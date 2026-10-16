@@ -1134,7 +1134,7 @@ ART["shadow_heal"] = table.concat({
 })
 
 -- Priest Trinity. All mutable state is private to this loader.
-local VERSION="1.0.0"
+local VERSION="1.1.0"
 local C=core
 local function static(o,n,...) local f=o and o[n];if type(f)~="function" then return nil end;local ok,v=pcall(f,...);if ok then return v end end
 local function unit(o,n,...) if not o then return nil end;local f=o[n];if type(f)~="function" then return nil end;local ok,v=pcall(f,o,...);if ok then return v end end
@@ -1171,6 +1171,8 @@ local Spells={
  dispersion={47585},vampiric_embrace={15286},silence={15487},horror={64044},scream={8122,10890,10888,8124},
  chastise={88625},serenity={2050},sanctify={34861},circle={204883,34861},prayer_healing={596,10961,10960,996},
  guardian_spirit={47788},apotheosis={200183},hymn={64843},symbol={64901},
+ halo={120517},divine_star={110744},holy_nova={132157,15237},ultimate_penitence={421453},archangel={197862},
+ shadow_mend={},inner_focus={14751},divine_spirit={27841,14819,14818},shadow_protection={27683,10958,976},fear_ward={6346},
  fiend={34433},mindbender={123040,200174},power_infusion={10060},shadowform={232698,15473},
  void_eruption={228260},void_bolt={205448},void_torrent={263165},dark_ascension={391109},
  shadow_crash={205385,457042},void_blast={450983},mind_flay_insanity={391403},
@@ -1178,8 +1180,9 @@ local Spells={
  void_shield={},shadow_word_madness={},tentacle_slam={},void_volley={},voidform={},binding_heal={32546},death={32379},
 }
 local Names={shield="Power Word: Shield",fortitude="Power Word: Fortitude",renew="Renew",flash_heal="Flash Heal",heal="Greater Heal",lesser_heal="Lesser Heal",smite="Smite",holy_fire="Holy Fire",pain="Shadow Word: Pain",mind_blast="Mind Blast",mind_flay="Mind Flay",vampiric_touch="Vampiric Touch",plague="Devouring Plague",penance="Penance",mending="Prayer of Mending",radiance="Power Word: Radiance",rapture="Rapture",evangelism="Evangelism",pain_suppression="Pain Suppression",barrier="Power Word: Barrier",purify="Purify",dispel_magic="Dispel Magic",cure_disease="Cure Disease",desperate_prayer="Desperate Prayer",fade="Fade",dispersion="Dispersion",vampiric_embrace="Vampiric Embrace",silence="Silence",horror="Psychic Horror",scream="Psychic Scream",chastise="Holy Word: Chastise",serenity="Holy Word: Serenity",sanctify="Holy Word: Sanctify",circle="Circle of Healing",prayer_healing="Prayer of Healing",guardian_spirit="Guardian Spirit",apotheosis="Apotheosis",hymn="Divine Hymn",symbol="Symbol of Hope",fiend="Shadowfiend",mindbender="Mindbender",power_infusion="Power Infusion",shadowform="Shadowform",void_eruption="Void Eruption",void_bolt="Void Bolt",void_torrent="Void Torrent",dark_ascension="Dark Ascension",shadow_crash="Shadow Crash",void_blast="Void Blast",mind_flay_insanity="Mind Flay: Insanity",inner_fire="Inner Fire",abolish_disease="Abolish Disease",void_shield="Void Shield",shadow_word_madness="Shadow Word: Madness",tentacle_slam="Tentacle Slam",void_volley="Void Volley",voidform="Voidform"}
-Names.binding_heal="Binding Heal";Names.death="Shadow Word: Death"
-local hard={flash_heal=true,heal=true,lesser_heal=true,binding_heal=true,smite=true,holy_fire=true,mind_blast=true,vampiric_touch=true,mind_flay=true,penance=true,radiance=true,prayer_healing=true,hymn=true,symbol=true,void_eruption=true,void_torrent=true,mind_flay_insanity=true,dark_ascension=true,void_blast=true}
+Names.binding_heal="Binding Heal";Names.death="Shadow Word: Death";Names.halo="Halo";Names.divine_star="Divine Star";Names.holy_nova="Holy Nova";Names.ultimate_penitence="Ultimate Penitence";Names.archangel="Archangel";Names.shadow_mend="Shadow Mend";Names.inner_focus="Inner Focus";Names.divine_spirit="Divine Spirit";Names.shadow_protection="Shadow Protection";Names.fear_ward="Fear Ward"
+local hard={flash_heal=true,heal=true,lesser_heal=true,binding_heal=true,shadow_mend=true,smite=true,holy_fire=true,mind_blast=true,vampiric_touch=true,mind_flay=true,penance=true,radiance=true,prayer_healing=true,hymn=true,symbol=true,void_eruption=true,void_torrent=true,mind_flay_insanity=true,dark_ascension=true,void_blast=true}
+local healing_spell={shield=true,void_shield=true,renew=true,flash_heal=true,heal=true,lesser_heal=true,binding_heal=true,shadow_mend=true,penance=true,mending=true,radiance=true,serenity=true,sanctify=true,circle=true,prayer_healing=true}
 local learned_names={}
 local function scan_book()
  learned_names={};local reverse={};for k,n in pairs(Names) do reverse[n:lower()]=k end
@@ -1289,6 +1292,14 @@ local function forecast(u)
  if old and t>old.t and t-old.t<2 then loss=math.max(0,(old.h-h)/(t-old.t));loss=0.65*(old.loss or 0)+0.35*loss end
  State.prediction[id]={h=h,t=t,loss=loss};return Settings.get("predictive") and math.max(0,h-loss*1.5) or h
 end
+local function incoming_ally_from(ctx)
+ for _,e in ipairs(ctx.enemies or {}) do
+  if unit(e,"is_casting_spell")==true then
+   local u=unit(e,"get_active_spell_target")
+   if alive(u) and not enemy(ctx.me,u) then for _,ally in ipairs(ctx.allies or {}) do if same(ally,u) then return ally end end end
+  end
+ end
+end
 local function snapshot(me,target)
  local ctx={me=me,target=target,allies=roster(me),enemies={},policy=Policies[State.mode] or Policies.world_pve,injured=0,critical=0,atoned=0}
  local seen={};local function push(u)
@@ -1303,7 +1314,13 @@ local function snapshot(me,target)
   if predicted<Settings.get("emergency")+ctx.policy.urgent then ctx.critical=ctx.critical+1 end
   if aura(u,194384,false,true)>3 then ctx.atoned=ctx.atoned+1 end
  end
- ctx.low=ctx.allies[1] or me;ctx.lowhp=hp(ctx.low);ctx.predicted=State.prediction[guid(ctx.low)] or {h=ctx.lowhp,loss=0}
+ local incoming=incoming_ally_from(ctx);local best,best_score=ctx.allies[1] or me,-999
+ for _,u in ipairs(ctx.allies) do
+  local p=State.prediction[guid(u)] or {h=hp(u),loss=0};local projected=Settings.get("predictive") and math.max(0,p.h-p.loss*1.5) or p.h
+  local score=100-projected+(same(u,incoming) and 18 or 0)+(same(u,me) and 2 or 0)
+  if score>best_score then best,best_score=u,score end
+ end
+ ctx.low=best;ctx.lowhp=hp(best);ctx.incoming=incoming;ctx.predicted=State.prediction[guid(best)] or {h=ctx.lowhp,loss=0}
  local p=ctx.predicted;ctx.urgent=(Settings.get("predictive") and math.max(0,p.h-p.loss*1.5) or p.h)<Settings.get("emergency")+ctx.policy.urgent
  return ctx
 end
@@ -1326,6 +1343,7 @@ local function cast(k,target,reason,ground,major)
  if accepted==true then
   State.last_cast=t;State.last_action=(Names[k] or k)..": "..reason;State.accepted=State.accepted+1
   if major then State.cd_lock=t+5 end
+  if healing_spell[k] then State.heal_last=k end
   event("cast",State.last_action);return true
  end
  return false
@@ -1384,28 +1402,23 @@ local function heal_forever(ctx)
   if attempt("flash_heal",u,"Forever emergency direct heal") then return true end
  end
  if h<Settings.get("heal_at") then
-  if has(u,"mending")==0 and attempt("mending",u,"Forever reactive group healing") then return true end
-  if ctx.injured>=ctx.policy.group and Settings.get("aoe") and (attempt("circle",u,"Forever group recovery") or attempt("prayer_healing",u,"Forever party healing")) then return true end
+  if (ctx.injured>=2 or ctx.incoming) and has(u,"mending")==0 and attempt("mending",u,"Forever reactive group healing") then return true end
+  if ctx.injured>=ctx.policy.group and Settings.get("aoe") then
+   if Settings.get("cooldowns") and attempt("inner_focus",ctx.me,"Prepare efficient group healing") then return true end
+   if attempt("circle",u,"Forever group recovery") or attempt("prayer_healing",u,"Forever party healing") then return true end
+  end
   if h<75 and attempt("penance",u,"Forever efficient direct healing") then return true end
-  if not same(u,ctx.me) and hp(ctx.me)<85 and attempt("binding_heal",u,"Forever dual-target recovery") then State.heal_last="binding_heal";return true end
-  if State.spec=="holy" and State.heal_last=="heal" and has(u,"renew")==0 and attempt("renew",u,"Forever Litany alternation") then State.heal_last="renew";return true end
+  if not same(u,ctx.me) and hp(ctx.me)<85 and attempt("binding_heal",u,"Forever dual-target recovery") then return true end
+  if State.spec=="holy" and (State.heal_last=="heal" or State.heal_last=="flash_heal" or State.heal_last=="lesser_heal") and has(u,"renew")==0 and attempt("renew",u,"Forever Litany spell-family alternation") then return true end
   if has(u,"renew")==0 and attempt("renew",u,"Forever sustained recovery") then return true end
   local key=h<60 and "flash_heal" or "heal"
-  if attempt(key,u,"Forever direct healing") then State.heal_last=key;return true end
+  if State.spec=="holy" and State.heal_last=="renew" and Settings.get("cooldowns") and attempt("inner_focus",ctx.me,"Prepare Litany direct heal") then return true end
+  if attempt(key,u,"Forever direct healing") then return true end
   if attempt("lesser_heal",u,"Low-level healing fallback") then return true end
  end
  return false
 end
-local function incoming_ally(ctx)
- for _,e in ipairs(ctx.enemies) do
-  if unit(e,"is_casting_spell")==true then
-   local u=unit(e,"get_active_spell_target")
-   if alive(u) and not enemy(ctx.me,u) and distance(ctx.me,u)<=40 then
-    for _,ally in ipairs(ctx.allies) do if same(ally,u) then return ally end end
-   end
-  end
- end
-end
+local function incoming_ally(ctx) return ctx.incoming or incoming_ally_from(ctx) end
 local function clustered_injured(ctx,radius)
  local best,count=ctx.low,0
  for _,center in ipairs(ctx.allies) do local n=0;for _,u in ipairs(ctx.allies) do if hp(u)<Settings.get("heal_at") and distance(center,u)<=radius then n=n+1 end end;if n>count then best,count=center,n end end
@@ -1422,8 +1435,10 @@ local function discipline(ctx)
  if ctx.injured>=ctx.policy.group and Settings.get("aoe") then
   local center,n=clustered_injured(ctx,6)
   if Settings.get("cooldowns") and ctx.critical>=2 and n>=ctx.policy.group and attempt("barrier",center,"Clustered critical damage",true,true) then return true end
-  if attempt("radiance",u,"Group Atonement setup") then return true end
-  if Settings.get("cooldowns") and ctx.atoned>=math.min(4,#ctx.allies) and attempt("evangelism",ctx.me,"Extend existing Atonements",false,true) then return true end
+  if ctx.atoned<math.min(ctx.policy.group,#ctx.allies) and attempt("radiance",u,"Group Atonement setup") then return true end
+  local ramp_need=State.mode=="raid" and math.min(8,#ctx.allies) or math.min(4,#ctx.allies)
+  if Settings.get("cooldowns") and ctx.atoned>=ramp_need and ctx.injured>=ctx.policy.group and attempt("evangelism",ctx.me,"Extend prepared Atonement ramp",false,true) then return true end
+  if Settings.get("cooldowns") and ctx.critical>=2 and attempt("ultimate_penitence",u,"Critical group recovery",false,true) then return true end
  end
  if ctx.lowhp<Settings.get("heal_at") then
   if aura(u,194384,false,true)<3 and has(u,"shield")==0 and attempt("shield",u,"Apply Atonement to injured ally") then return true end
@@ -1445,17 +1460,18 @@ local function holy(ctx)
   if Settings.get("cooldowns") and attempt("guardian_spirit",u,"Critical ally protection",false,true) then return true end
   if attempt("serenity",u,"Emergency Holy Word") or attempt("flash_heal",u,"Emergency spot heal") then return true end
  end
- if ctx.lowhp<75 and attempt("serenity",u,"Efficient Holy Word recovery") then return true end
+ if ctx.lowhp<80 and attempt("serenity",u,"Efficient Holy Word recovery") then return true end
+ if (ctx.injured>=2 or ctx.incoming) and has(u,"mending")==0 and attempt("mending",u,"Maintain Prayer of Mending") then return true end
  if ctx.injured>=ctx.policy.group and Settings.get("aoe") then
   local center,n=cluster(ctx,10)
   if n>=ctx.policy.group and attempt("sanctify",center,"Clustered group recovery",true) then return true end
   if attempt("circle",u,"Group recovery") then return true end
   if Settings.get("cooldowns") and ctx.critical>=3 and attempt("hymn",ctx.me,"Widespread critical damage",false,true) then return true end
   if Settings.get("cooldowns") and ctx.critical>=2 and attempt("apotheosis",ctx.me,"Restore Holy Word recovery",false,true) then return true end
-  if attempt("prayer_healing",u,"Sustained group recovery") then return true end
+  if attempt("halo",ctx.me,"Anticipated group healing and damage") or attempt("divine_star",center,"Clustered group healing",true) then return true end
+  if State.mode~="raid" and attempt("prayer_healing",u,"Sustained dungeon group recovery") then return true end
  end
  if ctx.lowhp<Settings.get("heal_at") then
-  if has(u,"mending")==0 and attempt("mending",u,"Reactive healing") then return true end
   if unit(ctx.me,"is_moving")==true and has(u,"renew")==0 and attempt("renew",u,"Moving recovery") then return true end
   if attempt(ctx.lowhp<65 and "flash_heal" or "heal",u,"Holy Word cooldown recovery") then return true end
  end
@@ -1465,18 +1481,20 @@ local function damage(ctx)
  local target=ctx.target;if not enemy(ctx.me,target) or protected(target) then return false end
  if not unit(ctx.me,"is_in_combat") or unit(target,"is_in_combat")~=true then return false end
  if State.spec~="shadow" then
-  local floor=State.spec=="discipline" and State.client=="retail" and ctx.atoned>0 and 55 or math.max(Settings.get("damage_above"),ctx.policy.damage)
+  local disc_pve=State.spec=="discipline" and State.client=="retail" and not ctx.policy.pvp and State.mode~="raid"
+  local floor=disc_pve and ctx.atoned>0 and 68 or math.max(Settings.get("damage_above"),ctx.policy.damage)
   if ctx.urgent or ctx.lowhp<floor or mana(ctx.me)<Settings.get("mana_reserve") then return false end
   if has(target,"holy_fire",true,true)<2 and attempt("holy_fire",target,"Holy damage synergy") then return true end
   if has(target,"pain",true,true)<2 and attempt("pain",target,"Sustained damage / Atonement") then return true end
+  if State.spec=="discipline" and attempt("mind_blast",target,"Atonement burst damage") then return true end
   if attempt("penance",target,"Offensive Penance") or attempt("smite",target,"Safe damage window") then return true end
   return false
  end
  if State.client=="forever" then
   if hp(target)<20 and hp(ctx.me)>55 and attempt("death",target,"Forever execute with self-health reserve") then return true end
   if has(target,"pain",true,true)<3 and attempt("pain",target,"Forever Shadow DoT") then return true end
-  if has(target,"plague",true,true)<3 and attempt("plague",target,"Forever learned disease DoT") then return true end
-  if has(target,"vampiric_embrace",true,true)==0 and attempt("vampiric_embrace",target,"Forever damage-to-healing debuff") then return true end
+  if ttd(target)>8 and has(target,"plague",true,true)<3 and attempt("plague",target,"Forever learned disease DoT") then return true end
+  if (hp(ctx.me)<85 or ctx.injured>0 or ttd(target)>20) and has(target,"vampiric_embrace",true,true)==0 and attempt("vampiric_embrace",target,"Forever sustain window") then return true end
   if attempt("mind_blast",target,"Forever Shadow burst") or attempt("mind_flay",target,"Forever Shadow filler") then return true end
   return false
  end
@@ -1487,12 +1505,14 @@ local function damage(ctx)
  local aoe_safe=true;for _,u in pairs(static(C.object_manager,"get_visible_objects") or {}) do
   if enemy(ctx.me,u) and distance(target,u)<10 and (protected(u) or unit(u,"is_in_combat")~=true) then aoe_safe=false;break end
  end
- if Settings.get("aoe") and aoe_safe and #ctx.enemies>=Settings.get("aoe_count") and attempt("shadow_crash",target,"Engaged enemy cluster",true) then return true end
- if has(target,"vampiric_touch",true,true)<4 and attempt("vampiric_touch",target,"Maintain Vampiric Touch") then return true end
+ if Settings.get("aoe") and aoe_safe and #ctx.enemies>=Settings.get("aoe_count") then
+  if attempt("tentacle_slam",target,"Apply Midnight DoTs to engaged cluster") or attempt("shadow_crash",target,"Engaged enemy cluster",true) then return true end
+ end
+ if ttd(target)>12 and has(target,"vampiric_touch",true,true)<4 and attempt("vampiric_touch",target,"Maintain Vampiric Touch") then return true end
  if has(target,"pain",true,true)<3 and attempt("pain",target,"Maintain Shadow Word: Pain") then return true end
  if Settings.get("multidot") and Settings.get("aoe") and not ctx.policy.pvp then
   local cap=math.min(Settings.get("max_dots"),ctx.policy.dots);local n=0
-  for _,u in ipairs(ctx.enemies) do if not protected(u) then n=n+1;if n<=cap and has(u,"vampiric_touch",true,true)<4 and attempt("vampiric_touch",u,"Bounded engaged-target multidot") then return true end end end
+  for _,u in ipairs(ctx.enemies) do if not protected(u) and ttd(u)>12 then n=n+1;if n<=cap and has(u,"vampiric_touch",true,true)<4 and attempt("vampiric_touch",u,"Bounded durable-target multidot") then return true end end end
  end
  if Settings.get("cooldowns") and dots_up and ttd(target)>ctx.policy.burst then
   if attempt("mindbender",target,"Prepare burst pet") or attempt("fiend",target,"Prepare burst pet") then return true end

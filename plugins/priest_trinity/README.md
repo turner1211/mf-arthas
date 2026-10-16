@@ -1,4 +1,4 @@
-# Priest Trinity 1.0.0
+# Priest Trinity 1.1.0
 
 One self-contained Project Sylvanas priest plugin with Discipline, Holy and Shadow branches for Retail/Midnight and WoW Forever. F1 opens or hides the custom menu. Characters remain on the right, as requested.
 
@@ -29,11 +29,11 @@ ACTIVITY provides a manual override if a custom server reports an unusual instan
 
 ## Rotations and support
 
-- Retail Discipline: direct emergency healing and Pain Suppression, observed Atonement tracking, Radiance for group coverage, Evangelism for existing coverage, clustered Barrier, targeted incoming-cast shielding, damage during safe Atonement windows.
-- Retail Holy: emergency Serenity/Guardian Spirit, clustered Sanctify, group healing, Divine Hymn/Apotheosis for critical groups, Mending and direct recovery.
+- Retail Discipline: predicted-danger target scoring, direct emergency healing and Pain Suppression, observed Atonement tracking, mode-sized Radiance/Evangelism ramps, clustered Barrier, Ultimate Penitence recovery, targeted incoming-cast shielding, and more active damage healing outside raids/PvP.
+- Retail Holy: Holy Word triage, proactive Prayer of Mending, clustered Sanctify, Halo/Divine Star support when learned, Divine Hymn/Apotheosis for critical groups, and dungeon-only Prayer of Healing fallback.
 - Retail Shadow: DoT maintenance, engaged-target multidot, Insanity spending, learned Voidform/Ascension alternatives, pet/burst alignment, Void Bolt/Torrent and generator/filler priorities. Midnight-specific named abilities are used only if discovered as learned in the client spellbook.
 - Forever Discipline: direct Penance healing, Weakened Soul-aware emergency shields, ranked direct heals, Holy Fire/Penance damage synergy. It never expects Retail Atonement to heal the party.
-- Forever Holy: Binding Heal for simultaneous self/ally recovery, Mending, ranked healing, Renew/direct-heal alternation. Emergency healing takes priority over alternation.
+- Forever Holy: Binding Heal for simultaneous self/ally recovery, damage-aware Mending, ranked healing, Inner Focus preparation, and Litany spell-family alternation. Emergency healing takes priority over alternation.
 - Forever Shadow: learned Shadowform, Pain/Plague, Vampiric Embrace, Mind Blast/Flay, and health-gated Shadow Word: Death. It never spends Retail Insanity.
 - Common utility: learned interruptible-cast Silence, optional emergency PvP peels, friendly magic/disease dispels, personal buffs, health-loss prediction, defensive recovery and major-cooldown spacing.
 
