@@ -31,6 +31,13 @@ local function stacks(c,family)
  return highest
 end
 local function dying(c,seconds)return c.target_hp<=25 or type(c.ttd)=='number' and c.ttd<=seconds end
+local function pve_durable(c,seconds)
+ if c.boss or c.training or c.target_tanked or (c.nearby or 0)>=2 then return true end
+ if type(c.ttd)=='number' then return c.ttd>=seconds end
+ -- Leveling mobs usually die before maintenance finishers repay their global.
+ -- Keep the older conservative behavior when the host cannot report a level.
+ return type(c.level)~='number' or c.level>30
+end
 function M.poison_plan(c)
  local instant=spell(c,'INSTANT_COAT')
  local deadly=spell(c,'DEADLY_COAT')
@@ -111,9 +118,16 @@ local function combat(c,durable)
  end
  local a=use(c,'RIPOSTE',nil,'Riposte after parry');if a then return a end
  if (c.attackers or 0)>=2 then a=use(c,'GHOSTLY',nil,'early Ghostly Strike dodge against multiple attackers');if a then return a end end
+ -- Spend points on a transferable buff when the current mob will die before
+ -- another Eviscerate can land and another enemy is already in the pull.
+ if c.cp>=3 and dying(c,4) and (c.nearby or 0)>=2 and buff(c,'SLICE')<5 then
+  a=use(c,'SLICE',c.player,'carry dying-target combo points into the next enemy');if a then return a end
+ end
  a=slice(c,durable);if a then return a end
  if c.cooldowns and durable then
-  if c.aoe_safe and (c.nearby>=2 or c.boss or c.training or c.pvp and c.target_stunned) then
+  -- Blade Flurry doubles attacks but also raises Energy costs. Pool first so
+  -- the opening of its short window is not lost to Energy starvation.
+  if (c.energy_pct or c.energy or 0)>=70 and c.aoe_safe and (c.nearby>=2 or c.boss or c.training or c.pvp and c.target_stunned) then
    a=use(c,'BLADE_FLURRY',c.player,c.nearby>=2 and 'safe two-target Blade Flurry'
     or c.pvp and c.target_stunned and 'Combat stun-window Blade Flurry' or 'single-target boss Blade Flurry');if a then return a end
   end
@@ -172,9 +186,9 @@ local function run(c,durable)
  if c.spec_key=='subtlety' then return subtlety(c,durable) end
  return assassination(c,durable)
 end
-function M.pve(c)return run(c,c.boss or c.training or not c.ttd or c.ttd>=15)end
-function M.mythic_plus(c)return run(c,c.boss or c.training or c.nearby>=2 or not c.ttd or c.ttd>=15)end
-function M.delve(c)return run(c,c.boss or c.training or c.target_hp>=65)end
+function M.pve(c)return run(c,pve_durable(c,15))end
+function M.mythic_plus(c)return run(c,pve_durable(c,15))end
+function M.delve(c)return run(c,pve_durable(c,18) or c.target_hp>=80)end
 function M.arena(c)return run(c,c.target_stunned or c.kill_window or c.target_hp<=55)end
 function M.battleground(c)return run(c,c.kill_window or c.target_hp<=65 or c.nearby>=2)end
 function M.world_pvp(c)return run(c,c.target_stunned or c.kill_window or c.target_hp<=55)end

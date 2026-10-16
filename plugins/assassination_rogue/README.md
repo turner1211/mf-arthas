@@ -1,8 +1,8 @@
 # Assassination Rogue — Valeera Activity Profiles
 
-Version 1.2.8 adds automatic Forever level detection and level-gated spell families. The selected level appears in the GUI and STATE log. Forever Assassination maintains Venom and Slice before adding long-target PvE Rupture, Combat avoids starting Adrenaline Rush near full Energy, and Combat/Subtlety prioritize Ghostly Strike's dodge value under multiple attackers. Retail/Midnight dispatch remains separate and unchanged.
+Version 1.2.9 makes Forever leveling priorities character-level aware as well as spellbook aware. Ordinary level-30-and-below solo mobs no longer receive low-value maintenance finishers when time-to-die is unavailable; bosses, training targets, tanked targets and packs remain durable. Combat pools Energy before Blade Flurry and carries dying-target combo points into Slice and Dice when another enemy is already present. Preparation and Blind also have explicit level gates. Retail/Midnight dispatch remains separate and unchanged.
 
-Project Sylvanas / IZI plugin, version 1.2.8. Built from the Holy Paladin GUI and aura compatibility layer, with Rogue damage, control, survival, gathering and logging modules.
+Project Sylvanas / IZI plugin, version 1.2.9. Built from the Holy Paladin GUI and aura compatibility layer, with Rogue damage, control, survival, gathering and logging modules.
 
 ## Controls
 
