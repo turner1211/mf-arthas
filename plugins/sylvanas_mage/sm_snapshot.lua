@@ -83,6 +83,8 @@ function N.build(player,identity,mode,settings,engine)
   settings=settings,now=now,game_now=U.number(U.fn(core.game_time)),enemies={},nearby={},casts={},
   enemy_count=1,attackers=0,melee_attackers=0,peel_target=nil,physical=false,magic=false,aoe_safe=true,aoe_known=false,party={},
   target=U.call(player,'get_target'),hp=U.hp(player)}
+ c.level=U.number(U.call(player,'get_level'))or U.number(identity.level)or 0
+ c.level_band=c.level>=60 and'endgame'or c.level>=40 and'40-59'or c.level>=24 and'24-39'or c.level>=20 and'20-23'or'1-19'
  c.precognition,c.precognition_left=N.precognition(player)
  local player_key=U.guid(player)or tostring(player)
  local pressure=N.health_pressure

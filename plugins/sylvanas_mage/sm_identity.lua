@@ -11,6 +11,7 @@ function I.resolve(class,reported,index)
 end
 function I.read(player)
  local class=U.number(U.call(player,'get_class'))
+ local level=U.number(U.call(player,'get_level'))or 0
  local family,evidence=Client.detect()
  if not family then return nil,'client_unconfirmed_'..tostring(evidence)end
  if family=='forever'then
@@ -27,7 +28,7 @@ function I.read(player)
   for _,candidate in ipairs(I.ids)do local n=score[candidate];if n>best then id,best,tie=candidate,n,false elseif n==best then tie=true end end
   if not id or best<=0 or tie then return nil,'forever_tree_unavailable_or_tied'end
   if not U.guid(player)then return nil,'player_identity_unavailable'end
-  return{id=id,spec=I.specs[id],role='DAMAGER',assigned='NONE',role_conflict=false,
+  return{id=id,spec=I.specs[id],role='DAMAGER',assigned='NONE',role_conflict=false,level=level,
    player=U.guid(player),version='Forever',client_family='forever',client_evidence=evidence,tree_score=score}
  end
  local raw=core.spell_book and U.fn(core.spell_book.get_specialization_id)
@@ -44,7 +45,7 @@ function I.read(player)
  elseif assigned==enums.group_role.HEALER then role='HEALER' end
  if type(assigned)=='string' then role=assigned:upper() end
  if not U.guid(player) then return nil,'player_identity_unavailable' end
- return {id=id,spec=I.specs[id],role=expected,assigned=role,
+ return {id=id,spec=I.specs[id],role=expected,assigned=role,level=level,
   role_conflict=role~='NONE' and role~=expected,player=U.guid(player),version=version,client_family='midnight',client_evidence=evidence}
 end
 return I
