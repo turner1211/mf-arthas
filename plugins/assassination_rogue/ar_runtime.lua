@@ -6,7 +6,7 @@ local Lib={
  Intel=require('ar_combat_intel'),Replay=require('ar_replay'),Performance=require('ar_performance'),
  PvP=require('ar_pvp_tactics'),TargetForecast=require('ar_target_forecast'),
  ThreatLearning=require('ar_threat_learning'),InterruptCoordination=require('ar_interrupt_coordination'),
- CastPriority=require('ar_cast_priority'),Decision=require('ar_decision_memory'),DangerZones=require('ar_danger_zones'),BossCoach=require('ar_boss_coach'),BossHUD=require('ar_boss_hud'),Hotkeys=require('ar_hotkeys')
+ CastPriority=require('ar_cast_priority'),Decision=require('ar_decision_memory'),DangerZones=require('ar_danger_zones'),BossCoach=require('ar_boss_coach'),BossHUD=require('ar_boss_hud'),Hotkeys=require('ar_hotkeys'),Branch=require('ar_branch'),Forever=require('ar_forever')
 }
 local E=require("common/enums")
 local Color=require('common/color')
@@ -56,7 +56,8 @@ local opening={start=0,done=false,garrote=0,rupture=false,envenom=false}
 
 
 
-for _,id in ipairs({Lib.S.DEADLY,Lib.S.WOUND,Lib.S.CRIPPLING,Lib.S.ATROPHIC,Lib.S.NUMBING,Lib.S.INSTANT,Lib.S.AMPLIFYING}) do Lib.A.track(id,{cast_floor=1800}) end
+for _,id in ipairs({Lib.S.DEADLY,Lib.S.WOUND,Lib.S.CRIPPLING,Lib.S.ATROPHIC,Lib.S.NUMBING,Lib.S.INSTANT,Lib.S.AMPLIFYING,
+ 8679,8687,8691,11341,11342,11343,2823,2837,11355,11356,11357,25347,3408,11201,5761,8694,11398,13219,13222,13223,13224}) do Lib.A.track(id,{cast_floor=1800}) end
 for id,duration in pairs({[Lib.S.VIAL]=4,[Lib.S.FEINT]=6,[Lib.S.CLOAK]=5,[Lib.S.EVASION]=10,[Lib.S.STEALTH]=3,[Lib.S.VANISH]=3,[Lib.S.SPRINT]=8,[Lib.S.SLICE]=12}) do Lib.A.track(id,{cast_floor=duration}) end
 -- Read-only native getters are memoized within one evaluation, never across ticks.
 
@@ -293,6 +294,7 @@ local function refresh(u,id,threshold)
  return true
 end
 local off_gcd={[Lib.S.STEP]=true,[Lib.S.KICK]=true,[Lib.S.CLOAK]=true,[Lib.S.EVASION]=true,[Lib.S.VANISH]=true,[Lib.S.TEA]=true,[Lib.S.SPRINT]=true,[Lib.S.MARK_FOR_DEATH]=true}
+for _,id in ipairs(require('ar_forever_spells').KICK) do off_gcd[id]=true end
 local self_spells={[Lib.S.FAN]=true,[Lib.S.TEMPEST]=true,[Lib.S.VIAL]=true,[Lib.S.FEINT]=true,
  [Lib.S.CLOAK]=true,[Lib.S.EVASION]=true,[Lib.S.VANISH]=true,[Lib.S.STEALTH]=true,[Lib.S.TEA]=true,
  [Lib.S.DEADLY]=true,[Lib.S.WOUND]=true,[Lib.S.CRIPPLING]=true,[Lib.S.ATROPHIC]=true,[Lib.S.NUMBING]=true}
@@ -433,7 +435,7 @@ local function confirm(id,success,observed_target)
   if id==Lib.S.CHEAP and k==State.arena_vanish_kill and State.arena_vanish_kill_stage=='cheap'
      and now()<State.arena_vanish_kill_until then State.arena_vanish_kill_stage='garrote2' end
  end
- if id==Lib.S.KICK and healer(req.target) then
+ if (id==Lib.S.KICK or Lib.Forever.is_spell('KICK',id)) and healer(req.target) then
   State.cc_history[k]=State.cc_history[k] or {};State.cc_history[k].lockout_until=now()+3
   Lib.T.note('HEALER_LOCKOUT',{'target='..tostring(req.target_name),'duration=3.0','source=confirmed Kick'})
  end
@@ -463,7 +465,11 @@ local function defense(c)
  elseif c.friendly_healer_mana and c.friendly_healer_mana<=35 then hpv=hpv-4 end
  if c.player_flag_carrier then hpv=hpv-10 end
  local why=" / "..r.reason
- if c.pvp and r.stun and (talent(Lib.S.PREEMPTIVE,'Preemptive Maneuver') or talent(Lib.S.ELUSIVENESS,'Elusiveness')) and not present(c.player,Lib.S.FEINT) then
+ if c.game_branch=='forever' and not player_stunned and c.attackers>=2 and (c.melee_pressure or r.physical)
+    and hpv<=85 and not evasion_effective then
+  if attempt(action(Lib.S.EVASION,c.player,'Forever: early Evasion against multiple melee attackers'..why),c) then return true end
+ end
+ if c.game_branch~='forever' and c.pvp and r.stun and (talent(Lib.S.PREEMPTIVE,'Preemptive Maneuver') or talent(Lib.S.ELUSIVENESS,'Elusiveness')) and not present(c.player,Lib.S.FEINT) then
   if attempt(action(Lib.S.FEINT,c.player,'preemptive Feint: observed stun cast'..why),c) then return true end
  end
  if c.pvp and r.control and r.magic and (r.impact_in or math.huge)<=0.55
@@ -502,7 +508,7 @@ if c.world_escape and not c.player_flag_carrier and c.attackers>=3 and not c.ste
  end
  -- Trade one defensive at a time. Lib.A configured imminent AoE gets Feint even
  -- without Elusiveness; unknown targeted casts use Feint only with that talent.
- if not present(c.player,Lib.S.CLOAK) and not evasion_effective and not present(c.player,Lib.S.FEINT)
+ if c.game_branch~='forever' and not present(c.player,Lib.S.CLOAK) and not evasion_effective and not present(c.player,Lib.S.FEINT)
     and (c.boss_defensive_soon or (timer and timer.kind=="aoe") or (timer and timer.kind=="unknown" and talent(Lib.S.ELUSIVENESS,"Elusiveness")) or
       (r.danger and talent(Lib.S.ELUSIVENESS,"Elusiveness") and (hpv<=85 or cast_defense_needed or r.focus_burst and c.attackers>0 and (r.current-r.projected)>=8))) then
   if attempt(action(Lib.S.FEINT,c.player,"predictive damage reduction"..why),c) then return true end
@@ -521,7 +527,7 @@ if c.world_escape and not c.player_flag_carrier and c.attackers>=3 and not c.ste
  if not player_stunned and (c.melee_pressure and hpv<=60 or r.physical and hpv<=65 or timer_personal and timer.kind=="physical") and not present(c.player,Lib.S.CLOAK) and not evasion_effective then
   if attempt(action(Lib.S.EVASION,c.player,"predictive physical defense"..why),c) then return true end
  end
- if hpv<=70 and c.attackers>0 and talent(Lib.S.ELUSIVENESS,"Elusiveness") and not present(c.player,Lib.S.FEINT)
+ if c.game_branch~='forever' and hpv<=70 and c.attackers>0 and talent(Lib.S.ELUSIVENESS,"Elusiveness") and not present(c.player,Lib.S.FEINT)
     and not present(c.player,Lib.S.CLOAK) and not evasion_effective then
   if attempt(action(Lib.S.FEINT,c.player,"Elusiveness under focus"),c) then return true end
  end
@@ -551,6 +557,7 @@ local function clean_for_breakable(u)
 end
 
 local function evaluate_sap(c)
+ local sap_id=c.sap_id or Lib.S.SAP
  c.sap_candidate=nil;c.sap_target='none'
   if not c.pvp or c.training then c.sap_status='not a live PvP profile';return end
  if not opts.cc or not c.profile.cc or not c.profile.opener then c.sap_status='CC or opener disabled';return end
@@ -568,7 +575,7 @@ local function evaluate_sap(c)
    -- pre-combat candidate and let the spell usability check reject stale data.
    if call(u,'is_in_combat')~=true and los(c.player,u) and not protected(u) and not breakable(u)
       and helper('is_cc_immune',u,nil,500)~=true
-      and read(core.spell_book.is_spell_in_range,Lib.S.SAP,u,c.player)==true and clean_for_breakable(u) then
+      and read(core.spell_book.is_spell_in_range,sap_id,u,c.player)==true and clean_for_breakable(u) then
     local reduction=helper('get_unit_dr',u,E.cc_flags and E.cc_flags.INCAPACITATE,0)
     local local_cc=State.cc_history[guid(u)]
     local raw_reduction=call(u,'get_dr',E.cc_flags and E.cc_flags.INCAPACITATE,0)
@@ -582,18 +589,18 @@ local function evaluate_sap(c)
  if not candidate then c.sap_status=healer(c.target) and 'healer selected for kill: eligible DPS focus required' or 'no confirmed enemy healer detected';return end
  c.sap_target=call(candidate,'get_name') or guid(candidate)
  if best then
-  if ready(Lib.S.SAP) then c.sap_candidate=best;c.sap_status='eligible: automatic healer / focus Sap'
+  if ready(sap_id) then c.sap_candidate=best;c.sap_status='eligible: automatic healer / focus Sap'
   else c.sap_status=State.ready_failure end
  elseif call(candidate,'is_in_combat')==true then c.sap_status='candidate in combat'
  elseif protected(candidate) or helper('is_cc_immune',candidate,nil,500)==true then c.sap_status='candidate immune'
  elseif breakable(candidate) then c.sap_status='candidate already controlled'
  elseif not los(c.player,candidate) then c.sap_status='candidate outside line of sight'
- elseif read(core.spell_book.is_spell_in_range,Lib.S.SAP,candidate,c.player)~=true then c.sap_status='candidate outside Sap range'
+ elseif read(core.spell_book.is_spell_in_range,sap_id,candidate,c.player)~=true then c.sap_status='candidate outside Sap range'
  elseif not clean_for_breakable(candidate) then c.sap_status='candidate has DoTs or debuff safety unavailable'
  else c.sap_status='incapacitate DR unavailable / too diminished' end
 end
 local function sap_healer(c)
- if c.sap_candidate then return attempt(action(Lib.S.SAP,c.sap_candidate,'automatic in-range off-target Sap before opener'),c) end
+ if c.sap_candidate then return attempt(action(c.sap_id or Lib.S.SAP,c.sap_candidate,'automatic in-range off-target Sap before opener'),c) end
  if c.pvp and not c.training and now()-State.sap_log_time>=2 then
   State.sap_log_time=now()
   Lib.T.note('SAP_BLOCKED',{'target='..c.sap_target,'reason='..c.sap_status,'stealth='..tostring(c.stealth),
@@ -634,7 +641,7 @@ local function control(c)
    if plan.phase=='cc' then Lib.StepCC.confirm(plan.cc,plan.focus,false);return true end
    Lib.StepCC.reset()
  elseif not Lib.PvP.tether_safe(c,destination,{dist=dist,los=los,cc=function(u)return helper('is_crowd_controlled',u,nil,0)==true end}) then Lib.StepCC.reset()
-  elseif plan.phase=='cc' and plan.cc==Lib.S.KICK then
+  elseif plan.phase=='cc' and (plan.cc==Lib.S.KICK or Lib.Forever.is_spell('KICK',plan.cc)) then
    if call(plan.focus,'is_casting_spell')~=true and call(plan.focus,'is_channelling_spell')~=true then
     Lib.StepCC.confirm(plan.cc,plan.focus,false)
    elseif attempt(action(plan.cc,plan.focus,'Step Kick: confirmed arrival, stop healer cast'),c) then return true end
@@ -711,7 +718,7 @@ local function control(c)
     or row.targets_self and row.learned>=10 and "learned dangerous cast targeting player"
     or row.targets_ally and row.learned>=10 and "learned dangerous cast targeting ally"
     or healer(u) and "interrupt healer cast / channel" or "interrupt verified cast / channel"
-   local kick_range=read(core.spell_book.is_spell_in_range,Lib.S.KICK,u,c.player)==true
+   local kick_range=read(core.spell_book.is_spell_in_range,c.kick_id or Lib.S.KICK,u,c.player)==true
    local step_charges=read(core.spell_book.get_spell_charge,Lib.S.STEP)
    local priority_step=row.protect_healer or Lib.CastPriority.score(row.spell_id)>=80
     or row.targets_self and (row.learned or 0)>=10
@@ -719,12 +726,12 @@ local function control(c)
       and type(step_charges)=='number' and step_charges>=2 and ready(Lib.S.STEP)
       and guid(u)~=guid(c.target) and dist(c.player,u)<=25
       and Lib.PvP.tether_safe(c,u,{dist=dist,los=los,cc=function(v)return helper('is_crowd_controlled',v,nil,0)==true end})
-      and Lib.StepCC.start(c.target,u,Lib.S.KICK,now()) then
+      and Lib.StepCC.start(c.target,u,c.kick_id or Lib.S.KICK,now()) then
     if attempt(action(Lib.S.STEP,u,healer(u) and 'Step to healer Kick: reserve return charge'
        or 'Step to priority Kick: reserve return charge'),c) then return true end
     Lib.StepCC.reset()
    end
-   if interruptible==true and attempt(action(Lib.S.KICK,u,reason),c) then return true end
+   if interruptible==true and attempt(action(c.kick_id or Lib.S.KICK,u,reason),c) then return true end
    local stop_safe=interruptible==true or interruptible==false and call(u,'is_boss')~=true
     and helper('is_cc_immune',u,E.cc_flags and E.cc_flags.STUN,0)==false
    if stop_safe and not c.pvp and opts.cc and c.profile.cc and call(u,'is_boss')~=true
@@ -770,8 +777,8 @@ local function control(c)
     and los(c.player,step_focus) and not protected(step_focus) and clean_for_breakable(step_focus) then
   local sap_dr=helper('get_unit_dr',step_focus,E.cc_flags and E.cc_flags.INCAPACITATE,0)
   if now()>=State.blind_chain_until and c.stealth and type(sap_dr)=='number' and sap_dr>=0.5
-     and read(core.spell_book.is_spell_in_range,Lib.S.SAP,step_focus,c.player)==true then
-   if attempt(action(Lib.S.SAP,step_focus,'trinketless healer chain: Sap after Blind'),c) then return true end
+     and read(core.spell_book.is_spell_in_range,c.sap_id or Lib.S.SAP,step_focus,c.player)==true then
+   if attempt(action(c.sap_id or Lib.S.SAP,step_focus,'trinketless healer chain: Sap after Blind'),c) then return true end
   elseif now()>=State.blind_chain_until-1 and not c.stealth and c.self_hp>=70 and (c.attackers or 0)<=1
      and (c.defensive_reserves or 0)>=2 and ready(Lib.S.VANISH) then
    if attempt(action(Lib.S.VANISH,c.player,'trinketless healer chain: Vanish before Sap'),c) then return true end
@@ -852,7 +859,7 @@ local function control(c)
  -- Prefer it when a healer is casting or stun DR is unavailable, but only
  -- during established pressure and never into immunity or existing control.
  local reserved_garrote=guid(focus)==State.arena_vanish_focus and now()<State.arena_vanish_until
- if c.stealth and pressure and enemy(c.player,focus) and control_candidate(focus,c.target)
+ if c.game_branch~='forever' and c.stealth and pressure and enemy(c.player,focus) and control_candidate(focus,c.target)
     and healer(focus) and control_chain_clear(focus) and not protected(focus) and not breakable(focus)
     and los(c.player,focus) and not present(focus,Lib.S.GARROTE)
     and (reserved_garrote or call(focus,'is_casting_spell')==true or call(focus,'is_channelling_spell')==true
@@ -867,7 +874,7 @@ local function control(c)
   if clean_for_breakable(focus) and control_chain_clear(focus) then
    local blind_dr=helper('get_unit_dr',focus,E.cc_flags and E.cc_flags.DISORIENT,0)
    if c.stealth and call(focus,"is_in_combat")==false then
-    if type(reduction)=='number' and reduction>=0.5 and attempt(action(Lib.S.SAP,focus,"focus healer opener"),c) then return true end
+    if type(reduction)=='number' and reduction>=0.5 and attempt(action(c.sap_id or Lib.S.SAP,focus,"focus healer opener"),c) then return true end
    elseif c.target_stunned or c.bleeds_ready and pressure or c.self_hp<=50 or c.attackers>=2 then
     -- Blind is strongest after observed trinket usage; otherwise prefer Gouge.
     if c.healer_trinket_down and type(blind_dr)=='number' and blind_dr>=0.5 then
@@ -902,7 +909,9 @@ local function make_context(p,target,profile,list)
  local pvp=mode=="arena" or mode=="battleground" or mode=="world_pvp"
  local c={player=p,target=target,profile=profile,mode=mode,pvp=pvp,cp=cp,cp_max=type(max)=="number" and max or 5,
   energy=energy,self_hp=hp(p) or 100,target_hp=hp(target) or 100,nearby=0,attackers=0,player_attackers=0,pet_attackers=0,ally_threats=0,interrupt_opportunities=0,enemies={},aoe_safe=true,
-  spread_needed=false,ready=ready,known=known,cd=cd,refresh=refresh,
+   spread_needed=false,ready=ready,known=known,cd=cd,refresh=refresh,
+   remaining=function(u,id)return Lib.A.remaining(u,id) or 0 end,
+   stacks=function(u,id)return Lib.A.stacks(u,id) or 0 end,
   stun_safe=function(u) return stun_safe(p,u) end,opener=profile.opener,
   full_stun_safe=function(u) return full_stun(p,u) end,
   cooldowns=profile.cooldowns,cc_enabled=opts.cc and profile.cc,offensive_vanish=opts.offensive_vanish and mode~="delve",
@@ -912,10 +921,11 @@ local function make_context(p,target,profile,list)
   darkest=present(p,Lib.S.DARKEST_NIGHT),improved=present(p,Lib.S.IMPROVED_GARROTE),
   blindside=present(p,121153),kingsbane_gain=talent(Lib.S.IMPLACABLE_FINAL,"Implacable Kingsbane") and 6 or 1,
   improved_talent=talent(Lib.S.IMPROVED_GARROTE,"Improved Garrote"),
-  boss=call(target,"is_boss")==true,ttd=call(target,"get_time_to_die"),target_class=call(target,'get_class'),
+  boss=call(target,"is_boss")==true,ttd=call(target,"get_time_to_die"),target_class=call(target,'get_class'),target_healer=healer(target),
   target_race=call(target,'get_race') or call(target,'get_race_id'),
   target_stunned=stunned(target) or State.cc_history[guid(target)] and (State.cc_history[guid(target)].stun_active_until or 0)>now(),healer_cc=false,ally_burst=false,ally_burst_target=nil,self_peel_target=nil,friendly_healers={},friendly_tank=nil,friendly_healer_smoke_cover=false,burst_requested=now()<State.manual_burst_until,
   target_key=alive(target) and guid(target) or nil,healer_present=false,
+  target_debuffs_readable=type(call(target,'get_debuffs'))=='table',
   blind_chain_target=State.blind_chain_target,blind_chain_remaining=math.max(0,State.blind_chain_until-now()),
   trinket_recent=helper("trinket_used_within",target,60)==true,smoke_range=dist(p,target)<=5,
   kidney_cd=cd(Lib.S.KIDNEY),
@@ -928,7 +938,8 @@ local function make_context(p,target,profile,list)
    if tonumber(affix_id)==10 then c.fortified=true elseif tonumber(affix_id)==9 then c.tyrannical=true end
   end
  end
- if c.pvp then c.utility_poison=Lib.S.CRIPPLING
+ if game_branch=='forever' then c.lethal_poison,c.utility_poison=Lib.Forever.poison_plan(c)
+ elseif c.pvp then c.utility_poison=Lib.S.CRIPPLING
  elseif c.mode=='mythic_plus' and c.fortified then c.utility_poison=known(Lib.S.NUMBING) and Lib.S.NUMBING or Lib.S.ATROPHIC
  else c.utility_poison=known(Lib.S.ATROPHIC) and Lib.S.ATROPHIC or Lib.S.NUMBING end
  c.hero=talent(Lib.S.MARK,"Deathstalker's Mark") and "Deathstalker" or talent(Lib.S.HAND_OF_FATE,"Hand of Fate") and "Fatebound" or "Unknown"
@@ -941,7 +952,8 @@ local function make_context(p,target,profile,list)
   +(known(Lib.S.EVASION) and cd(Lib.S.EVASION)<=0.05 and 1 or 0)
   +(not c.player_flag_carrier and known(Lib.S.VANISH) and cd(Lib.S.VANISH)<=0.05 and 1 or 0)
  c.defensive_dry=c.pvp and c.defensive_reserves==0
- c.kick_ready=opts.interrupt and known(Lib.S.KICK) and cd(Lib.S.KICK)<=0.05
+ c.kick_id=game_branch=='forever' and Lib.Branch.forever_spell('KICK',known) or Lib.S.KICK
+ c.kick_ready=opts.interrupt and c.kick_id~=nil and cd(c.kick_id)<=0.05
  c.bleeds_ready=not refresh(target,Lib.S.GARROTE,0) and not refresh(target,Lib.S.RUPTURE,0)
  c.bomb_opener=pvp and profile.cooldowns and opts.cc and profile.cc and not c.damage_reduced and c.self_hp>45
   and known(Lib.S.SMOKE) and cd(Lib.S.SMOKE)<=0 and (known(Lib.S.DEATHMARK) and cd(Lib.S.DEATHMARK)<=2 or known(Lib.S.KINGSBANE) and cd(Lib.S.KINGSBANE)<=2)
@@ -1006,7 +1018,7 @@ local function make_context(p,target,profile,list)
    if opts.interrupt and not protected(u) and not breakable(u)
       and (call(u,'is_casting_spell')==true or call(u,'is_channelling_spell')==true)
       and call(u,'is_active_spell_interruptable')==true and los(p,u) then
-    local kick_actionable=c.kick_ready and read(core.spell_book.is_spell_in_range,Lib.S.KICK,u,p)==true
+    local kick_actionable=c.kick_ready and read(core.spell_book.is_spell_in_range,c.kick_id or Lib.S.KICK,u,p)==true
     local kidney_actionable=opts.cc and profile.cc and c.cp>=5 and known(Lib.S.KIDNEY) and cd(Lib.S.KIDNEY)<=0.05
      and read(core.spell_book.is_spell_in_range,Lib.S.KIDNEY,u,p)==true and stun_safe(p,u)
     local blind_actionable=not c.pvp and opts.cc and profile.cc and known(Lib.S.BLIND) and cd(Lib.S.BLIND)<=0.05
@@ -1046,7 +1058,7 @@ local function make_context(p,target,profile,list)
    local channel=call(u,'is_channelling_spell')==true
    local finish=channel and call(u,'get_active_channel_cast_end_time') or call(u,'get_active_spell_cast_end_time')
    local kick_reachable=c.kick_ready and call(u,'is_active_spell_interruptable')==true and los(p,u)
-    and read(core.spell_book.is_spell_in_range,Lib.S.KICK,u,p)==true
+    and read(core.spell_book.is_spell_in_range,c.kick_id or Lib.S.KICK,u,p)==true
    c.friendly_healer_cast_imminent=channel or type(finish)=='number' and finish>now() and finish-now()<=0.8
    c.friendly_healer_cast_outside_bomb=dist(p,u)>8
    c.friendly_healer_cast_kick_reachable=kick_reachable
@@ -1208,12 +1220,10 @@ local function update(H)
  local p=core.object_manager.get_local_player();if not alive(p) or (hp(p) or 0)<=0.1
     or call(p,'is_ghost')==true or call(p,'is_released')==true then Lib.G.stop();return end
  if call(p,"get_class")~=(E.class_id and E.class_id.ROGUE or 4) then return end
- local expected=E.class_spec_id and E.class_spec_id.spec_enum and E.class_spec_id.spec_enum.ASSASSINATION_ROGUE
- if expected then
-  local raw=read(core.spell_book.get_specialization_id)
-  local spec=read(E.class_spec_id.get_specialization_enum,call(p,"get_class"),raw)
-  if spec~=expected then skip("Assassination specialization required");return end
- end
+  local raw_spec=read(core.spell_book.get_specialization_id)
+  local spec=read(E.class_spec_id and E.class_spec_id.get_specialization_enum,call(p,"get_class"),raw_spec) or raw_spec
+  local game_branch,spec_key,branch_evidence=Lib.Branch.detect(raw_spec,spec)
+  if game_branch~='forever' and not (spec==259 or spec==260 or spec==261 or raw_spec==1 or raw_spec==2 or raw_spec==3) then skip("Rogue damage specialization required");return end
  local target=call(p,"get_target")
  -- Optional city practice assistant. Project Sylvanas' locale-independent
  -- unit_helper classification covers capital-city and expansion-hub dummies;
@@ -1331,7 +1341,11 @@ local function update(H)
      and dist(p,u)<range and los(p,u) then best,range=u,dist(p,u) end end
   if best then read(core.input.set_target,best);target=best end
  end
- local c=make_context(p,target,Lib.P.settings[mode],list);if not c then skip("Resource data unavailable");return end
+  local c=make_context(p,target,Lib.P.settings[mode],list);if not c then skip("Resource data unavailable");return end
+  c.spec_id=spec;c.spec_key=spec_key;c.game_branch=game_branch;c.branch_evidence=branch_evidence
+  c.sap_id=game_branch=='forever' and (Lib.Branch.forever_spell('SAP',known) or Lib.S.SAP) or Lib.S.SAP
+  c.spec_name=spec_key=='outlaw' and 'Outlaw' or spec_key=='combat' and 'Combat' or spec_key=='subtlety' and 'Subtlety' or 'Assassination'
+  if game_branch=='forever' then c.hero='Forever '..c.spec_name..' tree' end
  c.healer_tether_safe,c.healer_tether_reason=Lib.PvP.tether_safe(c,target,{dist=dist,los=los,cc=function(u)return helper('is_crowd_controlled',u,nil,0)==true end})
  if enemy(p,target) and State.opening_target~=guid(target) then
   State.opening_target=guid(target)
@@ -1483,13 +1497,14 @@ local function update(H)
   Lib.G.update(p,opts,Lib.T,list)
   if opts.fishing then return end
   if opts.poisons then
-   local lethal=c.pvp and Lib.S.WOUND or known(Lib.S.DEADLY) and Lib.S.DEADLY or Lib.S.INSTANT
+   local lethal=c.game_branch=='forever' and c.lethal_poison
+    or c.pvp and known(Lib.S.WOUND) and Lib.S.WOUND or known(Lib.S.DEADLY) and Lib.S.DEADLY or Lib.S.INSTANT
    local utility=c.utility_poison
-   if not present(p,lethal) and attempt(action(lethal,p,"prepare lethal poison"),c) then return end
-   if talent(Lib.S.DRAGON_BLADES,'Dragon-Tempered Blades') and known(Lib.S.AMPLIFYING) and not present(p,Lib.S.AMPLIFYING) and attempt(action(Lib.S.AMPLIFYING,p,'prepare additional lethal poison'),c) then return end
-   if not present(p,utility) and attempt(action(utility,p,"prepare utility poison"),c) then return end
+   if lethal and not present(p,lethal) and attempt(action(lethal,p,c.game_branch=='forever' and "prepare Forever lethal poison" or "prepare lethal poison"),c) then return end
+   if c.game_branch~='forever' and talent(Lib.S.DRAGON_BLADES,'Dragon-Tempered Blades') and known(Lib.S.AMPLIFYING) and not present(p,Lib.S.AMPLIFYING) and attempt(action(Lib.S.AMPLIFYING,p,'prepare additional lethal poison'),c) then return end
+   if utility and utility~=lethal and not present(p,utility) and attempt(action(utility,p,c.game_branch=='forever' and "prepare Forever utility poison" or "prepare utility poison"),c) then return end
    if c.in_city and call(p,'is_moving')==false and now()>=State.city_poison_at then
-    local random_poison=Lib.Stealth.random_poison(known)
+    local random_poison=c.game_branch=='forever' and (c.utility_poison or c.lethal_poison) or Lib.Stealth.random_poison(known)
     State.city_poison_at=now()+60
     if random_poison and attempt(action(random_poison,p,"city idle random poison"),c) then return end
    end
@@ -1524,7 +1539,10 @@ local function update(H)
  if c.pvp and mode~='battleground' and not combat and call(target,"is_in_combat")~=true then skip("Waiting for confirmed PvP engagement");return end
  if breakable(target) or protected(target) then skip("Target is controlled / immune");return end
  if opts.auto_face then read(core.input.look_at,call(target,"get_position")) end
- if read(core.spell_book.is_spell_in_range,Lib.S.MUTILATE,target,p)~=true then
+ c.melee_probe_id=c.game_branch=='forever' and next_action and next_action.id or Lib.S.MUTILATE
+ c.melee_probe_ok=c.game_branch=='forever' and next_action and guid(next_action.target)==guid(p)
+  or c.melee_probe_id and read(core.spell_book.is_spell_in_range,c.melee_probe_id,target,p)==true
+ if c.melee_probe_ok~=true then
   -- Finisher/control range can exceed Mutilate range for selected talents.
   if next_action and (next_action.id==Lib.S.ENVENOM or next_action.id==Lib.S.RUPTURE or next_action.id==Lib.S.KIDNEY)
      and read(core.spell_book.is_spell_in_range,next_action.id,target,p)==true
@@ -1609,7 +1627,8 @@ local function gui_state()
  end
  local c=M.context or {}
  return {eligible=true,window_open=window_open,plugin_enabled=opts.enabled,auto_mode=true,active_mode=mode,editing_mode=editing_mode or mode,
-  mode_label=Lib.P.settings[mode].label,profile_name=Lib.P.settings[editing_mode or mode].label,hero=c.hero or "Unknown",last=last,
+   mode_label=Lib.P.settings[mode].label,profile_name=Lib.P.settings[editing_mode or mode].label,hero=c.hero or "Unknown",last=last,
+   spec_name=c.spec_name or 'Assassination',game_branch=c.game_branch or 'retail',
   notice=notice,status=pending and "Cast pending" or Lib.G.status,log_enabled=opts.logging,profiles=Lib.P.settings,
   hotkey_status=Lib.Hotkeys.status,hotkey_labels=hotkey_labels,
   prediction=c.prediction,attackers=c.attackers,timer_status=Lib.BigWigs.status,

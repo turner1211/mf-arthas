@@ -1,5 +1,8 @@
 -- Each profile has its own decision function; common primitives handle class mechanics.
 local S=require("ar_spells")
+local Outlaw=require("ar_outlaw")
+local Subtlety=require("ar_subtlety")
+local Forever=require("ar_forever")
 local M={}
 M.order={"pve","mythic_plus","delve","arena","battleground","world_pvp"}
 M.settings={
@@ -307,5 +310,10 @@ function M.offensive_disarm(c)
     or c.damage_reduced or not c.disarmable or not c.disarm_matchup then return end
  return pick(c,S.DISMANTLE,nil,'kill window: deny Death Strike / Die by the Sword')
 end
-function M.decide(mode,c) return M[mode](c) end
+function M.decide(mode,c)
+ if c.game_branch=='forever' then return Forever.decide(mode,c) end
+ if c.spec_key=='outlaw' then return Outlaw.decide(mode,c) end
+ if c.spec_key=='subtlety' then return Subtlety.decide(mode,c) end
+ return M[mode](c)
+end
 return M

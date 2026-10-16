@@ -9,8 +9,16 @@ local function small_font() return enums and enums.window_enums.font_id.FONT_SMA
 local page, win_x, win_y = 1, 45, 45
 local pve_scroll, last_pve_scroll = 0, -math.huge
 local dragging, mouse_was_down, reported = nil, false, false
-local panel_w, panel_h = 1000, 760
+local panel_w, panel_h = 1180, 780
 local labels = { "PVE DAMAGE", "PVP / CONTROL", "ROTATION", "CONTROL", "SURVIVAL", "UTILITY", "GATHERING", "BOSS TOOLS", "HOTKEYS", "DISPLAY / LOGS", "CORE" }
+local themes={
+ {118,226,107,'POISON • PRECISION • PRESSURE'},{230,62,88,'SETUP • CONTROL • FINISH'},
+ {100,220,116,'BLEEDS • ENERGY • EXECUTION'},{164,105,255,'SAP • BLIND • KIDNEY'},
+ {245,177,66,'ANTICIPATE • TRADE • ESCAPE'},{77,180,235,'MOBILITY • TARGETING • STEALTH'},
+ {54,205,170,'LOOT • FISH • SKIN'},{240,124,70,'MECHANICS • POSITION • SURVIVE'},
+ {62,204,230,'BIND • TOGGLE • CUSTOMIZE'},{185,197,210,'RECORD • REVIEW • IMPROVE'},
+ {215,70,91,'SYSTEM • SAFETY • PERFORMANCE'}}
+local accent={118,226,107}
 
 local function initialize_window()
     if window then return true end
@@ -45,8 +53,11 @@ local function hovered(x1, y1, x2, y2)
 end
 local function button(label, x1, y1, x2, y2, action, active)
     local over = hovered(x1, y1, x2, y2)
-    rect(x1, y1, x2, y2, active and c(118, 226, 107, 248) or
-        (over and c(117, 28, 41, 236) or c(49, 17, 25, 210)), 5)
+    rect(x1+2, y1+3, x2+2, y2+3, c(3, 7, 8, 185), 6)
+    rect(x1, y1, x2, y2, active and c(accent[1],accent[2],accent[3],248) or
+        (over and c(accent[1],accent[2],accent[3],150) or c(21, 27, 29, 224)), 5)
+    outline(x1,y1,x2,y2,active and c(232,246,218,245) or c(accent[1],accent[2],accent[3],over and 230 or 105),5,active and 2 or 1)
+    if active then rect(x1,y1+5,x1+5,y2-5,c(240,249,224,245),3) end
     local icon=Icons.for_label(label)
     local offset=10
     if icon and x2-x1>=130 then
@@ -54,34 +65,45 @@ local function button(label, x1, y1, x2, y2, action, active)
         local icon_y=y1+math.floor((y2-y1-icon_size)/2)
         Icons.draw(icon,x1+4,icon_y,icon_size,win_x,win_y,window)
         outline(x1+3,icon_y-1,x1+5+icon_size,icon_y+icon_size+1,
-            active and c(226,255,218) or c(163,233,149,210),4,1)
+            active and c(245,255,240) or c(accent[1],accent[2],accent[3],210),4,1)
         offset=icon_size+13
     end
     text(label, x1 + offset, y1 + 10, small_font(), active and c(12, 28, 16) or c(237, 245, 237))
     if clicked(x1, y1, x2, y2) then action() end
 end
 local function toggle_row(label, value, x, y, x2, on_click, note, hotkey, on_hotkey)
-    local over = hovered(x, y, x2, y + 45)
-    rect(x, y, x2, y + 45, c(25, 17, 25, 224), 5)
-    outline(x, y, x2, y + 45, over and c(118, 226, 107, 235) or c(91, 49, 63, 190), 5, over and 2 or 1)
+    local over = hovered(x, y, x2, y + 50)
+    rect(x+2, y+3, x2+2, y + 53, c(2,7,8,170), 6)
+    rect(x, y, x2, y + 50, c(17, 27, 28, 239), 6)
+    outline(x, y, x2, y + 50, over and c(accent[1],accent[2],accent[3],235) or c(65, 78, 76, 190), 6, over and 2 or 1)
     local icon=Icons.for_label(label);local offset=14
     if icon then
-        Icons.draw(icon,x+5,y+4,37,win_x,win_y,window)
-        outline(x+4,y+3,x+43,y+42,c(163,233,149,210),4,1);offset=52
+        rect(x+6,y+5,x+46,y+45,c(8,16,17,245),7)
+        Icons.draw(icon,x+9,y+8,34,win_x,win_y,window)
+        outline(x+6,y+5,x+46,y+45,c(accent[1],accent[2],accent[3],230),7,2);offset=56
     end
-    text(Text.compact(label,30), x + offset, y + 6, small_font(), c(237, 245, 237))
-    if note and note ~= "" then text(Text.compact(note,35), x + offset, y + 26, small_font(), c(186, 203, 189)) end
+    text(Text.compact(label,36), x + offset, y + 7, small_font(), c(244, 237, 219))
+    if note and note ~= "" then text(Text.compact(note,43), x + offset, y + 28, small_font(), c(186, 203, 189)) end
     local enabled = value == true
-    local key_x1,key_x2=x2-176,x2-84
-    local key_over=hovered(key_x1,y+10,key_x2,y+35)
-    rect(key_x1,y+10,key_x2,y+35,key_over and c(117,28,41,245) or c(43,31,45,245),6)
-    outline(key_x1,y+10,key_x2,y+35,c(163,233,149,190),6,1)
-    text(Text.compact(hotkey or 'UNBOUND',12),key_x1+8,y+15,small_font(),c(224,241,218))
-    rect(x2 - 75, y + 10, x2 - 14, y + 35, enabled and c(118, 226, 107) or c(62, 44, 54), 6)
-    text(enabled and "ON" or "OFF", x2 - 58, y + 15, small_font(),
-        enabled and c(12, 28, 16) or c(237, 245, 237))
-    if clicked(key_x1,y+10,key_x2,y+35) then if on_hotkey then on_hotkey() end
-    elseif clicked(x, y, x2, y + 45) then on_click() end
+    local switch_x1,switch_x2=x2-292,x2-198
+    rect(switch_x1,y+11,switch_x2,y+39,enabled and c(accent[1],accent[2],accent[3],225) or c(48,59,59,245),14)
+    outline(switch_x1,y+11,switch_x2,y+39,c(accent[1],accent[2],accent[3],190),14,1)
+    local knob_x=enabled and switch_x2-26 or switch_x1+4
+    rect(knob_x,y+14,knob_x+22,y+36,enabled and c(235,250,220) or c(145,151,149),11)
+    text(enabled and "ON" or "OFF",enabled and switch_x1+15 or switch_x1+38,y+17,small_font(),enabled and c(12,28,16) or c(224,232,227))
+    local key_x1,key_x2=x2-188,x2-82
+    local key_over=hovered(key_x1,y+9,key_x2,y+41)
+    rect(key_x1,y+9,key_x2,y+41,key_over and c(accent[1],accent[2],accent[3],135) or c(25,35,36,245),6)
+    outline(key_x1,y+9,key_x2,y+41,c(accent[1],accent[2],accent[3],190),6,1)
+    text(Text.compact(hotkey or 'HK OFF',12),key_x1+10,y+18,small_font(),c(238,229,207))
+    local left_x1,left_x2=x2-72,x2-40
+    local right_x1,right_x2=x2-34,x2-2
+    rect(left_x1,y+9,left_x2,y+41,c(24,34,35,245),6);outline(left_x1,y+9,left_x2,y+41,c(accent[1],accent[2],accent[3],175),6,1)
+    rect(right_x1,y+9,right_x2,y+41,c(24,34,35,245),6);outline(right_x1,y+9,right_x2,y+41,c(accent[1],accent[2],accent[3],175),6,1)
+    text("<",left_x1+11,y+17,small_font(),c(240,218,171));text(">",right_x1+11,y+17,small_font(),c(240,218,171))
+    if clicked(key_x1,y+9,key_x2,y+41) or clicked(left_x1,y+9,left_x2,y+41) or clicked(right_x1,y+9,right_x2,y+41) then
+        if on_hotkey then on_hotkey() end
+    elseif clicked(x, y, x2, y + 50) then on_click() end
 end
 
 local function compact(value, limit)
@@ -114,6 +136,8 @@ function M.render(state, action)
     window:set_visibility(state.window_open ~= false)
     if state.window_open == false then return end
     local ok, err = pcall(function()
+        local theme=themes[page] or themes[1]
+        accent={theme[1],theme[2],theme[3]}
         local mouse_down, cursor = false, nil
         if type(core.get_cursor_position) == "function" then cursor = core.get_cursor_position() end
         if core.input and type(core.input.is_key_pressed) == "function" then
@@ -121,7 +145,7 @@ function M.render(state, action)
             mouse_down = mok and pressed == true
         end
         if cursor and mouse_down and not mouse_was_down and cursor.x >= win_x
-            and cursor.x <= win_x + panel_w and cursor.y >= win_y and cursor.y <= win_y + 72 then
+            and cursor.x <= win_x + panel_w and cursor.y >= win_y and cursor.y <= win_y + 112 then
             dragging = { dx = cursor.x - win_x, dy = cursor.y - win_y }
             if core.graphics and type(core.graphics.capture_next_mouse_input) == "function" then
                 pcall(core.graphics.capture_next_mouse_input)
@@ -194,51 +218,48 @@ function M.render(state, action)
 
             -- Keep every label on a controlled contrast surface while leaving
             -- the Valeera portrait and the full-window artwork visible.
-            rect(500, 10, 978, 91, c(15, 13, 21, 224), 8)
-            outline(500, 10, 978, 91, c(118, 226, 107, 210), 8, 1)
-            text("ASSASSINATION ROGUE", 520, 19, font.FONT_BIG or 0, c(236, 246, 232))
-            text("VALEERA  |  PRESSURE • SETUP • SURVIVAL", 521, 49,
-                small_font(), c(163, 233, 149))
-            text("F1 OPEN/CLOSE  |  SWITCH + OPTIONAL HOTKEY  |  DRAG HEADER", 521, 73,
-                small_font(), c(211, 221, 216))
-
-            rect(398, 96, 978, 164, c(33, 15, 23, 222), 8)
-            text("Mode: " .. tostring(state.mode_label or "Detecting"), 415, 105,
-                small_font(), c(237, 245, 237))
-            text("Build: " .. tostring(state.hero or "Unknown"), 415, 134,
-                small_font(), c(163, 233, 149))
-            text("Editing: " .. compact(state.profile_name or "Detecting", 27), 590, 105,
-                small_font(), c(237, 245, 237))
-            text("Last: " .. compact(state.last or "Waiting", 30), 590, 134,
-                small_font(), c(197, 213, 205))
-            button(state.plugin_enabled and "ON" or "PAUSED", 815, 109, 881, 151,
+            -- Header and status bar: Rogue-class identity remains constant while
+            -- the accent and motto communicate the selected activity page.
+            rect(18, 10, 1158, 112, c(10, 18, 19, 238), 10)
+            outline(18, 10, 1158, 112, c(accent[1],accent[2],accent[3],220), 10, 2)
+            rect(35,24,112,99,c(21,29,29,245),38)
+            outline(35,24,112,99,c(accent[1],accent[2],accent[3],240),38,3)
+            Icons.draw(32645,48,36,50,win_x,win_y,window)
+            text("SHADOWS OF VALEERA", 130, 20, font.FONT_BIG or 0, c(241, 230, 206))
+            text(string.upper(state.spec_name or "ROGUE").." ROGUE SUITE  •  v"..require('ar_version'), 132, 54,
+                small_font(), c(accent[1],accent[2],accent[3]))
+            text(theme[4],132,79,small_font(),c(206,218,211))
+            button("MODE: "..compact(state.mode_label or "DETECT",16), 740, 31, 925, 75,
+                function() action("auto_mode") end, true)
+            button(state.plugin_enabled and "PROFILE ACTIVE" or "PROFILE PAUSED", 938, 31, 1138, 75,
                 function() action("toggle_plugin") end, state.plugin_enabled)
-            button("AUTO", 888, 109, 969, 151,
-                function() action("auto_mode") end, state.auto_mode)
+            text("CLIENT: "..string.upper(state.game_branch or 'retail').."   •   BUILD: "..tostring(state.hero or 'Unknown').."   •   EDITING: "..compact(state.profile_name or 'Auto',18),740,84,small_font(),c(222,231,224))
 
-            rect(18, 172, 982, 292, c(55, 15, 27, 115), 8)
-            local gap, tabw = 8, 184
+            -- Permanent navigation rail modeled after the customer reference.
+            rect(18, 122, 270, 708, c(9, 18, 19, 235), 9)
+            outline(18,122,270,708,c(75,88,82,220),9,1)
+            local gap, tabw = 5, 230
             for i, label in ipairs(labels) do
-                local row = math.floor((i - 1) / 5)
-                local col = (i - 1) % 5
-                local x1 = 22 + col * (tabw + gap)
-                button(label, x1, 178 + row * 36, x1 + tabw, 210 + row * 36,
+                local y1=132+(i-1)*49
+                button(label, 29, y1, 29+tabw, y1+43,
                     function() page = i; pve_scroll = 0; action("notice", label .. " tab opened") end, page == i)
             end
 
-            rect(398, 300, 978, 690, c(18, 15, 23, 222), 9)
+            rect(282, 122, 1158, 708, c(9, 20, 20, 234), 9)
+            outline(282,122,1158,708,c(accent[1],accent[2],accent[3],150),9,1)
             local shortcuts={{703,'Garrote',1},{1943,'Rupture',1},{32645,'Envenom',1},{6770,'Sap',2},{408,'Kidney Shot',2},{212182,'Smoke Bomb',2}}
             for i,entry in ipairs(shortcuts) do
-                local ix=24+(i-1)*59
-                rect(ix,662,ix+50,712,c(25,17,25,235),5)
-                outline(ix,662,ix+50,712,hovered(ix,662,ix+50,712) and c(118,226,107) or c(150,50,70),5)
-                Icons.draw(entry[1],ix+5,667,40,win_x,win_y,window)
-                if hovered(ix,662,ix+50,712) then text(entry[2],24,722,small_font(),c(237,245,237)) end
-                if clicked(ix,662,ix+50,712) then page=entry[3];pve_scroll=0;action('notice',entry[2]..' settings opened') end
+                local ix=31+(i-1)*38
+                rect(ix,676,ix+33,709,c(18,27,27,245),5)
+                outline(ix,676,ix+33,709,hovered(ix,676,ix+33,709) and c(accent[1],accent[2],accent[3]) or c(91,105,98),5)
+                Icons.draw(entry[1],ix+3,679,27,win_x,win_y,window)
+                if hovered(ix,676,ix+33,709) then text(entry[2],31,715,small_font(),c(237,245,237)) end
+                if clicked(ix,676,ix+33,709) then page=entry[3];pve_scroll=0;action('notice',entry[2]..' settings opened') end
             end
-            text(labels[page], 416, 309, font.FONT_SEMI_BIG or 0, c(128, 234, 114))
+            text(labels[page].." CUSTOMIZATION", 312, 145, font.FONT_SEMI_BIG or 0, c(accent[1],accent[2],accent[3]))
+            text(theme[4],312,174,small_font(),c(180,197,188))
             local function row(label, value, y, kind, note, hotkey, hotkey_id, key)
-                toggle_row(label, value, 416, y, 960, function() action(kind,key) end, note,hotkey,
+                toggle_row(label, value, 312, y, 1128, function() action(kind,key) end, note,hotkey,
                     hotkey_id and function() action('hotkey_capture',hotkey_id) end or nil)
             end
             local function profile_button(label, key, x1, y)
@@ -251,70 +272,73 @@ function M.render(state, action)
             if keys then
                 for i, key in ipairs(keys) do
                     button(state.profiles[key].label,
-                        416 + (i-1)*181, 339, 589 + (i-1)*181, 375,
+                        312 + (i-1)*267, 198, 562 + (i-1)*267, 238,
                         function() action("set_mode", key) end, state.editing_mode == key)
                 end
                 local p = state.profiles[state.editing_mode or state.active_mode]
-                text(p.label .. " SETTINGS (EDIT ONLY)", 416, 385, small_font(), c(163, 233, 149))
+                text(p.label .. " SETTINGS", 312, 252, small_font(), c(accent[1],accent[2],accent[3]))
                 local mode=state.editing_mode or state.active_mode
-                row("Damage rotation", p.damage, 405, "profile_damage", "Separate logic for this activity",state.hotkey_labels and state.hotkey_labels['profile_'..mode..'_damage'],'profile_'..mode..'_damage')
-                row("Stealth opener / first pressure", p.opener, 454, "profile_opener", "Confirmed casts advance the opener",state.hotkey_labels and state.hotkey_labels['profile_'..mode..'_opener'],'profile_'..mode..'_opener')
-                row("Kill-window cooldowns", p.cooldowns, 503, "profile_cooldowns", "Bleed setup before major cooldowns",state.hotkey_labels and state.hotkey_labels['profile_'..mode..'_cooldowns'],'profile_'..mode..'_cooldowns')
-                row("Control chains / peels", p.cc, 552, "profile_cc", "DR-aware setups and defensive peels",state.hotkey_labels and state.hotkey_labels['profile_'..mode..'_cc'],'profile_'..mode..'_cc')
-                row("Survival / defensive trades", p.defensives, 601, "profile_defensives", "Predictive personal cooldown trades",state.hotkey_labels and state.hotkey_labels['profile_'..mode..'_defensives'],'profile_'..mode..'_defensives')
-                text("AUTOMATIC BURST - NO REQUEST NEEDED",416,656,small_font(),c(163,233,149))
+                row("Damage rotation", p.damage, 270, "profile_damage", "Separate logic for this activity",state.hotkey_labels and state.hotkey_labels['profile_'..mode..'_damage'],'profile_'..mode..'_damage')
+                row("Stealth opener / first pressure", p.opener, 329, "profile_opener", "Confirmed casts advance the opener",state.hotkey_labels and state.hotkey_labels['profile_'..mode..'_opener'],'profile_'..mode..'_opener')
+                row("Kill-window cooldowns", p.cooldowns, 388, "profile_cooldowns", "Bleed setup before major cooldowns",state.hotkey_labels and state.hotkey_labels['profile_'..mode..'_cooldowns'],'profile_'..mode..'_cooldowns')
+                row("Control chains / peels", p.cc, 447, "profile_cc", "DR-aware setups and defensive peels",state.hotkey_labels and state.hotkey_labels['profile_'..mode..'_cc'],'profile_'..mode..'_cc')
+                row("Survival / defensive trades", p.defensives, 506, "profile_defensives", "Predictive personal cooldown trades",state.hotkey_labels and state.hotkey_labels['profile_'..mode..'_defensives'],'profile_'..mode..'_defensives')
+                text("AUTOMATIC BURST • ACTIVITY DETECTION • SAFE CONFIRMATION",312,578,small_font(),c(accent[1],accent[2],accent[3]))
             elseif page == 10 then
                 local T = require("ar_telemetry")
-                row("Encounter recorder", state.log_enabled, 345, "toggle_log", "Casts, outcomes, resources and gathering",state.hotkey_labels and state.hotkey_labels.toggle_logging,'toggle_logging')
-                button("COPY SAVED LOG",416,438,588,478,function()
+                row("Encounter recorder", state.log_enabled, 215, "toggle_log", "Casts, outcomes, resources and gathering",state.hotkey_labels and state.hotkey_labels.toggle_logging,'toggle_logging')
+                button("COPY SAVED LOG",312,290,555,334,function()
                     if window.copy_to_clipboard then window:copy_to_clipboard(T.saved_log()) end
                 end,false)
-                button("COPY THIS RUN",598,435,772,478,function()
+                button("COPY THIS RUN",565,290,810,334,function()
                     if window.copy_to_clipboard then window:copy_to_clipboard(T.current_run()) end
                 end,false)
-                button("CLEAR LOG",780,435,960,478,function() action("clear_log") end,false)
-                text(compact(T.path(),57),416,490,small_font(),c(237, 245, 237))
-                text("Recorder: " .. compact(T.status,48),416,520,small_font(),c(163, 233, 149))
-                text("Session: " .. compact(T.run_status(),48),416,550,small_font(),c(237, 245, 237))
-                text("Boss timer: " .. compact(state.timer_status or "Unavailable",46),416,580,small_font(),c(163,233,149))
+                button("CLEAR LOG",820,290,1128,334,function() action("clear_log") end,false)
+                rect(312,350,1128,490,c(15,27,28,238),7)
+                outline(312,350,1128,490,c(accent[1],accent[2],accent[3],125),7,1)
+                text("LOG FILE  "..compact(T.path(),80),330,370,small_font(),c(237, 245, 237))
+                text("RECORDER  " .. compact(T.status,74),330,403,small_font(),c(accent[1],accent[2],accent[3]))
+                text("SESSION   " .. compact(T.run_status(),74),330,436,small_font(),c(237, 245, 237))
+                text("BOSS TIMER  " .. compact(state.timer_status or "Unavailable",70),330,469,small_font(),c(accent[1],accent[2],accent[3]))
                 local D=require('ar_debug')
-                button(D.enabled and "DEBUG ON" or "DEBUG OFF",416,606,580,644,function() action("debug_toggle") end,D.enabled)
-                button("CAPTURE STATE",590,606,765,644,function() action("debug_snapshot") end,false)
-                button("COPY DEBUG",775,606,960,644,function()
+                button(D.enabled and "DEBUG ON" or "DEBUG OFF",312,515,555,559,function() action("debug_toggle") end,D.enabled)
+                button("CAPTURE STATE",565,515,810,559,function() action("debug_snapshot") end,false)
+                button("COPY DEBUG",820,515,1128,559,function()
                     if window.copy_to_clipboard then window:copy_to_clipboard(D.last_snapshot or D.path()) end
                 end,false)
-                text("Debugger: "..compact(D.status,45),416,657,small_font(),c(163,233,149))
+                text("DEBUGGER  "..compact(D.status,88),312,580,small_font(),c(accent[1],accent[2],accent[3]))
             else
                 local rows = state.pages[page] or {}
                 local max_scroll = math.max(0,#rows-5)
                 pve_scroll = math.min(pve_scroll,max_scroll)
-                button("UP",780,315,865,350,function() pve_scroll=math.max(0,pve_scroll-1) end,false)
-                button("DOWN",875,315,960,350,function() pve_scroll=math.min(max_scroll,pve_scroll+1) end,false)
+                button("PREVIOUS",916,195,1017,232,function() pve_scroll=math.max(0,pve_scroll-1) end,false)
+                button("NEXT",1027,195,1128,232,function() pve_scroll=math.min(max_scroll,pve_scroll+1) end,false)
                 text(string.format("ITEMS %d-%d OF %d", math.min(#rows, pve_scroll + 1),
-                    math.min(#rows, pve_scroll + 5), #rows), 416, 327, small_font(), c(186, 203, 189))
-                local wheel=hovered(398,355,978,682) and mouse_wheel_delta() or 0
+                    math.min(#rows, pve_scroll + 5), #rows), 312, 207, small_font(), c(186, 203, 189))
+                local wheel=hovered(300,240,1140,650) and mouse_wheel_delta() or 0
                 if wheel~=0 and core.time()-last_pve_scroll>0.08 then
                     pve_scroll=math.max(0,math.min(max_scroll,pve_scroll+(wheel<0 and 1 or -1)))
                     last_pve_scroll=core.time()
                 end
                 for i=1,5 do
                     local item=rows[pve_scroll+i]
-                    if item then row(item.label,item.value,370+(i-1)*57,item.action,item.note,item.hotkey,item.hotkey_id,item.key) end
+                    if item then row(item.label,item.value,246+(i-1)*68,item.action,item.note,item.hotkey,item.hotkey_id,item.key) end
                 end
-                if page==9 then text(compact(state.hotkey_status or 'Click a key pill to bind',65),416,657,small_font(),c(163,233,149)) end
+                if page==9 then text(compact(state.hotkey_status or 'Click a key pill to bind',88),312,602,small_font(),c(accent[1],accent[2],accent[3])) end
             end
 
-            rect(398, 696, 978, 746, c(33, 15, 23, 232), 6)
-            rect(20, 703, 118, 746, c(113, 215, 106, 225), 6)
-            text("F1  HIDE", 34, 717, small_font(), c(14, 25, 18))
-            text("STATUS: " .. compact(state.status or "Ready", 47), 415, 704,
+            rect(18, 719, 1158, 765, c(8, 17, 18, 244), 7)
+            outline(18,719,1158,765,c(accent[1],accent[2],accent[3],145),7,1)
+            rect(29, 726, 137, 758, c(accent[1],accent[2],accent[3],235), 6)
+            text("F1  HIDE", 48, 735, small_font(), c(14, 25, 18))
+            text("STATUS: " .. compact(state.status or "Ready", 66), 300, 727,
                 small_font(), c(237, 245, 237))
-            text("NOTICE: " .. compact(state.notice or "Automatic activity detection", 47), 415, 726,
+            text("NOTICE: " .. compact(state.notice or "Automatic activity detection", 66), 300, 746,
                 small_font(), c(186, 203, 189))
-            rect(884, 708, 968, 740, c(117, 225, 104, 248), 6)
-            outline(884, 708, 968, 740, c(118, 226, 107, 255), 6, 2)
-            text("v"..require('ar_version'), 900, 717, small_font(), c(14, 24, 18))
-            outline(1, 1, 998, 758, c(167, 40, 60, 255), 10, 2)
+            rect(1030, 726, 1144, 758, c(accent[1],accent[2],accent[3],248), 6)
+            outline(1030, 726, 1144, 758, c(accent[1],accent[2],accent[3],255), 6, 2)
+            text("v"..require('ar_version'), 1050, 735, small_font(), c(14, 24, 18))
+            outline(1, 1, 1178, 778, c(accent[1],accent[2],accent[3],255), 10, 2)
         end)
     end)
     if not ok and not reported then
