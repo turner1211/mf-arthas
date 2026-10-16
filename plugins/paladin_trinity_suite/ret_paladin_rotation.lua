@@ -1285,7 +1285,7 @@ local function run_auto_looting()
             and object.can_be_looted and object:can_be_looted()
             and object.has_loot and object:has_loot()
             and (recently_looted_corpses[get_corpse_key(object)] or 0) <= now then
-            local distance = player:distance_to(object)
+            local distance = safe_unit_call(player, "distance_to", object)
             if distance and distance <= nearest_distance then
                 nearest_corpse, nearest_distance = object, distance
             end
@@ -1317,6 +1317,22 @@ core.register_on_update_callback(run_auto_looting)
 local simple_movement = require("common/utility/simple_movement")
 local vec3 = require("common/geometry/vector_3")
 local movement_owner = nil
+runtime_debug.master_navigation_active = function()
+    local bundle = rawget(_G, "AmeisenNav") or rawget(_G, "ArthasNav")
+    local client = type(bundle) == "table" and bundle.client or nil
+    if type(client) ~= "table" then return false end
+    -- Public builds have used several names for this read-only state.  Pause
+    -- only on a positive answer; missing methods never disable local movement.
+    for _, method in ipairs({ "is_navigation_active", "is_navigating", "is_moving" }) do
+        local fn = client[method]
+        if type(fn) == "function" then
+            local ok, active = pcall(fn, client)
+            if not ok then ok, active = pcall(fn) end
+            if ok and active == true then return true end
+        end
+    end
+    return false
+end
 local function stop_owned_movement(owner)
     if movement_owner == owner then
         simple_movement:clear_navigation()
@@ -1387,6 +1403,11 @@ local function run_auto_skinning()
         report_skinning_status("Paused while the player is casting")
         return
     end
+    if runtime_debug.master_navigation_active() then
+        stop_owned_movement("skinning")
+        report_skinning_status("Paused while MasterArthasNav is moving")
+        return
+    end
 
     local now = core.time()
     if gui.looting:get_state() and now < next_corpse_interaction then
@@ -1409,7 +1430,7 @@ local function run_auto_skinning()
             pending_count = pending_count + 1
             if now >= record.ready_at and now >= record.next_attempt_at
                 and not corpse_has_loot_pending(object) then
-                local distance = player:distance_to(object)
+                local distance = safe_unit_call(player, "distance_to", object)
                 if distance and distance <= nearest_distance then
                     nearest_corpse, nearest_distance = object, distance
                     pending_skin_key, pending_skin_record = corpse_key, record
@@ -1435,7 +1456,7 @@ local function run_auto_skinning()
                 if corpse_has_loot_pending(object) then
                     loot_waiting_units = loot_waiting_units + 1
                 else
-                    local distance = player:distance_to(object)
+                    local distance = safe_unit_call(player, "distance_to", object)
                     if distance and distance <= nearest_distance then
                         nearest_corpse, nearest_distance = object, distance
                         pending_skin_key, pending_skin_record = nil, nil
@@ -1531,6 +1552,12 @@ local function stop_auto_move()
 end
 
 local function run_auto_move()
+    if runtime_debug.master_navigation_active() then
+        stop_auto_move()
+        diagnostic_transition("auto_move_navigation_yield", "MasterArthasNav", "INFO",
+            "SAFETY", "auto_move_held", { reason = "external_navigation_active" })
+        return
+    end
     local move_key = gui.auto_move_hotkey:get_key_code()
     -- Any direct movement input belongs to the player. Yield immediately so
     -- automatic chase never fights WASD or the arrow keys.
@@ -1655,7 +1682,7 @@ local function run_auto_move()
         return
     end
 
-    local distance = player:distance_to(target)
+    local distance = safe_unit_call(player, "distance_to", target)
     local target_radius = 0
     if target.get_bounding_radius then
         local radius_ok, radius = pcall(target.get_bounding_radius, target)
@@ -2870,7 +2897,7 @@ local function nearby_enemy_count(player, current_target, range, engaged_only)
             and unit.is_unit and unit:is_unit()
             and not unit:is_dead()
             and player:can_attack(unit)
-            and player:distance_to(unit) <= check_range
+            and (safe_unit_call(player, "distance_to", unit) or math.huge) <= check_range
             and (not engaged_only or not runtime_debug.is_engaged_pve_enemy
                 or runtime_debug.is_engaged_pve_enemy(player, unit, current_target)) then
             count = count + 1
@@ -2886,7 +2913,7 @@ local function nearby_enemy_count(player, current_target, range, engaged_only)
     if current_target and not current_target_seen
         and current_target.is_valid and current_target:is_valid()
         and not current_target:is_dead() and player:can_attack(current_target)
-        and player:distance_to(current_target) <= check_range then
+        and (safe_unit_call(player, "distance_to", current_target) or math.huge) <= check_range then
         count = count + 1
     end
     return count

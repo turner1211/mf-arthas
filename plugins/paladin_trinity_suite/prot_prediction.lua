@@ -4,6 +4,7 @@ local Intelligence = require("prot_intelligence")
 local Host = require("prot_host")
 local Threat = require("prot_threat")
 local Dungeon = require("prot_dungeon")
+local HealthPrediction = require("common/modules/health_prediction")
 local state = { time = nil, health = nil, maximum = nil, owner = nil, loss_rate = 0 }
 
 local function safe(object, method, ...)
@@ -251,7 +252,13 @@ function M.evaluate(player, window, use_boss_timers)
     if maximum <= 0 then return nil end
     local now = core.time()
     local current_pct = math.max(0, math.min(100, health / maximum * 100))
-    local incoming = tonumber(safe(player, "get_incoming_damage", window)) or 0
+    -- Some Sylvanas/IZI builds expose prediction only through the shared
+    -- health-prediction module.  A native unit call can also return a valid
+    -- zero while the shared provider has already observed queued damage, so
+    -- retain the stronger of both independent readings.
+    local unit_incoming = tonumber(safe(player, "get_incoming_damage", window))
+    local module_incoming = tonumber(safe(HealthPrediction, "get_incoming_damage", player, window))
+    local incoming = math.max(0, unit_incoming or 0, module_incoming or 0)
     local heals = tonumber(safe(player, "get_incoming_heals")) or 0
     local absorbs = tonumber(safe(player, "get_total_shield")) or 0
     local heal_absorbs = tonumber(safe(player, "get_total_heal_absorbs"))

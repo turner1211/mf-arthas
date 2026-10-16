@@ -1,12 +1,18 @@
-# Paladin Trinity Suite 1.2.5
+# Paladin Trinity Suite 1.2.6
 
 One Project Sylvanas plugin containing Holy Paladin 4.70.0, Retribution Paladin
-1.62.0, and Protection Paladin 6.14.0.
+1.63.0, and Protection Paladin 6.15.0.
 
-Version 1.2.5 keeps Retail/Midnight and WoW Forever in this single folder.
+Version 1.2.6 keeps Retail/Midnight and WoW Forever in this single folder.
 The selector identifies the client edition before it identifies the Paladin
 profile. Edition-specific spell data, rotations, settings, callbacks, and logs
 remain isolated. If detection is ambiguous, the suite stays inactive.
+
+Version 1.2.6 also hardens the issues identified by the external audit: Protection
+now compares the unit and shared health-prediction providers instead of silently
+accepting an empty native forecast, while Retribution routes every remaining
+distance lookup through its protected host adapter so missing optional IZI object
+extensions cannot terminate looting, skinning, target counting, or auto-chase.
 
 The Retail/Midnight side preserves every specialization's existing artwork and theme while
 expanding customer navigation. Holy gains dedicated Cooldowns and Support tabs,
