@@ -32,13 +32,21 @@ function M.detect(raw_spec,converted_spec)
  local forever=M.branch=='forever'
  if not M.branch_locked then
   v=version_text()
-  forever=v:find('forever',1,true)~=nil or v:find('1.60.',1,true)~=nil
-  -- Forever's new Mutilate ID is a safe positive fingerprint. Retail-only
-  -- signatures veto generic Classic spell IDs, which overlap intentionally.
-  if known(1310707) and not (known(360194) or known(315341) or known(185313)) then forever=true end
+  local forever_version=v:find('forever',1,true)~=nil or v:find('1.60.',1,true)~=nil
+  local retail_signature=converted_spec==259 or converted_spec==260 or converted_spec==261
+   or raw_spec==259 or raw_spec==260 or raw_spec==261
+   or known(1329) or known(193315) or known(185438)
+   or known(360194) or known(315341) or known(185313)
+  -- Rank-one Sinister Strike lets a brand-new Forever Rogue identify the
+  -- client before Mutilate exists. Retail signatures veto overlapping IDs.
+  local forever_signature=(known(1310707) or known(1752)) and not retail_signature
+  forever=forever_version or forever_signature
   M.branch=forever and 'forever' or 'retail'
-  M.evidence=v~='' and ('client '..v) or forever and 'Forever spell fingerprint' or 'Retail specialization API'
-  M.branch_locked=true
+  M.evidence=forever_version and ('client '..v) or forever_signature and 'Forever spell fingerprint'
+   or retail_signature and 'Retail spell fingerprint' or 'unconfirmed client; detection will retry'
+  -- Never freeze an unconfirmed default. Some hosts expose build information
+  -- one or two frames after the spellbook and player object become available.
+  M.branch_locked=forever_version or forever_signature or retail_signature
  end
  if not forever then
   M.branch='retail'

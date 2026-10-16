@@ -233,7 +233,7 @@ function M.render(state, action)
                 function() action("auto_mode") end, true)
             button(state.plugin_enabled and "PROFILE ACTIVE" or "PROFILE PAUSED", 938, 31, 1138, 75,
                 function() action("toggle_plugin") end, state.plugin_enabled)
-            text("CLIENT: "..string.upper(state.game_branch or 'retail').."   •   BUILD: "..tostring(state.hero or 'Unknown').."   •   EDITING: "..compact(state.profile_name or 'Auto',18),740,84,small_font(),c(222,231,224))
+            text("CLIENT: "..string.upper(state.game_branch or 'retail').."   •   LEVEL: "..tostring(state.level or '?').."   •   BUILD: "..compact(state.hero or 'Unknown',20).."   •   EDITING: "..compact(state.profile_name or 'Auto',14),740,84,small_font(),c(222,231,224))
 
             -- Permanent navigation rail modeled after the customer reference.
             rect(18, 122, 270, 708, c(9, 18, 19, 235), 9)

@@ -61,7 +61,7 @@ for _,id in ipairs({Lib.S.DEADLY,Lib.S.WOUND,Lib.S.CRIPPLING,Lib.S.ATROPHIC,Lib.
 for id,duration in pairs({[Lib.S.VIAL]=4,[Lib.S.FEINT]=6,[Lib.S.CLOAK]=5,[Lib.S.EVASION]=10,[Lib.S.STEALTH]=3,[Lib.S.VANISH]=3,[Lib.S.SPRINT]=8,[Lib.S.SLICE]=12}) do Lib.A.track(id,{cast_floor=duration}) end
 -- Read-only native getters are memoized within one evaluation, never across ticks.
 
-local cached_getters={is_valid=true,is_dead=true,is_player=true,is_in_combat=true,is_mounted=true,is_falling=true,is_flying=true,get_guid=true,get_name=true,get_health=true,get_max_health=true,get_class=true,get_group_role=true,get_specialization_id=true}
+local cached_getters={is_valid=true,is_dead=true,is_player=true,is_in_combat=true,is_mounted=true,is_falling=true,is_flying=true,get_guid=true,get_name=true,get_health=true,get_max_health=true,get_class=true,get_group_role=true,get_specialization_id=true,get_level=true}
 local function call(o,k,...)
  if not o then return nil end
  local row
@@ -908,6 +908,7 @@ local function make_context(p,target,profile,list)
  local max=call(p,"get_max_power",E.power_type and E.power_type.COMBOPOINTS or 4)
  local pvp=mode=="arena" or mode=="battleground" or mode=="world_pvp"
  local c={player=p,target=target,profile=profile,mode=mode,pvp=pvp,cp=cp,cp_max=type(max)=="number" and max or 5,
+  level=tonumber(call(p,'get_level')) or tonumber(read(core.get_player_level)),
   energy=energy,self_hp=hp(p) or 100,target_hp=hp(target) or 100,nearby=0,attackers=0,player_attackers=0,pet_attackers=0,ally_threats=0,interrupt_opportunities=0,enemies={},aoe_safe=true,
    spread_needed=false,ready=ready,known=known,cd=cd,refresh=refresh,
    remaining=function(u,id)return Lib.A.remaining(u,id) or 0 end,
@@ -1628,7 +1629,7 @@ local function gui_state()
  local c=M.context or {}
  return {eligible=true,window_open=window_open,plugin_enabled=opts.enabled,auto_mode=true,active_mode=mode,editing_mode=editing_mode or mode,
    mode_label=Lib.P.settings[mode].label,profile_name=Lib.P.settings[editing_mode or mode].label,hero=c.hero or "Unknown",last=last,
-   spec_name=c.spec_name or 'Assassination',game_branch=c.game_branch or 'retail',
+   spec_name=c.spec_name or 'Assassination',game_branch=c.game_branch or 'retail',level=c.level,
   notice=notice,status=pending and "Cast pending" or Lib.G.status,log_enabled=opts.logging,profiles=Lib.P.settings,
   hotkey_status=Lib.Hotkeys.status,hotkey_labels=hotkey_labels,
   prediction=c.prediction,attackers=c.attackers,timer_status=Lib.BigWigs.status,

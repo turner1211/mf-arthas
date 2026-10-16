@@ -1,6 +1,8 @@
 # Assassination Rogue — Valeera Activity Profiles
 
-Project Sylvanas / IZI plugin, version 1.1.55. Built from the Holy Paladin GUI and aura compatibility layer, with new Rogue damage, control, survival, gathering and logging modules.
+Version 1.2.8 adds automatic Forever level detection and level-gated spell families. The selected level appears in the GUI and STATE log. Forever Assassination maintains Venom and Slice before adding long-target PvE Rupture, Combat avoids starting Adrenaline Rush near full Energy, and Combat/Subtlety prioritize Ghostly Strike's dodge value under multiple attackers. Retail/Midnight dispatch remains separate and unchanged.
+
+Project Sylvanas / IZI plugin, version 1.2.8. Built from the Holy Paladin GUI and aura compatibility layer, with Rogue damage, control, survival, gathering and logging modules.
 
 ## Controls
 

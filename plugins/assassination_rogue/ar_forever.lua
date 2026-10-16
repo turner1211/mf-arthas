@@ -1,7 +1,12 @@
 -- Dedicated WoW Forever engine. This module never imports Retail spell data.
 local F=require('ar_forever_spells')
 local M={}
+local function level_allows(c,family)
+ local minimum=F.LEVELS and F.LEVELS[family]
+ return not minimum or type(c.level)~='number' or c.level>=minimum
+end
 local function spell(c,family)
+ if not level_allows(c,family) then return nil end
  for _,id in ipairs(F[family] or {}) do if c.known(id) then return id end end
 end
 function M.is_spell(family,id)
@@ -78,6 +83,12 @@ local function assassination(c,durable)
  local deadly=stacks(c,'DEADLY')
  local a=slice(c,durable);if a then return a end
  if finisher(c) and buff(c,'VENOM')<4 and durable and not dying(c,8) then local a=use(c,'VENOM',nil,'maintain Venom poison amplifier');if a then return a end end
+ -- Blizzard expects poison Assassination to keep Venom and Slice ahead of its
+ -- lower-priority damage finishers. On a long PvE target, Rupture follows those
+ -- two buffs; PvP skips it so Blind, Gouge and Sap reset plans stay clean.
+ if not c.pvp and finisher(c) and durable and dot(c,'RUPTURE')<4 and not dying(c,16) then
+  local a=use(c,'RUPTURE',nil,'long-target Rupture after Venom and Slice');if a then return a end
+ end
  -- Deadly aura ranks are debuffs, not learned spell-book entries. Use the
  -- poison-coating spell to decide whether five-stack Coup de Grace is possible.
  local coup=finisher(c)
@@ -99,13 +110,18 @@ local function combat(c,durable)
   local a=use(c,'AMBUSH',nil,'Ambush opener') or use(c,'GARROTE',nil,'Garrote opener when Ambush position or weapon is unavailable');if a then return a end
  end
  local a=use(c,'RIPOSTE',nil,'Riposte after parry');if a then return a end
+ if (c.attackers or 0)>=2 then a=use(c,'GHOSTLY',nil,'early Ghostly Strike dodge against multiple attackers');if a then return a end end
  a=slice(c,durable);if a then return a end
  if c.cooldowns and durable then
   if c.aoe_safe and (c.nearby>=2 or c.boss or c.training or c.pvp and c.target_stunned) then
    a=use(c,'BLADE_FLURRY',c.player,c.nearby>=2 and 'safe two-target Blade Flurry'
     or c.pvp and c.target_stunned and 'Combat stun-window Blade Flurry' or 'single-target boss Blade Flurry');if a then return a end
   end
-  a=use(c,'ADRENALINE_RUSH',c.player,'Adrenaline Rush pressure window');if a then return a end
+  -- Do not start doubled regeneration near the Energy cap. Spend once first,
+  -- then begin the fifteen-second Adrenaline Rush window below half Energy.
+  if (c.energy_pct or c.energy or 100)<=50 then
+   a=use(c,'ADRENALINE_RUSH',c.player,'Adrenaline Rush below half Energy');if a then return a end
+  end
  end
  if finisher(c) or c.cp>=3 and dying(c,4) then return use(c,'EVISCERATE',nil,c.cp<5 and 'execute before target death loses combo points' or 'Combat Eviscerate finisher') end
  return use(c,'GHOSTLY',nil,'Ghostly Strike') or use(c,'BACKSTAB',nil,'dagger Backstab') or use(c,'SINISTER',nil,'Sinister Strike')
@@ -119,9 +135,11 @@ local function subtlety(c,durable)
   -- ten-second proc is active, so this cannot request an ordinary Ambush.
   local a=use(c,'AMBUSH',nil,'consume Cutthroat in-combat Ambush proc');if a then return a end
  end
- local a=slice(c,durable);if a then return a end
+ local a
+ if (c.attackers or 0)>=2 then a=use(c,'GHOSTLY',nil,'early Ghostly Strike dodge against multiple attackers');if a then return a end end
+ a=slice(c,durable);if a then return a end
  local hemo_known=spell(c,'HEMORRHAGE')~=nil
- if finisher(c) and not (c.pvp and c.target_stunned) and hemo_known and aura(c,'HEMORRHAGE')>0 and dot(c,'RUPTURE')<4 and not dying(c,16) then
+ if not c.pvp and finisher(c) and hemo_known and aura(c,'HEMORRHAGE')>0 and dot(c,'RUPTURE')<4 and not dying(c,16) then
   local a=use(c,'RUPTURE',nil,'Serrated Blades and Hemorrhage long-target Rupture');if a then return a end
  end
  if finisher(c) then return use(c,'EVISCERATE',nil,'Subtlety Eviscerate finisher') end

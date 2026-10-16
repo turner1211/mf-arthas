@@ -124,7 +124,7 @@ function M.state(c,combat)
   run.highest_incoming=math.max(run.highest_incoming or 0,c.prediction and c.prediction.incoming or 0)
  end
  M.note("STATE",{"mode="..c.mode,"hero="..c.hero,"hp="..c.self_hp,"target_hp="..c.target_hp,
-  "energy="..c.energy,"energy_pct="..string.format("%.1f",c.energy_pct or -1),"cp="..c.cp,"nearby="..c.nearby,"nearby_raw="..tostring(c.raw_nearby),"aoe_safe="..tostring(c.aoe_safe),
+  "level="..tostring(c.level or 'unknown'),"energy="..c.energy,"energy_pct="..string.format("%.1f",c.energy_pct or -1),"cp="..c.cp,"nearby="..c.nearby,"nearby_raw="..tostring(c.raw_nearby),"aoe_safe="..tostring(c.aoe_safe),
   "opener="..tostring(c.open_done),"decision="..tostring(c.last),"pending="..tostring(c.pending),
   "training_dummy="..tostring(c.training==true),"target="..tostring(c.target_name),
   "attackable="..tostring(c.attackable),"is_dummy="..tostring(c.target_dummy),"target_is_self="..tostring(c.target_is_self),
