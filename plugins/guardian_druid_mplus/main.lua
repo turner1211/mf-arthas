@@ -7,6 +7,10 @@ if _guard_class~=11 then return end
 -- against this token and become no-ops instead of stacking in memory.
 _G.__guardian_runtime_generation=(_G.__guardian_runtime_generation or 0)+1
 _G.__druid_suite_generation=(_G.__druid_suite_generation or 0)+1
+local _client_family=require("druid_client").family()
+if _client_family=="forever" then
+    return require("guardian_forever")
+end
 -- Load each isolated runtime once. Every callback checks both its specialization
 -- and the suite generation, so only the active spec may render or act.
 local modules={}
