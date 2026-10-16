@@ -1,4 +1,4 @@
-SYLVANAS HUNTER 1.6.9 — MIDNIGHT + WOW FOREVER
+SYLVANAS HUNTER 1.6.10 — MIDNIGHT + WOW FOREVER
 
 PLUGIN FOLDER RULE: Every file inside this plugin folder and every subfolder
 must end in `.lua` or `.md`. Release packaging fails if any other file type is
@@ -8,6 +8,12 @@ JPEG, ZIP, Python, JSON, layered-art, or other file types in the plugin folder.
 Built for Project Sylvanas's Midnight and WoW Forever client APIs. This is an offline-validated
 release candidate; live testing is still required. It is not a claim of flawless
 gameplay, maximum DPS, or verified behavior on every talent build.
+
+Version 1.6.10 guards native time and window-position reads used by embedded
+portraits and spec icon atlases. A transient native UI exception now falls back
+to the safe artwork position or vector glyph instead of aborting the entire GUI
+frame. The installed release is also consolidated to one versioned Hunter
+folder so Project Sylvanas cannot register duplicate callbacks or hotkeys.
 
 Version 1.6.8 extends that policy around the verified level 26–30 rank-cost
 jump. The rotation raises its mana reserve in that band, adjusts Serpent Sting's

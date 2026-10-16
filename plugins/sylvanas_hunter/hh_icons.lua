@@ -1,5 +1,5 @@
 -- Original Hunter glyphs drawn with native vectors.
-local I={}
+local U=require('hh_util');local I={}
 local white
 function I.glyph(kind,w,x,y,size,accent)
  local V,C=require('common/geometry/vector_2'),require('common/color');local scale=size/32
@@ -51,7 +51,7 @@ function I.draw(kind,w,x,y,size,accent,spec)
   if atlas then
    local V,C=require('common/geometry/vector_2'),require('common/color')
    if not white then white=C.new(255,255,255,255) end
-   local origin=w.get_position and w:get_position() or V.new(70,70)
+   local origin=U.call(w,'get_position') or V.new(70,70)
    local cx,cy=cell%3,math.floor(cell/3)
    local drawn=pcall(g.draw_texture_rect,atlas,V.new(origin.x+x,origin.y+y),size,size,cx/3,cy/3,(cx+1)/3,(cy+1)/3,white,true)
    if drawn then

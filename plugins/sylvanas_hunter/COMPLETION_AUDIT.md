@@ -143,3 +143,5 @@ Version 1.6.6 adds native character-level detection and explicit Forever unlock 
 Version 1.6.7 adds level-gated Track Hidden, Scare Beast pet control, guarded healer-peel Distracting Shot, level-scaled mana floors, short-target Sting suppression, and breakable-fear protection without changing Midnight modules.
 
 Version 1.6.9 adds early-level Monkey aspect transitions, level-8 solo Concussive Shot approach control, and explicit unlock checks for defensive, pet, trap, and kiting utility. Offline tests cover both sides of each new level boundary; live Forever testing remains necessary to tune timing against server latency and current NPC behavior.
+
+Version 1.6.10 guards the remaining direct native reads in the portrait and icon texture paths and consolidates the live scripts installation to a single Hunter release folder. This removes a confirmed duplicate-load risk and prevents transient time or window-position failures from aborting a GUI frame.

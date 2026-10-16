@@ -938,3 +938,12 @@ Sources:
 - https://foreverdb.net/class/Hunter/pve
 - https://foreverdb.net/spell/13163
 - https://foreverdb.net/spell/5116
+
+# 1.6.10 runtime and installation audit — 2026-10-16
+
+The scripts directory contained five versioned Hunter releases at once. Because
+Project Sylvanas discovers scripts by folder, parallel copies can register the
+same callbacks, windows, and hotkeys. The deployment is consolidated to one
+versioned Hunter folder. The GUI audit also found direct native time and window
+position reads in the embedded portrait and icon paths. Those reads now use the
+shared guarded API helpers and fall back without aborting the surrounding frame.
