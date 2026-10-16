@@ -1,8 +1,8 @@
 # Assassination Rogue — Valeera Activity Profiles
 
-Version 1.2.13 separates normal log commits from crash-recovery snapshot retries, preventing duplicate session rows when only the snapshot writer fails. Clear Log now succeeds only after the host confirms both the log reset and persistent-history reset. Version 1.2.12 hardened logging, learned prediction and gathering against transient host failures.
+Version 1.2.14 adds researched Forever target-lifetime openers and Combat cooldown alignment. Durable Assassination and Subtlety targets receive Garrote first, short leveling targets receive Ambush, and Blade Flurry now overlaps Adrenaline Rush without incompatible energy gates. Version 1.2.13 separated normal log commits from crash-recovery snapshot retries.
 
-Project Sylvanas / IZI plugin, version 1.2.13. Built from the Holy Paladin GUI and aura compatibility layer, with Rogue damage, control, survival, gathering and logging modules.
+Project Sylvanas / IZI plugin, version 1.2.14. Built from the Holy Paladin GUI and aura compatibility layer, with Rogue damage, control, survival, gathering and logging modules.
 
 ## Controls
 

@@ -90,7 +90,12 @@ local function pvp_control(c)
 end
 local function assassination(c,durable)
  if c.stealth then
-  local a=use(c,'AMBUSH',nil,'Ambush opener') or use(c,'GARROTE',nil,'Garrote opener when Ambush position or weapon is unavailable');if a then return a end
+  -- Forever guidance separates the openers by target lifetime: Garrote earns
+  -- its full bleed value on durable targets, while Ambush front-loads damage
+  -- into ordinary leveling enemies.
+  local a=durable and use(c,'GARROTE',nil,'durable target: Garrote bleed opener')
+   or use(c,'AMBUSH',nil,'short target: Ambush direct-damage opener')
+   or use(c,'GARROTE',nil,'Garrote opener when Ambush position or weapon is unavailable');if a then return a end
  end
  local deadly=stacks(c,'DEADLY')
  local a=slice(c,durable);if a then return a end
@@ -133,14 +138,16 @@ local function combat(c,durable)
  if c.cooldowns and durable then
   -- Blade Flurry doubles attacks but also raises Energy costs. Pool first so
   -- the opening of its short window is not lost to Energy starvation.
-  if (c.energy_pct or c.energy or 0)>=70 and c.aoe_safe and (c.nearby>=2 or c.boss or c.training or c.pvp and c.target_stunned) then
+  local rush_active=buff(c,'ADRENALINE_RUSH')>0
+  local blade_active=buff(c,'BLADE_FLURRY')>0
+  if (c.energy_pct or c.energy or 0)>=(rush_active and 40 or 70) and c.aoe_safe and (c.nearby>=2 or c.boss or c.training or c.pvp and c.target_stunned) then
    a=use(c,'BLADE_FLURRY',c.player,c.nearby>=2 and 'safe two-target Blade Flurry'
     or c.pvp and c.target_stunned and 'Combat stun-window Blade Flurry' or 'single-target boss Blade Flurry');if a then return a end
   end
   -- Do not start doubled regeneration near the Energy cap. Spend once first,
   -- then begin the fifteen-second Adrenaline Rush window below half Energy.
-  if (c.energy_pct or c.energy or 100)<=50 then
-   a=use(c,'ADRENALINE_RUSH',c.player,'Adrenaline Rush below half Energy');if a then return a end
+  if (c.energy_pct or c.energy or 100)<=(blade_active and 75 or 50) then
+   a=use(c,'ADRENALINE_RUSH',c.player,blade_active and 'align Adrenaline Rush with active Blade Flurry' or 'Adrenaline Rush below half Energy');if a then return a end
   end
  end
  if finisher(c) or leveling_finisher(c,durable) or c.cp>=3 and dying(c,4) then
@@ -151,7 +158,9 @@ end
 local function subtlety(c,durable)
  if c.stealth then
   local a=use(c,'PREMEDITATION',c.target,'Premeditation before opener');if a then return a end
-  a=use(c,'AMBUSH',nil,'Ambush opener') or use(c,'GARROTE',nil,'Garrote opener when Ambush position or weapon is unavailable');if a then return a end
+  a=durable and use(c,'GARROTE',nil,'durable target: Garrote before Hemorrhage')
+   or use(c,'AMBUSH',nil,'short target: Ambush direct-damage opener')
+   or use(c,'GARROTE',nil,'Garrote opener when Ambush position or weapon is unavailable');if a then return a end
  elseif c.cp<c.cp_max then
   -- is_usable_spell becomes true outside Stealth only while Cutthroat's
   -- ten-second proc is active, so this cannot request an ordinary Ambush.
