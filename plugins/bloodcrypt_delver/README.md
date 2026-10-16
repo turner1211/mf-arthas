@@ -1,13 +1,10 @@
-# Bloodcrypt Delver — development build 0.6.28
+# Bloodcrypt Delver — development build 0.6.29
 
-Build 0.6.28 protects local-player, full-object, and GUID lookups behind one
-Project Sylvanas object-manager adapter. Loader transitions, despawns, reloads,
-and recycled handles now degrade to unavailable data instead of allowing a
-native lookup exception to escape the delve controller. Static and method-style
-host bindings are both supported. Bloodcrypt remains an independent Delve
-product and does not import any class/spec interface or combat settings.
+Build 0.6.29 replaces the compact panel with a 1240x760 Bloodcrypt command console patterned after the supplied reference: ornate embedded crypt artwork, large sidebar pages, themed icon buttons, per-delve colors and guidance, switches, steppers, and configurable action hotkeys. The artwork remains embedded in Lua, preserving the Lua/Markdown-only package rule.
 
 This separate Sylvanas plugin preserves the flipped haunted-crypt artwork, crimson/bone controls and embedded icons. Combat remains with your rotation plugins. All package files are Lua or Markdown.
+
+Build 0.6.28 adopts SentinelCore's progress-confirmation and exponential-backoff patterns while preserving exclusive ArthasNav ownership. Managed routes must now show waypoint progress or physical displacement within a bounded window; active ArthasNav recovery/repathing receives a longer grace period, then a stalled route is cancelled, diagnosed, backed off and rescanned. Successful movement resets retry pressure.
 
 Build 0.6.27 removes the continuous bridge-snapshot loop, refreshes scenario data after relevant events, spaces in-delve idle snapshots from the end of the previous transmission, and disables unsolicited idle snapshots outside supported delves. It shares full object-manager scans, caches character/snapshot/mount reads, throttles BigWigs reads and reduces diagnostic disk writes. The controller drops to two Hz while stopped with its panel closed, and repeated state/candidate messages are suppressed without removing changes or errors.
 

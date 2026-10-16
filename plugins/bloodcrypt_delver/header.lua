@@ -1,2 +1,2 @@
-return {name="Bloodcrypt Delver",version="0.6.28",author="Local",load=true}
+return {name="Bloodcrypt Delver",version="0.6.29",author="Local",load=true}
 

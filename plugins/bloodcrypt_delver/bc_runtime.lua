@@ -4,15 +4,7 @@ local function enhancements() return rawget(_G,"ArthasNavEnhancements") end
 local function client()
  local e=enhancements();return e and e.get_client and e.get_client(M.owner) or nil
 end
-local function manager_call(manager,method,...)
- if not manager or type(manager[method])~="function" then return nil end
- local fn=manager[method];local ok,value=pcall(fn,...);if ok then return value end
- ok,value=pcall(fn,manager,...);return ok and value or nil
-end
-local function player() return manager_call(core and core.object_manager,"get_local_player") end
-local function object_from_guid(guid,manager)
- return manager_call(manager or core and core.object_manager,"get_object_from_guid",guid)
-end
+local function player() return core.object_manager.get_local_player() end
 local function distance(p,q) local x,y,z=p.x-q.x,p.y-q.y,p.z-q.z;return math.sqrt(x*x+y*y+z*z) end
 local Bridge=require("bc_bridge")
 local Wigs=require("bc_wigs")
@@ -30,8 +22,7 @@ local character_cache={at=-1,value=nil}
 local mount_cache={at=-1,rows={}}
 local function objects()
  local now=core.time();if now-object_cache.at<.2 then return object_cache.rows end
- object_cache.at=now;local rows=manager_call(core and core.object_manager,"get_all_objects")
- object_cache.rows=type(rows)=="table" and rows or {};return object_cache.rows
+ object_cache.at=now;object_cache.rows=core.object_manager.get_all_objects() or {};return object_cache.rows
 end
 M.bridge=Bridge.new({now=function() return core.time() end,identity=function()
  local ok,value=pcall(function() local p=player();return p and p:is_valid() and p:get_name() or nil end);return ok and value or nil
@@ -174,7 +165,7 @@ function M.move(pos,cb,request)
  end
  if request and request.valid_guid and g and g.object_manager and type(g.object_manager.get_object_from_guid)=="function" then
   local guid=request.valid_guid
-  opts.is_valid=function() local ok,value=pcall(function() local o=object_from_guid(guid,g.object_manager);return o and o:is_valid() and not (o.is_dead and o:is_dead()) or false end);return ok and value==true end
+  opts.is_valid=function() local ok,value=pcall(function() local o=g.object_manager.get_object_from_guid(guid);return o and o:is_valid() and not (o.is_dead and o:is_dead()) or false end);return ok and value==true end
  end
  if request and type(request.expires_in)=="number" and request.expires_in>0 and g and type(g.time)=="function" then opts.expires_at=g.time()+math.min(request.expires_in,300) end
  local done=function(ok,reason,detail)
@@ -185,7 +176,7 @@ function M.move(pos,cb,request)
   local guid=request.track_guid
   return c:track_target(function()
    local ok,value=pcall(function()
-    local o=g and object_from_guid(guid,g.object_manager)
+    local o=g and g.object_manager and g.object_manager.get_object_from_guid and g.object_manager.get_object_from_guid(guid)
     if not o or not o:is_valid() or o:is_dead() then return nil end
     local q=o:get_position();return q and {x=q.x,y=q.y,z=q.z} or nil
    end);return ok and value or nil
@@ -295,7 +286,7 @@ function M.object(id,anchor,alive)
 end
 function M.guid(o) local ok,value=pcall(function() return o and o:is_valid() and o:get_guid() or nil end);return ok and value or nil end
 function M.dead(guid)
- local ok,value=pcall(function() local o=object_from_guid(guid);return o and o:is_valid() and o:is_dead() or false end);return ok and value==true
+ local ok,value=pcall(function() local o=core.object_manager.get_object_from_guid(guid);return o and o:is_valid() and o:is_dead() or false end);return ok and value==true
 end
 function M.target(o)
  local ok,why=M.local_control();if not ok then return false,why end
@@ -347,7 +338,7 @@ function M.interact(o)
 end
 function M.face_guid(guid)
  local owned,why=M.local_control();if not owned then return false,why end
- local o=object_from_guid(guid);if not o then return false,"Object disappeared" end
+ local ok,o=pcall(core.object_manager.get_object_from_guid,guid);if not ok then return false,"Object disappeared" end
  local valid=pcall(function() if not o or not o:is_valid() then error("invalid") end end);if not valid then return false,"Object disappeared" end
  if not core.input or type(core.input.look_at)~="function" then return true,"Facing unavailable" end
  local got,q=pcall(o.get_position,o);if not got or not q then return false,"Object disappeared" end;local ran,result=pcall(core.input.look_at,vec3(q.x,q.y,q.z))
@@ -356,10 +347,10 @@ function M.face_guid(guid)
  return true,"Facing object"
 end
 function M.usable(guid)
- local ok,value=pcall(function() local o=object_from_guid(guid);if not o or not o:is_valid() then return nil end;return o:can_be_used() end)
+ local ok,value=pcall(function() local o=core.object_manager.get_object_from_guid(guid);if not o or not o:is_valid() then return nil end;return o:can_be_used() end)
  return ok and value or nil
 end
-function M.object_by_guid(guid) return object_from_guid(guid) end
+function M.object_by_guid(guid) local ok,value=pcall(core.object_manager.get_object_from_guid,guid);return ok and value or nil end
 function M.loot_count() return core.game_ui.get_loot_item_count() end
 function M.loot_slot(index)
  local ok,why=M.local_control();if not ok then return false,why end
@@ -387,7 +378,7 @@ function M.rewards(allow_key)
  table.sort(rows,function(a,b) return a.distance<b.distance end);return rows
 end
 function M.interact_guid(guid)
- local o=object_from_guid(guid);return M.interact(o)
+ local o=core.object_manager.get_object_from_guid(guid);return M.interact(o)
 end
 function M.capabilities()
  local e=enhancements();local checks={

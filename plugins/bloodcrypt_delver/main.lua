@@ -7,14 +7,14 @@ local Settings=require("bc_settings")
 local Debug=require("bc_debug")
 local Learning=require("bc_learning")
 local bot=Auto.new(Runtime);bot.options=Settings.load()
-Learning.load("0.6.28")
-bot.logger=Debug;Debug.start(core.time(),"0.6.28")
+Learning.load("0.6.29")
+bot.logger=Debug;Debug.start(core.time(),"0.6.29")
 local selected,variant=1,1
 local notice="Verified adaptive routing ready"
 local pending={};local nav_status="Checking navigation";local capabilities={}
 local wigs_status="BigWigs not checked";local wigs_bars={};local character={label="Detecting character"}
 local open=core.menu.checkbox(false,"bloodcrypt_delver_open_v1")
-local menu_root=core.menu.tree_node();local f9_down=false
+local menu_root=core.menu.tree_node();local f9_down=false;local key_down={}
 local function select(id)
  if not Catalog[id] then return end
  selected=id;variant=1
@@ -37,13 +37,31 @@ local function action(key,value)
  elseif key=="key" then bot.options.spend_key=not bot.options.spend_key
  elseif key=="mount" then bot.options.auto_mount=not bot.options.auto_mount
  elseif key=="fly" then bot.options.prefer_flying=not bot.options.prefer_flying
+ elseif key=="combat" then bot.options.combat_hold=not bot.options.combat_hold
+ elseif key=="approach" then bot.options.combat_approach=not bot.options.combat_approach
+ elseif key=="face" then bot.options.auto_face=not bot.options.auto_face
+ elseif key=="recover" then bot.options.recover_death=not bot.options.recover_death
+ elseif key=="learning" then bot.options.learning=not bot.options.learning
+ elseif key=="memory" then bot.options.objective_memory=not bot.options.objective_memory
+ elseif key=="hazards" then bot.options.hazard_avoidance=not bot.options.hazard_avoidance
+ elseif key=="storydetect" then bot.options.auto_story=not bot.options.auto_story
+ elseif key=="reserve" then bot.options.key_reserve=math.max(0,math.min(20,(bot.options.key_reserve or 1)+value))
+ elseif key=="pull" then bot.options.max_pull=math.max(1,math.min(20,(bot.options.max_pull or 5)+value))
+ elseif key=="hotkeys" then bot.options.hotkeys_enabled=not bot.options.hotkeys_enabled
+ elseif key=="hk_master" then bot.options.hk_master=not bot.options.hk_master
+ elseif key=="hk_loot" then bot.options.hk_loot=not bot.options.hk_loot
+ elseif key=="hk_key" then bot.options.hk_key=not bot.options.hk_key
+ elseif key=="hk_combat" then bot.options.hk_combat=not bot.options.hk_combat
+ elseif key=="hk_recovery" then bot.options.hk_recovery=not bot.options.hk_recovery
+ elseif key=="hk_travel" then bot.options.hk_travel=not bot.options.hk_travel
  elseif key=="tier" then
   if bot.enabled then notice="Stop before changing tier";return end
   local tier=tonumber(value);if tier then
    if Catalog[selected].nemesis then bot.options.tier=tier>=11 and 11 or 8 else bot.options.tier=math.max(1,math.min(11,math.floor(tier))) end
   end
  end
- if key=="repeat" or key=="exit" or key=="limit" or key=="loot" or key=="key" or key=="mount" or key=="fly" or key=="tier" then if not Settings.save(bot.options) then notice="Settings could not be saved" end end
+ local persistent={["repeat"]=true,exit=true,limit=true,loot=true,key=true,mount=true,fly=true,tier=true,combat=true,approach=true,face=true,recover=true,learning=true,memory=true,hazards=true,storydetect=true,reserve=true,pull=true,hotkeys=true,hk_master=true,hk_loot=true,hk_key=true,hk_combat=true,hk_recovery=true,hk_travel=true}
+ if persistent[key] and not Settings.save(bot.options) then notice="Settings could not be saved" end
 end
 _G.BloodcryptDelver={stop=function() pending[#pending+1]={"stop"} end,start=function(id) pending[#pending+1]={"select",id or selected};pending[#pending+1]={"start"} end,show=function() open:set(true) end,status=function() return bot.state end}
 core.register_on_game_event_callback(function(event,args) Runtime.event(event,args);bot:event(event,args) end)
@@ -59,6 +77,15 @@ core.register_on_update_callback(function()
  local focused=core.is_textbox_focused and core.is_textbox_focused() or false
  local down=core.input and core.input.is_key_pressed and core.input.is_key_pressed(0x78)==true or false
  if down and not f9_down and not focused then open:set(not open:get_state()) end;f9_down=down
+ local bindings={{0x74,"hk_master","master"},{0x75,"hk_loot","loot"},{0x76,"hk_key","key"},{0x77,"hk_combat","combat"},{0x79,"hk_recovery","recover"},{0x7A,"hk_travel","mount"},{0x7B,"hk_travel","repeat"}}
+ for _,bind in ipairs(bindings) do
+  local pressed=core.input and core.input.is_key_pressed and core.input.is_key_pressed(bind[1])==true or false
+  if pressed and not key_down[bind[1]] and not focused and bot.options.hotkeys_enabled and bot.options[bind[2]] then
+   local command=bind[3];if command=="master" then command=bot.enabled and "stop" or "start" end
+   if #pending<32 then pending[#pending+1]={command} end
+  end
+  key_down[bind[1]]=pressed
+ end
  local cadence=bot.enabled and .1 or open:get_state() and .2 or .5
  if core.time()-last<cadence then return end;last=core.time()
  local ok,err=pcall(function()
@@ -93,7 +120,7 @@ core.register_on_update_callback(function()
 end)
 core.register_on_render_menu_callback(function()
  menu_root:render("Bloodcrypt Delver",function()
-  core.menu.text("MIDNIGHT / DELVE EXPEDITIONS / v0.6.28")
+  core.menu.text("MIDNIGHT / DELVE EXPEDITIONS / v0.6.29")
   open:render("Open Bloodcrypt command panel","F9 shows or hides the crypt panel; Start and Stop control the expedition.")
   core.menu.text("F9: panel open / close")
  end)

@@ -18,6 +18,10 @@ local function contact_name(name)
  name=tostring(name or ""):lower()
  return name:find("focus crystal",1,true) or name:find("ley line focuser",1,true) or name:find("focuser socket",1,true)
 end
+local function remember(self,kind,guid)
+ if self.options.objective_memory~=false then return RunMemory.mark(kind,guid) end
+ return true
+end
 function M.new(api)
  return setmetatable({api=api,enabled=false,state="Stopped",index=0,runs=0,log={},options={repeat_run=true,max_runs=0,auto_exit=true,combat_hold=true,auto_loot=true,spend_key=false,tier=8,key_reserve=1,max_pull=5,recover_death=true,learning=true,auto_mount=true,prefer_flying=true},epoch=0,blocked={},nemesis=NemesisRuntime.new()},M)
 end
@@ -27,16 +31,42 @@ function M:note(s)
  if self.logger then self.logger.record(self.api.now(),"state",{state=s,delve=self.selected or 0,variant=self.variant or 0,runs=self.runs or 0}) end
 end
 function M:clear_motion() self.epoch=self.epoch+1;self.moving=false;self.arrived=false;self.goal=nil;self.goal_block_key=nil;self.move_started=nil;self.api.stop() end
+function M:observe_managed_motion(now,snap,nav)
+ local percent=tonumber(nav and nav.percent) or 0;local index=tonumber(nav and nav.index) or 0
+ local marker=tostring(index)..":"..string.format("%.2f",percent);local progressed=marker~=self.nav_progress_marker
+ local pos=snap and snap.position
+ if pos and self.last_motion_position then
+  local dx,dy,dz=pos.x-self.last_motion_position.x,pos.y-self.last_motion_position.y,pos.z-self.last_motion_position.z
+  if math.sqrt(dx*dx+dy*dy+dz*dz)>.55 then progressed=true end
+ end
+ if progressed then
+  self.nav_progress_marker=marker;self.last_motion_at=now;self.nav_transient_failures=0
+  if pos then self.last_motion_position={x=pos.x,y=pos.y,z=pos.z} end
+  return true
+ end
+ if pos and not self.last_motion_position then self.last_motion_position={x=pos.x,y=pos.y,z=pos.z};self.last_motion_at=now;return true end
+ local state=tostring(nav and nav.state or ""):lower();local recovering=state:find("recover",1,true) or state:find("repath",1,true)
+ local timeout=recovering and 20 or 12
+ if now-(self.last_motion_at or now)<=timeout then return true end
+ local key=self.goal_block_key or self.goal and (tostring(self.goal.x)..":"..tostring(self.goal.y))
+ local goal=self.goal;self:clear_motion();self.stuck_retries=(self.stuck_retries or 0)+1
+ local delay=math.min(8,2^(self.stuck_retries-1));self.nav_retry_at=now+delay
+ if key then self.blocked[key]=now+math.min(45,15+self.stuck_retries*5) end
+ if self.logger then self.logger.record(now,"managed_nav_stall",{state=state,index=index,percent=percent,seconds=timeout,retry=self.stuck_retries,backoff=delay,x=goal and goal.x or 0,y=goal and goal.y or 0,z=goal and goal.z or 0}) end
+ if self.stuck_retries>3 then self:stop("Managed navigation recovery exhausted; inspect live debugger") else self:note("Managed route stalled; rescanning after recovery "..self.stuck_retries) end
+ return false
+end
 function M:stop(reason)
  self.enabled=false;self.pending_id=nil;self:clear_motion();if self.reward_job then self.reward_job:stop();self.reward_job=nil end;self:note(reason or "Stopped")
 end
 function M:start(id,variant,resume)
  if not Catalog[id] then return false,"Invalid delve" end
  self:stop();self.selected=id;self.variant=variant or 1;self.runs=0;self.started=self.api.now();self.progress_at=self.started;self.enabled=true;self.completed=false;self.was_inside=false;self.enter_attempts=0;self.enter_at=nil;self.entry_deadline=nil;self.entry_arrived_at=nil;self.exit_attempts=0;self.exit_at=nil;self.nav_retry_at=nil;self.resolve_pending=false;self.signature=nil;self.interaction=nil;self.local_interaction=nil;self.local_prepare=nil;self.combat_move_guid=nil;self.combat_target_guid=nil;self.combat_last_position=nil;self.combat_seen_at=nil;self.combat_repath_at=nil;self.blocked={};self.failed_ids={};self.completed_guids={};self.family_refusals={};self.quarantined_families={};self.candidate_log_at={};self.index=0;self.stuck_retries=0;self.death_since=nil;self.loading_since=nil;self.nemesis:reset()
+ self.nav_retry_at=nil;self.nav_transient_failures=0;self.nav_progress_marker=nil
  self.entry_interaction_complete=false
  local instance=Catalog[id].instance
  local done,quarantined,families
- if resume then done,quarantined,families=RunMemory.load(instance) else done,quarantined,families=RunMemory.reset(instance) end
+ if resume and self.options.objective_memory~=false then done,quarantined,families=RunMemory.load(instance) else done,quarantined,families=RunMemory.reset(instance) end
  for guid in pairs(done) do self.completed_guids[guid]=true;self.blocked[guid]=math.huge;if guid:match("^Creature%-") then self.entry_interaction_complete=true end end
  for guid in pairs(quarantined) do self.blocked[guid]=math.huge end
  for name in pairs(families) do self.quarantined_families[name]=true end
@@ -52,7 +82,7 @@ function M:event(name,args) if self.enabled and self.reward_job then self.reward
 function M:move(p,label,block_key,frontier_distance,request)
  if self.moving then return false end
  if self.api.now()<(self.nav_retry_at or 0) then self.state="Navigation ownership cooldown";return false end
- if self.api.goal_safe then local safe,why=self.api.goal_safe(p);if safe==false then if block_key then self.blocked[block_key]=self.api.now()+20 end;self:note(why or "Unsafe navigation destination");if self.logger then self.logger.record(self.api.now(),"move_rejected_hazard",{label=label or "Navigating",x=p.x,y=p.y,z=p.z,reason=why or "unsafe"}) end;return false end end
+ if self.options.hazard_avoidance~=false and self.api.goal_safe then local safe,why=self.api.goal_safe(p);if safe==false then if block_key then self.blocked[block_key]=self.api.now()+20 end;self:note(why or "Unsafe navigation destination");if self.logger then self.logger.record(self.api.now(),"move_rejected_hazard",{label=label or "Navigating",x=p.x,y=p.y,z=p.z,reason=why or "unsafe"}) end;return false end end
  local snap=self.api.snapshot();local dist
  if snap.position then local dx,dy,dz=p.x-snap.position.x,p.y-snap.position.y,p.z-snap.position.z;dist=math.sqrt(dx*dx+dy*dy+dz*dz) end
  if self.options.auto_mount and not snap.dead and dist and dist>35 and self.api.prepare_mount then
@@ -64,8 +94,8 @@ function M:move(p,label,block_key,frontier_distance,request)
  local accepted=self.api.move(p,function(ok,reason)
   if epoch~=self.epoch or not self.enabled then return end
   self.moving=false;if self.logger then self.logger.record(self.api.now(),"move_result",{ok=ok==true,reason=reason or "",x=p.x,y=p.y,z=p.z}) end
-  if ok then self.arrived=true;self.stuck_retries=0;if frontier_distance then self.frontier_distance=math.max(self.frontier_distance or 0,frontier_distance) end
-  else callback_transient=transient(reason);if callback_transient then self.nav_retry_at=self.api.now()+2;self:note("Navigation paused: "..tostring(reason)) else self.blocked[tostring(p.x)..":"..tostring(p.y)]=self.api.now()+30;if block_key then self.blocked[block_key]=self.api.now()+45 end;self:note("Path unavailable: "..tostring(reason)) end end
+  if ok then self.arrived=true;self.stuck_retries=0;self.nav_transient_failures=0;if frontier_distance then self.frontier_distance=math.max(self.frontier_distance or 0,frontier_distance) end
+  else callback_transient=transient(reason);if callback_transient then self.nav_transient_failures=(self.nav_transient_failures or 0)+1;local delay=math.min(16,2^self.nav_transient_failures);self.nav_retry_at=self.api.now()+delay;self:note("Navigation paused: "..tostring(reason).." / retry in "..delay.."s") else self.nav_transient_failures=0;self.blocked[tostring(p.x)..":"..tostring(p.y)]=self.api.now()+30;if block_key then self.blocked[block_key]=self.api.now()+45 end;self:note("Path unavailable: "..tostring(reason)) end end
  end,request)
  if accepted==false then self.moving=false;if not callback_transient then if block_key then self.blocked[block_key]=self.api.now()+45 end;self:note("Navigation request refused") end end
  if self.logger then self.logger.record(self.api.now(),"move_request",{accepted=accepted~=false,label=label or "Navigating",x=p.x,y=p.y,z=p.z}) end
@@ -84,6 +114,7 @@ function M:resolve(ui,x,y,label)
 end
 function M:reset_run(now)
  self:clear_motion();self.completed=false;self.was_inside=false;self.started=now;self.progress_at=now;self.enter_attempts=0;self.enter_at=nil;self.entry_deadline=nil;self.entry_arrived_at=nil;self.exit_attempts=0;self.exit_at=nil;self.signature=nil;self.interaction=nil;self.local_interaction=nil;self.local_prepare=nil;self.combat_move_guid=nil;self.combat_target_guid=nil;self.combat_last_position=nil;self.combat_seen_at=nil;self.combat_repath_at=nil;self.reward_job=nil;self.blocked={};self.failed_ids={};self.completed_guids={};self.family_refusals={};self.quarantined_families={};self.index=0;self.stuck_retries=0;self.death_since=nil;self.loading_since=nil;self.nemesis:reset()
+ self.nav_retry_at=nil;self.nav_transient_failures=0;self.nav_progress_marker=nil
  self.entry_interaction_complete=false
  if self.api.reset_bridge then self.api.reset_bridge() end
  RunMemory.reset(Catalog[self.selected] and Catalog[self.selected].instance or 0)
@@ -91,7 +122,7 @@ end
 function M:tick()
  if not self.enabled then return end
  local a=self.api;local now=a.now();local snap=a.snapshot();local delve=Catalog[self.selected]
- local detected,label=a.detect_story and a.detect_story(delve)
+ local detected,label=self.options.auto_story~=false and a.detect_story and a.detect_story(delve)
  if detected and detected~=self.variant then self.variant=detected;self:note("Detected story: "..tostring(label)) end
  if not snap.ready then self.loading_since=self.loading_since or now;if now-self.loading_since>90 then self:stop("Character/loading timeout") else self.state="Loading: preserving verified run state" end;return else self.loading_since=nil end
  if snap.dead then
@@ -103,7 +134,7 @@ function M:tick()
  if snap.vehicle then if self.moving then self:clear_motion() end;self.state="Vehicle active: waiting for supported objective controls";return end
  local threat=self.options.combat_hold and a.combat_target and a.combat_target(60) or nil
  local escape,status
- if snap.combat and a.hazard_escape then escape,status=a.hazard_escape() end
+ if self.options.hazard_avoidance~=false and snap.combat and a.hazard_escape then escape,status=a.hazard_escape() end
  if snap.combat and not threat and not escape then self.combat_orphan_since=self.combat_orphan_since or now else self.combat_orphan_since=nil;self.combat_orphan_logged=nil end
  local stale_combat=snap.combat and not threat and not escape and now-(self.combat_orphan_since or now)>=5
  if (threat or escape or snap.combat and not stale_combat) and self.options.combat_hold then
@@ -111,14 +142,14 @@ function M:tick()
   self.progress_at=now
    if self.combat_target_guid~=threat.guid and self.logger then self.logger.record(now,"combat_acquire",{guid=threat.guid,name=threat.name or "",distance=threat.distance,source=threat.source or ""}) end
    self.combat_seen_at=now
-   if a.face_target and now>=(self.combat_face_at or 0) then local faced,why=a.face_target(threat.object);self.combat_face_at=now+.15;if faced==false and self.logger then self.logger.record(now,"combat_face_refused",{guid=threat.guid,reason=why or "refused"}) end end
+   if self.options.auto_face~=false and a.face_target and now>=(self.combat_face_at or 0) then local faced,why=a.face_target(threat.object);self.combat_face_at=now+.15;if faced==false and self.logger then self.logger.record(now,"combat_face_refused",{guid=threat.guid,reason=why or "refused"}) end end
   end
   status=status or "Combat plugin active"
   if escape and not self.moving then self:move(escape,status);return end
   if threat and not escape then
    if self.moving and self.combat_move_guid~=threat.guid then self:clear_motion() end
    if a.target and self.combat_target_guid~=threat.guid then local targeted,why=a.target(threat.object);if targeted then self.combat_target_guid=threat.guid elseif self.logger then self.logger.record(now,"combat_target_refused",{guid=threat.guid,reason=why or "refused"}) end end
-   if threat.distance>4.5 then
+   if self.options.combat_approach~=false and threat.distance>4.5 then
     if not self.moving then self.combat_move_guid=threat.guid;self.combat_last_position={x=threat.position.x,y=threat.position.y,z=threat.position.z};self.arrived=false;self:move(threat.position,"Combat approach: "..threat.name,threat.guid,nil,{track_guid=threat.guid}) end
     return
    end
@@ -173,7 +204,7 @@ function M:tick()
  if live and self.local_interaction then
   local pending=self.local_interaction;self.local_interaction=nil;self.local_prepare=nil;self.failed_ids[pending.id]=nil;self.completed_guids[pending.guid]=true;self.blocked[pending.guid]=math.huge
   if pending.friendly then self.entry_interaction_complete=true end
-  RunMemory.mark("completed",pending.guid);self.progress_at=now;self.stuck_retries=0;self:note("Scenario started after interaction: "..pending.name)
+  remember(self,"completed",pending.guid);self.progress_at=now;self.stuck_retries=0;self:note("Scenario started after interaction: "..pending.name)
  end
  if not live then
   if self.moving then return end
@@ -188,7 +219,7 @@ function M:tick()
    if ok then self.local_interaction={guid=pending.guid,id=pending.id,name=pending.name,at=now,friendly=pending.friendly,attempt=pending.attempt,object=pending.object};self.local_prepare=nil;self.blocked[pending.guid]=now+10;self.state="Local scan: using "..pending.name.." via "..tostring(why);return end
    if transient(why) then pending.ready_at=now+1;self.state="Interaction paused: "..tostring(why);return end
    if pending.attempt<2 then pending.attempt=pending.attempt+1;pending.ready_at=now+1.25;if a.face_guid then a.face_guid(pending.guid) end;self.state="Refacing before final acquisition attempt: "..pending.name;return end
-   self.failed_ids[pending.id]=(self.failed_ids[pending.id] or 0)+1;self.blocked[pending.guid]=math.huge;RunMemory.mark("quarantined",pending.guid);local f=family(pending.name);self.family_refusals[f]=(self.family_refusals[f] or 0)+1;if self.family_refusals[f]>=2 then self.quarantined_families[f]=true;RunMemory.mark("family",f) end;self.local_prepare=nil
+   self.failed_ids[pending.id]=(self.failed_ids[pending.id] or 0)+1;self.blocked[pending.guid]=math.huge;remember(self,"quarantined",pending.guid);local f=family(pending.name);self.family_refusals[f]=(self.family_refusals[f] or 0)+1;if self.family_refusals[f]>=2 then self.quarantined_families[f]=true;remember(self,"family",f) end;self.local_prepare=nil
    if contact_name(pending.name) and pending.object then local valid,q=pcall(function() if not pending.object:is_valid() then return nil end;return pending.object:get_position() end);if valid and q and finite(q.x) and finite(q.y) and finite(q.z) then if self.logger then self.logger.record(now,"contact_fallback",{guid=pending.guid,id=pending.id,name=pending.name,x=q.x,y=q.y,z=q.z}) end;self:move({x=q.x,y=q.y,z=q.z},"Crossing contact objective: "..pending.name);return end end
    if self.logger then self.logger.record(now,"run_quarantine",{guid=pending.guid,id=pending.id,name=pending.name,family=f,family_refusals=self.family_refusals[f],reason="two interaction refusals"}) end;self.state=self.quarantined_families[f] and "Inactive objective family quarantined: "..pending.name or "Inactive object quarantined for this run: "..pending.name;return
   end
@@ -201,9 +232,9 @@ function M:tick()
     self.failed_ids[pending.id]=(self.failed_ids[pending.id] or 0)+1;self.blocked[pending.guid]=now+15;self.state="Interaction refused: "..tostring(refused);return
    end
    local ui_confirmed=a.interaction_confirmed and a.interaction_confirmed(pending.at)
-   if ui_confirmed or not pending.friendly and (usable==nil or usable==false) then self.local_interaction=nil;self.failed_ids[pending.id]=nil;self.completed_guids[pending.guid]=true;self.blocked[pending.guid]=math.huge;if pending.friendly then self.entry_interaction_complete=true end;RunMemory.mark("completed",pending.guid);self.progress_at=now;self.stuck_retries=0;self:note("Confirmed local objective: "..pending.name);return end
+   if ui_confirmed or not pending.friendly and (usable==nil or usable==false) then self.local_interaction=nil;self.failed_ids[pending.id]=nil;self.completed_guids[pending.guid]=true;self.blocked[pending.guid]=math.huge;if pending.friendly then self.entry_interaction_complete=true end;remember(self,"completed",pending.guid);self.progress_at=now;self.stuck_retries=0;self:note("Confirmed local objective: "..pending.name);return end
    if now-pending.at<10 then self.state="Confirming local objective: "..pending.name;return end
-   self.failed_ids[pending.id]=(self.failed_ids[pending.id] or 0)+1;self.blocked[pending.guid]=math.huge;RunMemory.mark("quarantined",pending.guid);local f=family(pending.name);self.family_refusals[f]=(self.family_refusals[f] or 0)+1;if self.family_refusals[f]>=2 then self.quarantined_families[f]=true;RunMemory.mark("family",f) end;self.local_interaction=nil;if self.logger then self.logger.record(now,"run_quarantine",{guid=pending.guid,id=pending.id,name=pending.name,family=f,family_refusals=self.family_refusals[f],reason="no completion evidence"}) end
+   self.failed_ids[pending.id]=(self.failed_ids[pending.id] or 0)+1;self.blocked[pending.guid]=math.huge;remember(self,"quarantined",pending.guid);local f=family(pending.name);self.family_refusals[f]=(self.family_refusals[f] or 0)+1;if self.family_refusals[f]>=2 then self.quarantined_families[f]=true;remember(self,"family",f) end;self.local_interaction=nil;if self.logger then self.logger.record(now,"run_quarantine",{guid=pending.guid,id=pending.id,name=pending.name,family=f,family_refusals=self.family_refusals[f],reason="no completion evidence"}) end
   end
   local plan=Plans.get(self.selected,self.variant);local strict=plan and plan.requires_live_evidence==true
   local nearby=a.nearby_objectives(strict and 18 or 70)
@@ -255,23 +286,22 @@ function M:tick()
   self.state=strict and "Guarded story label: waiting for nearby live objective evidence" or self.entry_interaction_complete and "No new forward landmark: scanning for objective" or "Bridge unavailable: scanning nearby objectives";return
  end
  local sig=a.progress_signature();if sig and sig~=self.signature then
-  if self.interaction then self.completed_guids[self.interaction.guid]=true;RunMemory.mark("completed",self.interaction.guid);if self.options.learning then Learning.record(self.interaction.learn_key,true);Learning.flush() end end
+  if self.interaction then self.completed_guids[self.interaction.guid]=true;remember(self,"completed",self.interaction.guid);if self.options.learning then Learning.record(self.interaction.learn_key,true);Learning.flush() end end
   self.signature=sig;self.interaction=nil;local permanent={};for key,until_at in pairs(self.blocked) do if until_at==math.huge then permanent[key]=until_at end end;self.blocked=permanent;self.index=self.index+1;self.progress_at=now;self.stuck_retries=0;if self.moving then self:clear_motion() end
  end
  if not self.moving and now-(self.progress_at or now)>240 then self:stop("Progress watchdog: no objective change for 4 minutes; inspect live debugger");return end
  if self.interaction then
   if sig~=self.interaction.signature then self.interaction=nil;return end
   local usable=a.usable(self.interaction.guid)
-  if usable==false then self.completed_guids[self.interaction.guid]=true;self.blocked[self.interaction.guid]=math.huge;RunMemory.mark("completed",self.interaction.guid);self.interaction=nil;self.progress_at=now;self:note("Confirmed objective became inactive");return end
-  local current=a.snapshot();if current.map~=self.interaction.map or current.instance~=self.interaction.instance then self.completed_guids[self.interaction.guid]=true;self.blocked[self.interaction.guid]=math.huge;RunMemory.mark("completed",self.interaction.guid);self.interaction=nil;self.progress_at=now;self:note("Confirmed portal/floor transition");return end
-  if now-self.interaction.at>12 then local guid=self.interaction.guid;if self.options.learning then Learning.record(self.interaction.learn_key,false);Learning.flush() end;self.blocked[guid]=math.huge;RunMemory.mark("quarantined",guid);if self.logger then self.logger.record(now,"run_quarantine",{guid=guid,reason="accepted interaction produced no completion evidence"}) end;self.interaction=nil;self:note("Unconfirmed objective quarantined for this run");return end
+  if usable==false then self.completed_guids[self.interaction.guid]=true;self.blocked[self.interaction.guid]=math.huge;remember(self,"completed",self.interaction.guid);self.interaction=nil;self.progress_at=now;self:note("Confirmed objective became inactive");return end
+  local current=a.snapshot();if current.map~=self.interaction.map or current.instance~=self.interaction.instance then self.completed_guids[self.interaction.guid]=true;self.blocked[self.interaction.guid]=math.huge;remember(self,"completed",self.interaction.guid);self.interaction=nil;self.progress_at=now;self:note("Confirmed portal/floor transition");return end
+  if now-self.interaction.at>12 then local guid=self.interaction.guid;if self.options.learning then Learning.record(self.interaction.learn_key,false);Learning.flush() end;self.blocked[guid]=math.huge;remember(self,"quarantined",guid);if self.logger then self.logger.record(now,"run_quarantine",{guid=guid,reason="accepted interaction produced no completion evidence"}) end;self.interaction=nil;self:note("Unconfirmed objective quarantined for this run");return end
   return
  end
  if self.moving then
   local nav=a.nav_progress and a.nav_progress()
   if nav and nav.managed then
-   local marker=tostring(nav.state or "")..":"..tostring(nav.index or 0)..":"..tostring(nav.percent or 0)
-   if marker~=self.nav_progress_marker then self.nav_progress_marker=marker;self.last_motion_at=now end
+   self:observe_managed_motion(now,snap,nav)
    if self.logger and now>=(self.nav_progress_log_at or 0) then self.nav_progress_log_at=now+5;self.logger.record(now,"nav_progress",{state=nav.state or "",phase=nav.phase or "",percent=nav.percent or 0,index=nav.index or 0,remaining=nav.remaining or 0,replans=nav.replans or 0,recovery=nav.recovery_reason or "",readiness=nav.readiness or "",confidence=nav.confidence or 0,route_score=nav.route_score or 0}) end
    return
   end
