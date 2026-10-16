@@ -1,4 +1,6 @@
-# Bloodcrypt Delver — development build 0.6.32
+# Bloodcrypt Delver — development build 0.6.33
+
+Build 0.6.33 prevents a delayed bridge refresh from changing routing modes mid-objective. After receiving exact live scenario data, a temporary snapshot loss now cancels movement and holds the verified route for a bounded 15-second recovery window. Fresh evidence resumes the same objective; only a sustained loss permits the existing local fallback scanner. The hold is logged once with the last verified scenario step for live debugging.
 
 Build 0.6.32 keeps live scenario routing focused on required progress. Optional gathering nodes, supplies, side chests, reward coffers, Delve trunks, Gilded Stashes, and Nemesis Supplies are excluded from objective acquisition until the dedicated completion/reward phase. Story auto-detection now preserves both the detected variant and its display label, and equal-score candidates receive a deterministic GUID tie-break so object-manager iteration order cannot make routes oscillate between candidates.
 

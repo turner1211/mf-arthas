@@ -68,7 +68,7 @@ function M:stop(reason)
 end
 function M:start(id,variant,resume)
  if not Catalog[id] then return false,"Invalid delve" end
- self:stop();self.selected=id;self.variant=variant or 1;self.runs=0;self.started=self.api.now();self.progress_at=self.started;self.enabled=true;self.completed=false;self.was_inside=false;self.enter_attempts=0;self.enter_at=nil;self.entry_deadline=nil;self.entry_arrived_at=nil;self.exit_attempts=0;self.exit_at=nil;self.nav_retry_at=nil;self.resolve_pending=false;self.signature=nil;self.interaction=nil;self.local_interaction=nil;self.local_prepare=nil;self.combat_move_guid=nil;self.combat_target_guid=nil;self.combat_last_position=nil;self.combat_seen_at=nil;self.combat_repath_at=nil;self.blocked={};self.failed_ids={};self.completed_guids={};self.family_refusals={};self.quarantined_families={};self.candidate_log_at={};self.index=0;self.stuck_retries=0;self.death_since=nil;self.loading_since=nil;self.nemesis:reset()
+ self:stop();self.selected=id;self.variant=variant or 1;self.runs=0;self.started=self.api.now();self.progress_at=self.started;self.enabled=true;self.completed=false;self.was_inside=false;self.enter_attempts=0;self.enter_at=nil;self.entry_deadline=nil;self.entry_arrived_at=nil;self.exit_attempts=0;self.exit_at=nil;self.nav_retry_at=nil;self.resolve_pending=false;self.signature=nil;self.last_live_at=nil;self.last_live_step=nil;self.bridge_loss_logged=nil;self.interaction=nil;self.local_interaction=nil;self.local_prepare=nil;self.combat_move_guid=nil;self.combat_target_guid=nil;self.combat_last_position=nil;self.combat_seen_at=nil;self.combat_repath_at=nil;self.blocked={};self.failed_ids={};self.completed_guids={};self.family_refusals={};self.quarantined_families={};self.candidate_log_at={};self.index=0;self.stuck_retries=0;self.death_since=nil;self.loading_since=nil;self.nemesis:reset()
  self.nav_retry_at=nil;self.nav_transient_failures=0;self.nav_progress_marker=nil
  self.entry_interaction_complete=false
  local instance=Catalog[id].instance
@@ -121,7 +121,7 @@ function M:resolve(ui,x,y,label)
  end)
 end
 function M:reset_run(now)
- self:clear_motion();self.completed=false;self.was_inside=false;self.started=now;self.progress_at=now;self.enter_attempts=0;self.enter_at=nil;self.entry_deadline=nil;self.entry_arrived_at=nil;self.exit_attempts=0;self.exit_at=nil;self.signature=nil;self.interaction=nil;self.local_interaction=nil;self.local_prepare=nil;self.combat_move_guid=nil;self.combat_target_guid=nil;self.combat_last_position=nil;self.combat_seen_at=nil;self.combat_repath_at=nil;self.reward_job=nil;self.blocked={};self.failed_ids={};self.completed_guids={};self.family_refusals={};self.quarantined_families={};self.index=0;self.stuck_retries=0;self.death_since=nil;self.loading_since=nil;self.nemesis:reset()
+ self:clear_motion();self.completed=false;self.was_inside=false;self.started=now;self.progress_at=now;self.enter_attempts=0;self.enter_at=nil;self.entry_deadline=nil;self.entry_arrived_at=nil;self.exit_attempts=0;self.exit_at=nil;self.signature=nil;self.last_live_at=nil;self.last_live_step=nil;self.bridge_loss_logged=nil;self.interaction=nil;self.local_interaction=nil;self.local_prepare=nil;self.combat_move_guid=nil;self.combat_target_guid=nil;self.combat_last_position=nil;self.combat_seen_at=nil;self.combat_repath_at=nil;self.reward_job=nil;self.blocked={};self.failed_ids={};self.completed_guids={};self.family_refusals={};self.quarantined_families={};self.index=0;self.stuck_retries=0;self.death_since=nil;self.loading_since=nil;self.nemesis:reset()
  self.nav_retry_at=nil;self.nav_transient_failures=0;self.nav_progress_marker=nil
  self.entry_interaction_complete=false
  if self.api.reset_bridge then self.api.reset_bridge() end
@@ -214,6 +214,12 @@ function M:tick()
  if delve_state and delve_state.active and delve_state.tier>0 and self.options.tier>0 and delve_state.tier~=self.options.tier then self:stop("Active delve tier "..delve_state.tier.." does not match requested tier "..self.options.tier);return end
  if snap.complete then self.completed=true;self.exit_attempts=0;self.exit_at=nil;self:clear_motion();self:note("Delve complete");return end
  local live=a.scenario()
+ if live then self.last_live_at=now;self.last_live_step=live.step_id;self.bridge_loss_logged=nil
+ elseif self.last_live_at and now-self.last_live_at<15 then
+  if self.moving then self:clear_motion() end
+  if not self.bridge_loss_logged then self.bridge_loss_logged=true;if self.logger then self.logger.record(now,"scenario_snapshot_hold",{last_step=self.last_live_step or 0,grace=15}) end end
+  self.state="Scenario snapshot interrupted: holding verified route";return
+ end
  if live and self.local_interaction then
   local pending=self.local_interaction;self.local_interaction=nil;self.local_prepare=nil;self.failed_ids[pending.id]=nil;self.completed_guids[pending.guid]=true;self.blocked[pending.guid]=math.huge
   if pending.friendly then self.entry_interaction_complete=true end
