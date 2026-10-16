@@ -28,8 +28,11 @@ def manifest(project):
     rows = [f'project {project}', f'version {version}', 'entry mf_entry.lua']
     if header.exists():
         rows.append('header header.lua')
-    files = sorted(p for p in directory.rglob('*') if p.is_file()
-                   and runtime(p.relative_to(directory)))
+    # pathlib.Path compares case-insensitively on Windows, case-sensitively on
+    # Linux. Sort the POSIX strings explicitly so every platform emits one build.
+    files = sorted((p for p in directory.rglob('*') if p.is_file()
+                    and runtime(p.relative_to(directory))),
+                   key=lambda p: p.relative_to(directory).as_posix())
     for path in files:
         data = path.read_bytes()
         rows.append(f'file {len(data)} {hashlib.sha256(data).hexdigest()} {path.relative_to(directory).as_posix()}')

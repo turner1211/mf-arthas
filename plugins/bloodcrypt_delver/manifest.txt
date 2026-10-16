@@ -1,9 +1,10 @@
 # mf-arthas-manifest 1
-build 077752209059ae07
+build 65e3972f29c823fd
 project bloodcrypt_delver
 version 0.6.33
 entry mf_entry.lua
 header header.lua
+file 15711 82c8ad82962fe5087ced8c2c00d663071f52bc81cb15a58ff92c3db84d40fe6e WoW_BloodcryptBridge.lua
 file 757214 b22916dc31a4a05b1fa1c615335430f85446ea4f49da42f2130017545814f9d2 bc_art.lua
 file 37718 c80e28cd83b264d7b0e33864b453d0691fcf7058a99382aaf7347e6f4b8897c7 bc_auto.lua
 file 8427 c8c6d5426baf96bab0607679ff0cf4f7b80e9882860d9e9e89e679bac9f0a197 bc_bridge.lua
@@ -34,4 +35,3 @@ file 13255 71e5051307a26be80f94532e742b0682147c0f35e161ff5f340381e6a36e2fa9 mf_i
 file 64121 7e2e155eb92c9a5826704b4f8e57204aeaa73ee6b38ed88fbd566a0f7bda564b mf_locales.lua
 file 65 8346dad515442fa560f66d7a581d26205be738dd37ea2602c7fd8308449a1988 mf_project.lua
 file 2026 98143c38c3414f0b879bcbef23c84a6bbbd07c8a2c25157286acad081783446a mf_unicode_font.lua
-file 15711 82c8ad82962fe5087ced8c2c00d663071f52bc81cb15a58ff92c3db84d40fe6e WoW_BloodcryptBridge.lua
