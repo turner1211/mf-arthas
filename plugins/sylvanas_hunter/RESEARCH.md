@@ -947,3 +947,12 @@ same callbacks, windows, and hotkeys. The deployment is consolidated to one
 versioned Hunter folder. The GUI audit also found direct native time and window
 position reads in the embedded portrait and icon paths. Those reads now use the
 shared guarded API helpers and fall back without aborting the surrounding frame.
+
+# 1.6.11 aura clock-unit audit — 2026-10-16
+
+The aura fallback reader subtracted `core.game_time` from an absolute expiration
+and always divided by 1,000. Some supported native surfaces expose both values
+in seconds, so a real 4.25-second buff could be reported as 0.00425 seconds.
+The reader now compares game time with the monotonic `core.time` clock to select
+milliseconds or seconds. Tests exercise both formats with the same expected
+remaining duration.

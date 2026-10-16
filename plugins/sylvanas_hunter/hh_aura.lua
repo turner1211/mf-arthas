@@ -14,7 +14,13 @@ local function raw_left(a)
   or U.number(a.expires_at) or U.number(a.expiration)
  local now=U.number(U.fn(core.game_time))
  if ending and now and ending>now then
-  local left=(ending-now)/1000;if left>0 and left<3600 then return left end
+  local delta=ending-now;local session=U.number(U.fn(core.time))
+  -- Project Sylvanas surfaces have exposed game_time/expiration timestamps in
+  -- both milliseconds and seconds. Compare against the monotonic seconds clock
+  -- when available; default to the legacy millisecond contract otherwise.
+  local milliseconds=not session or session<=0 or now>session*10
+  local left=milliseconds and delta/1000 or delta
+  if left>0 and left<3600 then return left end
  end
 end
 local function result(a,left)

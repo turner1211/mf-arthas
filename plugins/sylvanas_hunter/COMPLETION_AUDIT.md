@@ -145,3 +145,5 @@ Version 1.6.7 adds level-gated Track Hidden, Scare Beast pet control, guarded he
 Version 1.6.9 adds early-level Monkey aspect transitions, level-8 solo Concussive Shot approach control, and explicit unlock checks for defensive, pet, trap, and kiting utility. Offline tests cover both sides of each new level boundary; live Forever testing remains necessary to tune timing against server latency and current NPC behavior.
 
 Version 1.6.10 guards the remaining direct native reads in the portrait and icon texture paths and consolidates the live scripts installation to a single Hunter release folder. This removes a confirmed duplicate-load risk and prevents transient time or window-position failures from aborting a GUI frame.
+
+Version 1.6.11 corrects mixed-unit aura expiration math. Millisecond and seconds-based native timestamps are both covered offline, preventing a five-second aura from being misread as 0.005 seconds on seconds-based hosts.

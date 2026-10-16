@@ -1,4 +1,4 @@
-SYLVANAS HUNTER 1.6.10 — MIDNIGHT + WOW FOREVER
+SYLVANAS HUNTER 1.6.11 — MIDNIGHT + WOW FOREVER
 
 PLUGIN FOLDER RULE: Every file inside this plugin folder and every subfolder
 must end in `.lua` or `.md`. Release packaging fails if any other file type is
@@ -8,6 +8,12 @@ JPEG, ZIP, Python, JSON, layered-art, or other file types in the plugin folder.
 Built for Project Sylvanas's Midnight and WoW Forever client APIs. This is an offline-validated
 release candidate; live testing is still required. It is not a claim of flawless
 gameplay, maximum DPS, or verified behavior on every talent build.
+
+Version 1.6.11 normalizes native aura expiration timestamps against the
+monotonic session clock. Hosts that expose aura expiration in seconds retain
+the real remaining duration, while legacy millisecond timestamps continue to
+convert correctly. This prevents premature refreshes or incorrect expiry
+decisions for damage procs, cleave buffs, defensives, and crowd control.
 
 Version 1.6.10 guards native time and window-position reads used by embedded
 portraits and spec icon atlases. A transient native UI exception now falls back

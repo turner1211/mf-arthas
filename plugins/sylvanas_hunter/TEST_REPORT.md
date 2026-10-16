@@ -1,14 +1,13 @@
 # Sylvanas Hunter test report
 
-## 1.6.10
+## 1.6.11
 
-- Simulated native time and window-position failures leave the GUI frame healthy and activate safe artwork fallbacks.
-- The installed release is limited to one versioned Hunter directory and contains only Lua/Markdown files.
-- Shared loader and Unicode localization files compile with the Hunter package; 5,994 localization contract checks pass.
+- Aura expiration tests cover native millisecond and seconds clocks. Both report the same 4.25-second remaining duration.
+- All shared loader and Unicode localization modules remain part of the compiled package.
 
 48 Lua files compiled.
 
-23891 behavioral assertions passed in Lua 5.4 with an offline Sylvanas API mock.
+23893 behavioral assertions passed in Lua 5.4 with an offline Sylvanas API mock.
 
 Spec/mode isolation, all 24 profiles, override allowlist, movement, range, LoS, GCD, charges, pet absence/death, CC protection, pending-cast confirmation, transition invalidation, direct casting without an observe mode, native GUI/HUD, PvE boss helper and entrypoint tested.
 
