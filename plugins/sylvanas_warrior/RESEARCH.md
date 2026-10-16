@@ -1017,3 +1017,20 @@ VERSION 1.8.0 — BUILD 70425 STANCE AND LIVE-LOG AUDIT
   combat evidence, so no unsupported tuning conclusions were drawn from them.
 - Sources checked October 16, 2026: Blizzard's official WoW Forever beta
   development notes and maintenance confirmation for client build 70425.
+
+VERSION 1.8.1 — LONG-SESSION STATE AND IDLE-COST AUDIT
+
+- The installed session log was last written by an obsolete build, but its
+  repeated idle snapshots and historic cast failures prompted another hot-path
+  review rather than unsupported rotation tuning.
+- Per-target retry and debuff-history keys were only pruned after a successful
+  action. A player who remained idle, paused, out of range, or repeatedly
+  rejected could retain every encountered target for the rest of the session.
+  Cleanup now runs every ten seconds independently of action selection and
+  expires retry, deferral, queued-swing, target-history, arena-trinket, and
+  stale ability-failure state using purpose-specific lifetimes.
+- Fully disabled profiles now stop before route, boss, aura, object-manager,
+  and health-prediction scans. Pause still refreshes the read-only boss helper,
+  but no longer resets and rebinds the engine every update.
+- Blizzard's October 15/16 notes were rechecked. They contain no newer Warrior
+  rotation change than the mechanics already recorded in the 1.8.0 audit.

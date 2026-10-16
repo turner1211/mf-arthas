@@ -10,8 +10,9 @@ local function status(value,c)
  C.status=value
  L.change('status',c,value)
 end
-local function stop(why,now,hide)
+local function stop(why,now,hide,preserve_read_only)
  status(why,current)
+ if preserve_read_only then return end
  if engine.scope then engine:reset(nil,now) end
  current=nil;if hide then C.identity=nil;C.mode=nil end
 end
@@ -19,6 +20,7 @@ local function tick()
  local now=U.number(U.fn(core.time)) or 0
  if now<next_tick then return end
  next_tick=now+0.10
+ if now-last_prune>=10 then last_prune=now;engine:prune(now)end
  C.sync_hotkeys()
  L.enabled=C.logging:get_state();L.flush(now)
  local player=U.fn(core.object_manager.get_local_player)
@@ -34,12 +36,16 @@ local function tick()
  local mode,reason=Modes.detect(player,U.call(player,'get_target'))
  if not mode then return stop(reason,now) end
  C.identity=identity;C.mode=mode
- Routes.update(player,identity,mode,Rt.family=='midnight'and C.route_map:get_state())
- Boss.update(player,identity,mode,Rt.family=='midnight'and C.boss_guide:get_state())
- if engine:bind(identity,mode,now) then L.change('context',nil,engine.scope) end
  local cfg=C.get(identity.id,mode)
  if not cfg then DpsBoss.update(nil,identity,false);return stop('Warrior profile unavailable',now) end
  if U.call(player,'is_mounted')~=false then DpsBoss.update(nil,identity,false);return stop('Mounted or mount state unavailable',now) end
+ -- A disabled profile needs identity for the GUI, but it does not need route,
+ -- boss, object-manager, aura, or prediction scans ten times per second.
+ if not C.enabled:get_state() then DpsBoss.update(nil,identity,false);return stop('Warrior disabled',now)end
+ if not cfg.enabled then DpsBoss.update(nil,identity,false);return stop('This spec and mode are disabled',now)end
+ Routes.update(player,identity,mode,Rt.family=='midnight'and C.route_map:get_state())
+ Boss.update(player,identity,mode,Rt.family=='midnight'and C.boss_guide:get_state())
+ if engine:bind(identity,mode,now) then L.change('context',nil,engine.scope) end
  engine.pvp_burst_allowed=C.burst:get_state()
  engine.dummy_allowed=C.training_dummy:get_state()
  current=N.build(player,identity,mode,cfg,engine)
@@ -50,8 +56,14 @@ local function tick()
   current.mechanic_defensive=DpsBoss.active.action=='DEFENSIVE';current.mechanic_remaining=DpsBoss.active.remaining
  end
  L.snapshot(current)
- if not C.enabled:get_state() or C.pause:get_state() then return stop('Warrior paused',now) end
- if not cfg.enabled then return stop('This spec and mode are disabled',now) end
+ -- Pause blocks every input while preserving read-only boss guidance and the
+ -- current snapshot. Do not reset/rebind the engine on every paused update.
+ if C.pause:get_state() then
+  -- A request that was pending when Pause was pressed must not become a false
+  -- confirmation timeout and exponential backoff when actions resume.
+  engine.pending=nil;engine.manual_until=math.max(engine.manual_until or 0,now+0.2)
+  return stop('Warrior paused',now,false,true)
+ end
  if not current.hp or not current.rage then status('Health or rage data unavailable',current);return end
  if current.now<(engine.transition_until or 0) then status('Settling spec, role, or mode change',current);return end
  if engine:expired(current) then status('Waiting for cast confirmation',current);return end
@@ -75,11 +87,6 @@ local function tick()
  local outcome_status=action.key..' — '..action.why..' ('..tostring(outcome)..')'
  if identity.role_conflict then outcome_status=outcome_status..'; assigned role differs, Taunt held' end
  status(outcome_status,current)
- if now-last_prune>=10 then
-  last_prune=now
-  for key,until_time in pairs(engine.retry) do if now>until_time+30 then engine.retry[key]=nil;engine.failures[key]=nil end end
-  for key,until_time in pairs(engine.defer) do if now>until_time then engine.defer[key]=nil end end
- end
  return success
 end
 core.register_on_update_callback(function()
@@ -135,9 +142,9 @@ if core.register_on_game_event_callback then
  end)
 end
 C.init()
-L.initialize('1.8.0')
+L.initialize('1.8.1')
 -- Read-only coordination surface: no foreign rotation or setting is imported.
-_G.SylvanasWarrior={version='1.8.0',status=function()
+_G.SylvanasWarrior={version='1.8.1',status=function()
  return {status=C.status,spec=C.identity and C.identity.spec,role=C.identity and C.identity.role,
   assigned_role=C.identity and C.identity.assigned,mode=C.mode,epoch=engine.epoch}
 end,diagnostics=function()
@@ -154,4 +161,4 @@ end,log_paths=function()return L.paths()end,copy_log=function()return L.copy_tex
   healer_trinket_down=current.healer_trinket_down,upcoming=current.upcoming and
    {text=current.upcoming.text,remaining=current.upcoming.remaining,source=current.upcoming.source} or nil,casts=casts}
 end}
-L.emit('startup',nil,'Warrior-only 1.8.0; Forever build 1.60.1.70425 stance audit active')
+L.emit('startup',nil,'Warrior-only 1.8.1; idle-cost and bounded-state audit active')

@@ -1,5 +1,11 @@
 SYLVANAS WARRIOR — ARMS / FURY / PROTECTION
-Version 1.8.0 — Midnight and WoW Forever dual-runtime Warrior suite
+Version 1.8.1 — Midnight and WoW Forever dual-runtime Warrior suite
+
+Version 1.8.1 bounds per-target retry, debuff-history, interrupt-deferral, and
+arena-trinket state during long dungeon and battleground sessions. Cleanup now
+runs independently of successful casts. Fully disabled profiles skip combat,
+route, aura, and prediction scans, while Pause keeps the boss helper read-only
+without resetting and rebinding the action engine every update.
 
 Forever 1.8.0 is audited for client build 1.60.1.70425. Fury now keeps
 Berserker Stance at the level-30 cap instead of waiting in Battle Stance for

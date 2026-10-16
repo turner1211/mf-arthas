@@ -16,6 +16,23 @@ function E:bind(identity,mode,now)
  if self.scope~=scope then self:reset(scope,now);return true end
  return false
 end
+function E:prune(now)
+ -- Target GUIDs are intentionally part of retry and debuff-history keys. Long
+ -- dungeon/BG sessions therefore need time-based cleanup even while no spell
+ -- is currently eligible, otherwise every encountered unit remains retained.
+ for key,until_time in pairs(self.retry)do
+  if now>until_time+30 then self.retry[key]=nil;self.failures[key]=nil end
+ end
+ for key,until_time in pairs(self.defer)do if now>until_time then self.defer[key]=nil end end
+ for key,until_time in pairs(self.queued_until)do if now>until_time+5 then self.queued_until[key]=nil end end
+ for key,seen in pairs(self.target_history)do if now-seen>300 then self.target_history[key]=nil end end
+ for key,seen in pairs(self.pvp_trinket)do if now-seen>180 then self.pvp_trinket[key]=nil end end
+ for key,seen in pairs(self.ability_failure_time)do
+  if now-seen>60 then
+   self.ability_failure_time[key]=nil;self.ability_failures[key]=nil;self.ability_retry[key]=nil
+  end
+ end
+end
 function E:predict(c)
  if not c.hp then self.health=nil;return nil end
  local max=select(2,U.hp(c.player));local r=self.health
