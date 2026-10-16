@@ -59,10 +59,22 @@ function Q.run(c,engine)
  end
  local disarm_pressure=c.pvp and c.physical and Pvp and Pvp.is_disarmable and Pvp:is_disarmable(c.target)==true
  if c.settings.stances and c.spec==72 and not disarm_pressure and not(c.pvp and c.distance and c.distance>8)then
+  local level=c.level or 60
   local rend=c.debuff(S.aura.rend);local recent=engine.target_history['rend:'..tostring(c.target_guid)]or-math.huge
-  if rend~=true and c.now-recent>12 then
+  -- Level-30 Fury intentionally omits Rend, so its stance controller must not
+  -- hold Battle Stance waiting for an action the rotation will never request.
+  -- Before Berserker Stance is learned, Battle Stance remains the safe home.
+  if level>30 and rend~=true and c.now-recent>12 then
    if c.buff(S.aura.battle_stance)~=true then local a=c.pick('battle_stance','Forever Fury stance for Rend');if a then return a end end
-  elseif c.buff(S.aura.berserker_stance)~=true then local a=c.pick('berserker_stance','Forever Fury damage stance after Rend');if a then return a end end
+  elseif level>=30 and c.buff(S.aura.berserker_stance)~=true then
+   local a=c.pick('berserker_stance','Forever Fury level-appropriate damage stance');if a then return a end
+  elseif level<30 and c.buff(S.aura.battle_stance)~=true then
+   local a=c.pick('battle_stance','Forever Fury pre-Berserker damage stance');if a then return a end
+  end
+ end
+ if c.settings.stances and c.spec==71 and not c.pvp and c.buff(S.aura.battle_stance)~=true then
+  -- Spearing Strike explicitly requires Battle Stance in current Forever.
+  local a=c.pick('battle_stance','Forever Arms restore Spearing Strike stance');if a then return a end
  end
  if c.spec==73 and not c.pvp and c.settings.taunt and not c.identity.role_conflict then
   for _,enemy in ipairs(c.enemies or{})do

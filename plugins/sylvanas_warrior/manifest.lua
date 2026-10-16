@@ -1,13 +1,13 @@
 return {
  name='Sylvanas Warrior',
- version='1.7.1',
+ version='1.8.0',
  files={
-  ['header.lua']='62875f6a4ec0303c75a2bb6eca9ab0cf467721deffa3d8cfce650722cab6f20e',
+  ['header.lua']='22d370469157a1bd921ed4cfa2e76fcc70526b9e1f815bf138ddf64c59864cff',
   ['IMPROVEMENTS.md']='99cb46beb8d7bb1f0bc7752d73c2c5d9041d91c821fa5d67952e13550d111760',
-  ['main.lua']='03b57681ad5de998c90c92a83459fd78f380681d633cbc68ba47c3c94a141b95',
-  ['README.md']='5d54c8ee5cc54b404b21daa708a06b34a8b63d805d99a4ffeee4abb4d656d840',
-  ['RESEARCH.md']='3611e368e2c921d6ed9f040f587d20e4b21e67283d2d1ea90e60e4fced344a9b',
-  ['TEST_REPORT.md']='932cd2dd3767a3d9bb90b00299a4eb68ec014fb28f4c231cb8c659ac0ff300cc',
+  ['main.lua']='f17acbdef5911fd0a8f01de8709627969d82019123a5a1d6bc5ba02643a27661',
+  ['README.md']='ff8869f87f770a3ac255d8720c2620e24fab5dc5a45c109ee433bf6d09c63f0d',
+  ['RESEARCH.md']='d9800f79b45cfa981214319ff6954a63279578da71e914565d8d1985cf94a633',
+  ['TEST_REPORT.md']='3871f5f96ec67b02786c21363db322afca32ab7f6af4ca89db4254775d44addf',
   ['ww_arms.lua']='0b9043b81aa949c9438c6caa61550ff6ae215bc4f2262cf3b59e4d1bb0072b9e',
   ['ww_arms_forever.lua']='eea9afb35ad3f372ef79bb563bf2b919298fd0d7e2d1d018af9f7cbcee874b0b',
   ['ww_art_arms.lua']='412ddd8361a51dc851c0543ac56c849a173cef7bea2e624981c8342c0b3cbe5a',
@@ -22,7 +22,7 @@ return {
   ['ww_engine.lua']='df05e3e77347d7268d14043b4719fa47accf1db70bcb4b50d7059c35a32488dd',
   ['ww_fury.lua']='3e372f9dcdd2f6b1892fba06c6994c3cd931851caded7a5a76e3c65c83955e3a',
   ['ww_fury_forever.lua']='461a2d0de4ccb335381262a850d40867f7d6d9bb2e280cea06ab3bb26f9b2038',
-  ['ww_gui.lua']='f9a38d546b3c601204a42e3cbb95fa149ade3c37b1eff672368ae09e585bc743',
+  ['ww_gui.lua']='c71dcf3ee899a638f77a2be15fa3d3a34d3976ec02c9b37f96313af7a91a60a6',
   ['ww_icon_art.lua']='37480098fd6abd25f62a3c42a4ea994b681c02b1f0014ce4724e5b059b9984e0',
   ['ww_identity.lua']='48fc822e398bb2a94ff741b099e9dad3e6a5fb0838575b41e26d51d90db96991',
   ['ww_intel.lua']='3f22ac20346138da58e2991c804c8586b20b7cf8c8646d5ce0d8b46f8fd12759',
@@ -45,6 +45,6 @@ return {
   ['ww_timers.lua']='850b89b64af18db5633285d49462beb3529db3aacf09299debabe4efa1c3ffeb',
   ['ww_util.lua']='ebf32251540de08e29d06e715be317d89221ae520d551c9ca72fdb0135b9993c',
   ['ww_utility.lua']='482b2207c540f44bb86f45dde519897147e9785d195b53e1e9b52ed8a7292099',
-  ['ww_utility_forever.lua']='b24c057158df07a16d04df969cc44c9e458dffb38d7bb1a6172249620776fc75',
+  ['ww_utility_forever.lua']='1800f1721f1c8767e5091c2b8771af95a0eb14d1f3b5184be73d9870be838737',
  }
 }

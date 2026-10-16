@@ -1,5 +1,12 @@
 SYLVANAS WARRIOR — ARMS / FURY / PROTECTION
-Version 1.7.1 — Midnight and WoW Forever dual-runtime Warrior suite
+Version 1.8.0 — Midnight and WoW Forever dual-runtime Warrior suite
+
+Forever 1.8.0 is audited for client build 1.60.1.70425. Fury now keeps
+Berserker Stance at the level-30 cap instead of waiting in Battle Stance for
+Rend, which the level-30 rotation intentionally omits. Pre-30 Fury remains in
+Battle Stance, and Arms restores Battle Stance for Spearing Strike. The direct
+spellbook execution path does not depend on the current beta's broken action
+bar stance swapping.
 
 Version 1.7.1 fixes two GUI defects found by the cross-plugin audit. Mouse-wheel
 scrolling now reaches every supported Sylvanas wheel API even when an earlier

@@ -998,3 +998,22 @@ VERSION 1.7.1 — GUI INPUT SYNCHRONIZATION AUDIT
   keybind edges now converge on the same persistent state without reverting.
 - Added regression checks for root wheel fallback, native checkbox persistence,
   paired hotkey updates, and subsequent hotkey control.
+
+VERSION 1.8.0 — BUILD 70425 STANCE AND LIVE-LOG AUDIT
+
+- The October 16 beta client is build 1.60.1.70425. Blizzard's latest notes do
+  not add a new Warrior rotation change; they retain the current level-30 cap
+  and confirm Demoralizing Shout threat, Last Stand, Battle Shout, Slam, and
+  Overpower fixes from the preceding builds.
+- Fixed a cross-layer Fury disagreement: the level-30 damage priority correctly
+  omitted Rend, but the utility controller could still hold Battle Stance while
+  waiting to apply it. Level-30 Fury now restores Berserker Stance, pre-30 Fury
+  uses Battle Stance, and post-30 Fury only enters Battle Stance for due Rend.
+- Arms now explicitly restores Battle Stance in Forever PvE because Blizzard
+  documents that Spearing Strike requires it.
+- The new beta has a known action-bar stance-swap defect. This plugin selects
+  abilities through the spellbook API and does not depend on action-bar pages.
+- Existing live logs were from obsolete 0.9.x builds and contained no current
+  combat evidence, so no unsupported tuning conclusions were drawn from them.
+- Sources checked October 16, 2026: Blizzard's official WoW Forever beta
+  development notes and maintenance confirmation for client build 70425.
