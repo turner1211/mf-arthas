@@ -1,26 +1,26 @@
 local M={}
-local function call(fn,...)
-    if type(fn)~="function" then return nil end
-    local ok,a,b,c=pcall(fn,...);if ok then return a,b,c end
+local function read(name)
+    local fn=core and core[name]
+    if type(fn)~="function" then return "" end
+    local ok,value=pcall(fn)
+    return ok and type(value)=="string" and value or ""
 end
-function M.version_text()
-    local probes={core and core.get_game_version,core and core.get_client_version,core and core.get_build_info,
-        core and core.game and core.game.get_version,core and core.game and core.game.get_build_info}
-    local out={}
-    for _,fn in ipairs(probes) do
-        local a,b,c=call(fn)
-        for _,v in ipairs({a,b,c}) do if v~=nil then out[#out+1]=tostring(v) end end
-    end
-    return table.concat(out," "):lower()
+function M.version() return read("get_game_version") end
+function M.exact_version() return read("get_exact_game_version") end
+function M.is_forever()
+    local name=M.version():lower();local exact=M.exact_version():lower()
+    return name=="forever" or name:find("forever",1,true)~=nil or exact:match("^1%.60%.")~=nil
 end
-function M.family()
-    local text=M.version_text()
-    if text:find("forever",1,true) or text:find("1.60.",1,true) then return "forever",text end
-    if text:find("midnight",1,true) then return "midnight",text end
-    return "unsupported",text
-end
+function M.edition() return M.is_forever() and "forever" or "retail" end
 function M.level(player)
-    local value=tonumber(call(player and player.get_level,player))
-    return value and math.max(1,math.floor(value)) or nil
+    local probes={
+        function() return player and player.get_level and player:get_level() end,
+        function() return core.object_manager and core.object_manager.get_local_player_level and core.object_manager.get_local_player_level() end,
+        function() return core.get_player_level and core.get_player_level() end
+    }
+    for _,probe in ipairs(probes)do
+        local ok,value=pcall(probe);value=ok and tonumber(value)or nil
+        if value and value>=1 and value<=80 then return math.floor(value)end
+    end
 end
 return M
