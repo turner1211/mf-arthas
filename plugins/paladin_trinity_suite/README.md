@@ -1,4 +1,4 @@
-# Paladin Trinity Suite 1.2.9
+# Paladin Trinity Suite 1.2.10
 
 One Project Sylvanas plugin containing Holy Paladin 4.71.0, Retribution Paladin
 1.64.0, and Protection Paladin 6.15.0.
@@ -39,6 +39,14 @@ still requires Final Stand and its full 15-yard safety check. Forever Holy now
 remembers the ally marked by Light's Vigil and directs Holy Shock back to that
 same ally, ensuring the prepared party heal is released instead of being lost
 when lowest-health targeting changes between updates.
+
+Version 1.2.10 improves Forever Protection resource and aura decisions. Healthy
+tanks now retain Retribution Aura at every level for its current threat and
+spell-power benefit, switching to Devotion before a pull when recovery is more
+important. Consecration now preserves a larger Mana reserve on two-target pulls
+and progressively relaxes that reserve for three- and four-target packs, keeping
+Judgement available for Seal of Fury threat recovery instead of exhausting Mana
+on area damage.
 
 The Retail/Midnight side preserves every specialization's existing artwork and theme while
 expanding customer navigation. Holy gains dedicated Cooldowns and Support tabs,

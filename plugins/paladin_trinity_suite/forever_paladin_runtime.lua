@@ -284,10 +284,10 @@ local function maintain_profile(instance,me)
     if combat(me) or not value(instance.config.auto_buffs,true) then return false end
     local desired_aura
     if instance.spec=="prot" then
-        -- During early levelling, Retribution Aura contributes meaningful pack
-        -- threat. Fall back to Devotion whenever recovery or later tanking calls
-        -- for the safer profile.
-        desired_aura=((instance.level or 60)<40 and hp(me)>=70 and resolve("RETRIBUTION_AURA"))
+        -- Forever's current Protection guidance favors Retribution Aura for
+        -- threat and spell-power-scaled damage.  Keep that default at every
+        -- level, but recover into Devotion before a pull when health is low.
+        desired_aura=(hp(me)>=75 and resolve("RETRIBUTION_AURA"))
             and "RETRIBUTION_AURA" or "DEVOTION_AURA"
     else
         desired_aura=instance.spec=="holy" and "CONCENTRATION_AURA" or "RETRIBUTION_AURA"
@@ -460,10 +460,15 @@ local function prot(instance,me)
     else instance.taunt_follow=nil end
     local count=nearby_enemies(instance,me,8)
     local holy_kind=holy_target(foe)
+    -- Consecration is the strongest area-threat tool but also the easiest way
+    -- to lose the Mana needed for a Fury Judgement taunt.  Larger packs justify
+    -- a lower reserve because each tick creates proportionally more threat.
+    local consecration_mana=count>=4 and 20 or count>=3 and 28 or 40
+    local consecration_ok=count>=2 and mana(me)>=consecration_mana
     -- Before Iron Creed becomes reachable, use the documented levelling
     -- priorities: Consecration first on packs, then Judgement and Exorcism.
     if instance.level and instance.level<35 then
-        return (count>=2 and mana(me)>=45 and cast("CONSECRATION",me,instance))
+        return (consecration_ok and cast("CONSECRATION",me,instance))
             or cast("JUDGEMENT",foe,instance)
             or (holy_kind and cast("EXORCISM",foe,instance))
             or cast("HOLY_STRIKE",foe,instance) or cast("HAMMER_RIGHTEOUS",foe,instance)
@@ -471,7 +476,7 @@ local function prot(instance,me)
     -- Iron Creed makes Holy Strike a six-second mitigation window at later
     -- levels, so it moves ahead of pure throughput buttons once available.
     return cast("HOLY_STRIKE",foe,instance)
-        or (count>=2 and cast("CONSECRATION",me,instance))
+        or (consecration_ok and cast("CONSECRATION",me,instance))
         or cast("JUDGEMENT",foe,instance)
         or (holy_kind and cast("EXORCISM",foe,instance))
         or cast("HAMMER_RIGHTEOUS",foe,instance)
