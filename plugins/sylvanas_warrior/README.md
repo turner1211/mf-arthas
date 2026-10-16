@@ -1,5 +1,46 @@
 SYLVANAS WARRIOR — ARMS / FURY / PROTECTION
-Version 0.9.54 — Protection Colossus fallback and capital-city dummy support
+Version 1.5.0 — Midnight and WoW Forever dual-runtime Warrior suite
+
+Forever 1.5.0 uses the newly fixed Improved Berserker Rage to break distant
+roots and heavy slows with safe stance recovery, converts it into Rage only in
+non-PvP Fury downtime, maintains Thunder Clap against single Protection targets,
+prioritizes pack Thunder Clap before future Shield Slam, and completes five
+Sunder stacks on durable Arms and Fury targets.
+
+Forever 1.4.0 supports Blizzard's October 15 Warrior update, adds cooldown-aware
+Mocking Blow recovery after Taunt, prevents unsafe low-health Bloodrage, consumes
+Victorious procs for damage when healing is unnecessary, and adds Protection's
+documented excess-Rage Cleave behavior on safe multi-target pulls.
+
+Forever 1.3.0 pairs Sweeping Strikes before reactive Overpower, refreshes Battle
+Shout in combat, controls low-health runners, adds PvP melee-pressure debuffs,
+reserves more Rage near Execute range, uses Death Wish only at safe health unless
+breaking Fear, adds guarded Protection Retaliation and Concussion Blow defense,
+and latches next-swing queues until the weapon event or a safe timeout.
+
+Forever 1.2.0 adds stance recovery after Disarm, Intercept, Hamstring, Retaliation,
+and safe solo Protection Execute; separates Last Stand from lethal Shield Wall
+timing; adds Fury Sunder and Protection Rend target logic; prevents dungeon fear
+from scattering packs; and handles Heroic Strike/Cleave as queued weapon swings.
+
+Forever combat logic is updated for client build 1.60.1.70374. It now tracks
+target-specific upkeep, uses the build-70374 pre-pull Bloodrage behavior, pools Rage around
+high-value actions, consumes reactive abilities before fillers, supports
+Spearing Strike, and handles the level-30 toolkit without assuming level-40
+talents are learned. Protection models Forever's seven-second, two-block Shield
+Block and prioritizes its enhanced Revenge proc for mitigation and threat.
+
+Forever startup leaves the native DB2 layer untouched in header.lua and waits
+eight seconds after a valid player appears before reading class, specialization,
+or spell-book data. This prevents the native IsLoaded assertion seen when
+Project Sylvanas attaches before Forever finishes loading its tables.
+
+The plugin now auto-detects Midnight or WoW Forever and loads a separate spell
+catalog, rank resolver, utility layer, and Arms/Fury/Protection rotation for that
+client. Saved options, hotkeys, and crash-recovery logs use separate namespaces.
+Midnight dungeon routes, boss data, hero talents, and spell IDs are never loaded
+into Forever decisions. Forever ranked spells are resolved to the highest learned
+rank, so leveling and talent variations fail closed when an ability is unlearned.
 
 This release lets Protection Warriors with Morale Killer answer verified nearby\r\nenemy burst against a party member with Demoralizing Shout. Ally pressure stays\r\nseparate from personal burst, so it cannot spend Shield Wall or cross into PvE.
 It retains the two-window design: the F1 main interface and F7 compact boss guide.
@@ -34,6 +75,14 @@ has a separately saved hotkey and visible ON/OFF button. Numeric thresholds keep
 their +/- value controls. F1 and F7 remain reserved for the main and boss-helper
 windows. The window is created once and hidden or shown in place to avoid
 frame-by-frame window recreation and flicker.
+
+The command window now follows a framed Warrior-suite layout with a large crest,
+ornate double border, vertical activity profiles, glowing toggle switches,
+hotkey boxes, and left/right hotkey selectors. Arms uses a crimson blade theme,
+Fury uses a fire-and-axes theme, and Protection uses a blue steel shield theme.
+Each theme has its own title, crest geometry, etched header field, accent colors,
+and profile language. Existing visibility gates continue to hide settings that
+do not belong to the selected specialization or activity.
 
 Both interfaces hide controls that cannot operate in the selected activity.
 Arena peel, healer control, and trinket tracking appear only for Arena;

@@ -108,11 +108,15 @@ function N.build(player,identity,mode,settings,engine)
  if type(loss)=='table' then
   local rows=loss.valid~=nil and {loss} or loss
   for _,row in pairs(rows) do
-   if type(row)=='table' and row.valid==true
-    and row.type==(enums.loss_of_control_type or {}).ROOT then c.rooted=true;break end
+   if type(row)=='table' and row.valid==true then
+    local flags=enums.loss_of_control_type or{}
+    if row.type==flags.ROOT then c.rooted=true end
+    if row.type==flags.SNARE then c.slowed=true end
+    if row.type==flags.FEAR or row.type==flags.FEAR_MECHANIC or row.type==flags.CHARM then c.feared=true end
+   end
   end
  end
- c.rooted=c.rooted==true
+ c.rooted=c.rooted==true;c.slowed=c.slowed==true;c.feared=c.feared==true
  c.busy=U.call(player,'is_casting_spell')==true or U.call(player,'is_channelling_spell')==true
  local channel_id=U.number(U.call(player,'get_active_channel_spell_id'))
  c.defense_during_channel=channel_id==436358 or channel_id==227847 or channel_id==446035
@@ -225,13 +229,21 @@ function N.build(player,identity,mode,settings,engine)
  c.debuff=function(id) return A.read(c.target,id,true,player) end
  c.known=function(key)
   local row=S.rows[key]
-  return row and S.allowed(key,c.spec) and U.fn(core.spell_book.is_spell_known,row.id)==true or false
+  return row and S.allowed(key,c.spec) and U.fn(core.spell_book.is_spell_known,engine:resolve(row))==true or false
  end
- c.talent=function(key) return S.talent[key] and U.fn(core.spell_book.is_spell_known,S.talent[key])==true or false end
+ c.talent=function(key)
+  local ids=S.talent[key];if type(ids)=='number'then ids={ids}end
+  for _,id in ipairs(ids or{})do if U.fn(core.spell_book.is_spell_known,id)==true then return true end end
+  return false
+ end
  c.charges=function(key)
   local row=S.rows[key];if not row or not S.allowed(key,c.spec)then return nil,nil end
-  local id=U.number(U.fn(core.spell_book.get_override_spell_id,row.id))or row.id
+  local id=engine:resolve(row)
   return U.number(U.fn(core.spell_book.get_spell_charge,id)),U.number(U.fn(core.spell_book.get_spell_charge_max,id))
+ end
+ c.cooldown=function(key)
+  local row=S.rows[key];if not row or not S.allowed(key,c.spec)then return nil end
+  return U.number(U.fn(core.spell_book.get_spell_cooldown,engine:resolve(row)))
  end
  c.ready=function(key,target) return engine:ready(c,key,target) end
  c.pick=function(key,why,target)

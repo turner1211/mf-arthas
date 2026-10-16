@@ -1,11 +1,11 @@
 local U,S,N,A,L=require('ww_util'),require('ww_spells'),require('ww_snapshot'),require('ww_aura'),require('ww_log')
 local E={};E.__index=E
 function E.new()
- return setmetatable({epoch=0,scope=nil,retry={},failures={},ability_retry={},ability_failures={},ability_failure_time={},recent={},history={},defer={},pvp_trinket={},manual_until=0,last_major=-math.huge},E)
+ return setmetatable({epoch=0,scope=nil,retry={},failures={},ability_retry={},ability_failures={},ability_failure_time={},recent={},history={},target_history={},queued_until={},defer={},pvp_trinket={},manual_until=0,last_major=-math.huge},E)
 end
 function E:reset(scope,now)
  self.epoch=self.epoch+1;self.scope=scope;self.retry={};self.failures={};self.ability_retry={};self.ability_failures={};self.ability_failure_time={};self.pending=nil
- self.recent={};self.history={};self.defer={};self.health=nil;self.target_health=nil
+ self.recent={};self.history={};self.target_history={};self.queued_until={};self.defer={};self.health=nil;self.target_health=nil
  self.last_major=-math.huge;self.manual_until=now+0.35;self.transition_until=now+0.35
  self.taunt_follow=nil;self.stance_safe_since=nil;self.assumed_stance=nil
  self.arena_started_at=nil;self.arena_was_in_combat=false
@@ -45,6 +45,7 @@ function E:target_life(c)
  if r.samples>=3 and r.rate>=0.75 then return c.target_hp/r.rate end
 end
 function E:resolve(row)
+ for _,candidate in ipairs(row.ids or{})do if U.fn(core.spell_book.is_spell_known,candidate)==true then return candidate end end
  local override=U.number(U.fn(core.spell_book.get_override_spell_id,row.id))
  return override and override>0 and override or row.id
 end
@@ -57,9 +58,10 @@ function E:ready(c,key,target)
  if not r or not r.specs[c.spec] or not c.settings.enabled then return false end
  local root_break=c.mode=='arena' and (c.spec==71 or c.spec==72) and c.rooted==true
   and (key=='avatar' or key=='arms_bladestorm' or key=='fury_bladestorm')
+ local fear_break=c.feared==true and c.spec==72 and(key=='death_wish'or key=='recklessness')
  if r.pvp and not c.pvp then return false end
  local prot_signature=r.prot_signature and c.spec==73 and not c.pvp and c.settings.cooldowns==true
- if r.burst and not c.burst and not root_break and not prot_signature then return false end
+ if r.burst and not c.burst and not root_break and not fear_break and not prot_signature then return false end
  if r.defensive and not c.settings.defensives then return false end
  if r.utility and not c.settings.interrupts and key=='pummel' then return false end
  if not r.defensive and not r.utility and not r.maintenance and not r.heal and not c.settings.damage then return false end
@@ -97,7 +99,7 @@ function E:ready(c,key,target)
   end
  end
  local retry_key=tostring(id)..':'..(U.guid(unit) or '?')
- if c.now<(self.retry[retry_key] or 0) or c.now<(self.ability_retry[key] or 0)
+ if c.now<(self.retry[retry_key] or 0) or c.now<(self.ability_retry[key] or 0)or c.now<(self.queued_until[key]or 0)
   or c.now-(self.recent[id] or -math.huge)<0.4 then return false end
  if r.major and c.now-self.last_major<3 and (not c.hp or c.hp>20) then return false end
  if r.kind=='friendly' then
@@ -106,8 +108,9 @@ function E:ready(c,key,target)
  elseif r.kind~='self' then
   local protected=N.protected(unit)
   local shatter_immune=key=='shattering_throw' and N.immune(unit)
-  if not U.enemy(c.player,unit) or protected and not shatter_immune
-   or not N.engaged(c.player,unit,c.mode,c.training) then return false end
+  local engaged=N.engaged(c.player,unit,c.mode,c.training)
+  if key=='charge'and require('ww_runtime').family=='forever'and not c.combat and U.same(unit,c.target)then engaged=true end
+  if not U.enemy(c.player,unit) or protected and not shatter_immune or not engaged then return false end
   if c.mode=='world_pve' and U.call(unit,'is_player')==true or c.mode=='world_pvp' and U.call(unit,'is_player')~=true then return false end
   if not U.los(c.player,unit) or not U.facing(c.player,unit) then return false end
   if U.fn(core.spell_book.is_spell_in_range,id,unit,c.player)~=true then return false end
@@ -151,7 +154,9 @@ function E:confirmed(id,target,c)
  local p=self.pending
  if not p or p.epoch~=self.epoch or p.scope~=self.scope or p.id~=id then return end
  if target and p.target_guid and U.guid(target)~=p.target_guid then return end
- self.history[p.key]=c.now;self.failures[p.retry_key]=nil;self.retry[p.retry_key]=nil
+ self.history[p.key]=c.now
+ if p.target_guid then self.target_history[p.key..':'..p.target_guid]=c.now end
+ self.failures[p.retry_key]=nil;self.retry[p.retry_key]=nil
  self.ability_failures[p.key]=nil;self.ability_failure_time[p.key]=nil;self.ability_retry[p.key]=nil
  if p.key=='defensive_stance' or p.key=='battle_stance' or p.key=='berserker_stance' then self.assumed_stance=p.key end
  if S.rows[p.key].major then self.last_major=c.now end
@@ -188,6 +193,18 @@ function E:cast(c,action)
   accepted=pos and U.fn(core.input.cast_position_spell,id,pos)==true
  else accepted=U.fn(core.input.cast_target_spell,id,unit)==true end
  if not accepted then self:failed(p,c.now,'input_rejected',c);return false,'input_rejected' end
+ -- Heroic Strike and Cleave are next-swing queues in Forever. They may not
+ -- produce a confirmation until the weapon lands, so holding the entire
+ -- decision engine on pending confirmation creates a visible rotation stall.
+ if row.queued then
+  self.history[p.key]=c.now
+  if p.target_guid then self.target_history[p.key..':'..p.target_guid]=c.now end
+  -- A slow two-hander can take well over three seconds to land. Keep the
+  -- queue latched until its combat event arrives, with a finite recovery for
+  -- a canceled swing or a loader that omits that event.
+  self.queued_until[p.key]=c.now+5
+  self.pending=nil
+ end
  L.emit('requested',c,action.key..':'..action.why)
  return true,'requested'
 end
@@ -199,6 +216,7 @@ function E:observe_cast(data,c)
   for key,row in pairs(S.rows) do
    if row.specs[c.spec] and self:resolve(row)==id then
     self.history[key]=c.now
+    if row.queued then self.queued_until[key]=nil end
     if key=='defensive_stance' or key=='battle_stance' or key=='berserker_stance' then self.assumed_stance=key end
     if row.major then self.last_major=c.now end
     L.emit('observed',c,key..':'..tostring(id))

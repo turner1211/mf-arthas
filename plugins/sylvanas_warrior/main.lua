@@ -1,9 +1,11 @@
-local U,I,Modes=require('ww_util'),require('ww_identity'),require('ww_modes')
-local C,E,N,Q,L=require('ww_settings'),require('ww_engine'),require('ww_snapshot'),require('ww_utility'),require('ww_log')
+local U,I,Modes,Rt=require('ww_util'),require('ww_identity'),require('ww_modes'),require('ww_runtime')
+local C,E,N,L=require('ww_settings'),require('ww_engine'),require('ww_snapshot'),require('ww_log')
+local Q=Rt.module('ww_utility','ww_utility_forever')
 local Routes,Boss,DpsBoss,Gui,BossHud,PvpLines=require('ww_routes'),require('ww_boss_guides'),require('ww_dps_boss_guides'),require('ww_gui'),require('ww_boss_hud'),require('ww_pvp_lines')
-local rotations={[71]=require('ww_arms'),[72]=require('ww_fury'),[73]=require('ww_protection')}
+local rotations={[71]=Rt.module('ww_arms','ww_arms_forever'),[72]=Rt.module('ww_fury','ww_fury_forever'),[73]=Rt.module('ww_protection','ww_protection_forever')}
 local engine=E.new()
 local current,next_tick,last_prune=nil,0,0
+local forever_identity_ready_at=nil
 local function status(value,c)
  C.status=value
  L.change('status',c,value)
@@ -20,14 +22,20 @@ local function tick()
  C.sync_hotkeys()
  L.enabled=C.logging:get_state();L.flush(now)
  local player=U.fn(core.object_manager.get_local_player)
- if not U.valid(player) then return stop('Waiting for a living player',now,true) end
+ if not U.valid(player) then forever_identity_ready_at=nil;return stop('Waiting for a living player',now,true) end
+ -- Forever can publish a valid player before specialization/spell DB2 data is
+ -- loaded. Native assertions occur below Lua and cannot be caught with pcall.
+ if Rt.family=='forever'then
+  forever_identity_ready_at=forever_identity_ready_at or(now+8)
+  if now<forever_identity_ready_at then C.status='Waiting for WoW Forever game data';return end
+ end
  local identity,why=I.read(player)
  if not identity then return stop(why,now,true) end
  local mode,reason=Modes.detect(player,U.call(player,'get_target'))
  if not mode then return stop(reason,now) end
  C.identity=identity;C.mode=mode
- Routes.update(player,identity,mode,C.route_map:get_state())
- Boss.update(player,identity,mode,C.boss_guide:get_state())
+ Routes.update(player,identity,mode,Rt.family=='midnight'and C.route_map:get_state())
+ Boss.update(player,identity,mode,Rt.family=='midnight'and C.boss_guide:get_state())
  if engine:bind(identity,mode,now) then L.change('context',nil,engine.scope) end
  local cfg=C.get(identity.id,mode)
  if not cfg then DpsBoss.update(nil,identity,false);return stop('Warrior profile unavailable',now) end
@@ -35,7 +43,7 @@ local function tick()
  engine.pvp_burst_allowed=C.burst:get_state()
  engine.dummy_allowed=C.training_dummy:get_state()
  current=N.build(player,identity,mode,cfg,engine)
- DpsBoss.update(current,identity,C.boss_guide:get_state())
+ DpsBoss.update(current,identity,Rt.family=='midnight'and C.boss_guide:get_state())
  if identity.id==73 and Boss.active then
   current.mechanic_defensive=Boss.action=='defensive';current.mechanic_remaining=Boss.remaining
  elseif (identity.id==71 or identity.id==72) and DpsBoss.active then
@@ -127,9 +135,9 @@ if core.register_on_game_event_callback then
  end)
 end
 C.init()
-L.initialize('0.9.54')
+L.initialize('1.5.0')
 -- Read-only coordination surface: no foreign rotation or setting is imported.
-_G.SylvanasWarrior={version='0.9.54',status=function()
+_G.SylvanasWarrior={version='1.5.0',status=function()
  return {status=C.status,spec=C.identity and C.identity.spec,role=C.identity and C.identity.role,
   assigned_role=C.identity and C.identity.assigned,mode=C.mode,epoch=engine.epoch}
 end,diagnostics=function()
@@ -146,4 +154,4 @@ end,log_paths=function()return L.paths()end,copy_log=function()return L.copy_tex
   healer_trinket_down=current.healer_trinket_down,upcoming=current.upcoming and
    {text=current.upcoming.text,remaining=current.upcoming.remaining,source=current.upcoming.source} or nil,casts=casts}
 end}
-L.emit('startup',nil,'Warrior-only 0.9.54; enabled with activity and specialization isolation')
+L.emit('startup',nil,'Warrior-only 1.5.0; Forever October 15 build logic active')

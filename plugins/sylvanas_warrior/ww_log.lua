@@ -1,7 +1,7 @@
-local U=require('ww_util')
+local U,R=require('ww_util'),require('ww_runtime')
 local L={rows={},queue={},pending_persistent={},last_flush=-math.huge,last_checkpoint=-math.huge,
  enabled=true,ready=false,last={},persistent='',initialized=false}
-local folder='sylvanas_warrior'
+local folder='sylvanas_warrior_'..R.family
 local path=folder..'/session.log'
 local copy_path=folder..'/session_copy.txt'
 local marker_path=folder..'/session_marker.txt'

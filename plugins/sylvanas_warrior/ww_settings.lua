@@ -1,4 +1,4 @@
-local Modes=require('ww_modes')
+local Modes,R=require('ww_modes'),require('ww_runtime')
 local C={cells={},hotkeys={},global_hotkeys={},status='Waiting for warrior',identity=nil,mode=nil}
 local specs={{71,'Arms'},{72,'Fury'},{73,'Protection'}}
 C.bounds={pvp_trinket_window={0,120},block_refresh={0,10}}
@@ -17,14 +17,15 @@ function C.defaults(spec,mode)
 end
 function C.init()
  C.root=core.menu.tree_node()
- C.enabled=core.menu.checkbox(true,'ww_warrior_enabled_v2')
- C.burst=core.menu.checkbox(true,'ww_warrior_pvp_burst_v2')
- C.logging=core.menu.checkbox(true,'ww_warrior_logging_v2')
- C.pause=core.menu.checkbox(false,'ww_warrior_pause_v2')
- C.themed_gui=core.menu.checkbox(true,'ww_warrior_themed_gui_v2')
- C.route_map=core.menu.checkbox(true,'ww_warrior_prot_route_v2')
- C.boss_guide=core.menu.checkbox(true,'ww_warrior_prot_boss_guide_v2')
- C.training_dummy=core.menu.checkbox(true,'ww_warrior_training_dummy_v2')
+ local ns=R.prefix
+ C.enabled=core.menu.checkbox(true,ns..'warrior_enabled_v2')
+ C.burst=core.menu.checkbox(true,ns..'warrior_pvp_burst_v2')
+ C.logging=core.menu.checkbox(true,ns..'warrior_logging_v2')
+ C.pause=core.menu.checkbox(false,ns..'warrior_pause_v2')
+ C.themed_gui=core.menu.checkbox(true,ns..'warrior_themed_gui_v2')
+ C.route_map=core.menu.checkbox(true,ns..'warrior_prot_route_v2')
+ C.boss_guide=core.menu.checkbox(true,ns..'warrior_prot_boss_guide_v2')
+ C.training_dummy=core.menu.checkbox(true,ns..'warrior_training_dummy_v2')
  local function hotkey(initial,tag)
   if type(core.menu.keybind)=='function'then return core.menu.keybind(0,initial,tag)end
   local h={key=0,state=initial};function h:get_key_code()return self.key end;function h:set_key(v)self.key=v end
@@ -32,7 +33,7 @@ function C.init()
   function h:render()end;return h
  end
  for _,key in ipairs({'enabled','pause','themed_gui','burst','logging','route_map','boss_guide','training_dummy'})do
-  C.global_hotkeys[key]=hotkey(C[key]:get_state(),'ww_global_'..key..'_hotkey_v3')
+  C.global_hotkeys[key]=hotkey(C[key]:get_state(),ns..'global_'..key..'_hotkey_v3')
  end
  C.spec_nodes={}
  for _,s in ipairs(specs) do
@@ -40,7 +41,7 @@ function C.init()
   for _,mode in ipairs(Modes.order) do
    local cell={node=core.menu.tree_node(),controls={}};C.hotkeys[s[1]][mode]={}
    for key,value in pairs(C.defaults(s[1],mode)) do
-    local tag='ww_'..s[1]..'_'..mode..'_'..key..'_v2'
+    local tag=ns..s[1]..'_'..mode..'_'..key..'_v2'
     local minimum,maximum=C.bound(key)
     cell.controls[key]=type(value)=='boolean' and core.menu.checkbox(value,tag)
      or core.menu.slider_int(minimum,maximum,value,tag)

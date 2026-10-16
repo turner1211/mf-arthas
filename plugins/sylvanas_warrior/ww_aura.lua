@@ -1,6 +1,8 @@
 local U=require('ww_util')
 local A={}
 function A.read(unit,id,debuff,owner)
+ if type(id)=='table'then for _,candidate in ipairs(id)do local a,b,c,d=A.read(unit,candidate,debuff,owner);if a then return a,b,c,d end end;return nil,nil,nil end
+ if not id then return nil,nil,nil end
  local data=U.call(unit,debuff and 'get_debuff_data' or 'get_buff_data',{id})
  if type(data)=='table' and data.is_active==true and (not owner or U.same(data.caster,owner)) then
   local remaining=U.number(data.remaining)

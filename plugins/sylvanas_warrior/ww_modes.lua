@@ -1,4 +1,4 @@
-local U=require('ww_util')
+local U,R=require('ww_util'),require('ww_runtime')
 local M={order={'world_pve','delve','dungeon','mythic_plus','raid','arena','battleground','world_pvp'}}
 M.labels={world_pve='World PvE',delve='Delves',dungeon='Dungeons',mythic_plus='Mythic+',raid='Raids',arena='Arena',battleground='Battlegrounds',world_pvp='World PvP'}
 M.pvp={arena=true,battleground=true,world_pvp=true}
@@ -8,11 +8,11 @@ function M.detect(p,t)
  local k=raw:lower()
  if k=='arena' then return 'arena' end
  if k=='pvp' or k=='battleground' then return 'battleground' end
- local delve=core.delves and U.fn(core.delves.is_in_delve)
+ local delve=R.family=='midnight'and core.delves and U.fn(core.delves.is_in_delve)
  if delve==true then return 'delve' end
  if k=='party' then
   local map=core.world and U.number(U.fn(core.world.get_active_challenge_map_id))
-  if map and map>0 or U.fn(core.get_difficulty_id)==8 then return 'mythic_plus' end
+  if R.family=='midnight'and(map and map>0 or U.fn(core.get_difficulty_id)==8)then return 'mythic_plus' end
   return 'dungeon'
  end
  if k=='raid' then return 'raid' end
