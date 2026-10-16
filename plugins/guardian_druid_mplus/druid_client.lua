@@ -7,9 +7,12 @@ local function read(name)
 end
 function M.version() return read("get_game_version") end
 function M.exact_version() return read("get_exact_game_version") end
+local forever_cache=nil
 function M.is_forever()
+    if forever_cache~=nil then return forever_cache end
     local name=M.version():lower();local exact=M.exact_version():lower()
-    return name=="forever" or name:find("forever",1,true)~=nil or exact:match("^1%.60%.")~=nil
+    forever_cache=name=="forever" or name:find("forever",1,true)~=nil or exact:match("^1%.60%.")~=nil
+    return forever_cache
 end
 function M.edition() return M.is_forever() and "forever" or "retail" end
 function M.level(player)

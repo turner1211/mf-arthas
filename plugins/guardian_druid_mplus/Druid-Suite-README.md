@@ -1,4 +1,26 @@
-# Arthas Druid Suite — Retail + Forever — v8.7.0
+# Arthas Druid Suite — Retail + Forever — v8.8.0
+
+## Forever form, leveling, and mana audit (8.8.0)
+
+Automatic profile selection now treats Primal Bite and Lacerate as Bear-only
+signatures. A tank who leaves Bear Form between pulls therefore remains on the
+Bear priority instead of being misclassified as Cat. Manual Cat and Bear choices
+also fall back safely according to the character's level and actually learned
+quest forms: Cat without its level-20 quest form uses learned Bear, and a Druid
+without Bear uses the caster priority. Level changes are recorded in the
+separate Forever log and refresh the learned-rank cache.
+
+The level-20 Cat toolkit now spends capped combo points with Rip when Ferocious
+Bite has not yet been learned, preventing repeated builders from wasting points.
+Balance switches to efficient Wrath below 35% Mana. Restoration adds Regrowth
+to a tank taking heavy sustained damage while preserving Rejuvenation for
+Swiftmend preparation and retaining emergency healing above that maintenance.
+
+Sources rechecked October 15: ForeverDB's live-extracted Druid PvE guide for
+build 1.60.1.70374, its level-1-to-30 Druid guide and Druid build cards,
+ClassicWoW.gg's Balance, Cat, Bear, and Restoration guides, and Wowhead's
+Forever Feral ability catalog. Learned spells and confirmed character level
+remain authoritative at runtime.
 
 ## Forever level and Bear-pressure audit (8.7.0)
 

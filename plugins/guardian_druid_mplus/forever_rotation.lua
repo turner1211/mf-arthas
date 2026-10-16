@@ -59,7 +59,10 @@ local function cat(c)
  if not S.has(t,"faerie_fire",true,p)then id=available("faerie_fire");if id then return act("Faerie Fire",id,t)end end
  local d=U.distance(p,t);if not c.prowling and d>=8 and d<=25 then id=available("feral_charge");if id then return act("Feral Charge cat gap close",id,t,nil,true)end end
  if cfg.cooldowns and(c.boss or c.enemy_count>=2 and(not c.target_ttd or c.target_ttd>=10))then id=available("berserk");if id then return act("Berserk",id,p)end end
- local active,remain=dot(t,"rip",p);local rip_worth=c.boss or c.target_ttd and c.target_ttd>=10 or not c.target_ttd and(c.target_hp or 100)>25;if cp>=5 and rip_worth and(not active or remain and remain<=2)then id=available("rip");if id then return act("Rip",id,t)end end
+ local active,remain=dot(t,"rip",p);local rip_worth=c.boss or c.target_ttd and c.target_ttd>=10 or not c.target_ttd and(c.target_hp or 100)>25
+ -- Ferocious Bite is learned later than the level-20 Cat toolkit. Until it is
+ -- actually learned, spend capped points with Rip instead of overcapping them.
+ if cp>=5 and(rip_worth or not S.best("ferocious_bite"))and(not active or remain and remain<=2)then id=available("rip");if id then return act(rip_worth and"Rip"or"Leveling Rip point spend",id,t)end end
  active,remain=dot(t,"rake",p);if not active or remain and remain<=2 then id=available("rake");if id then return act("Rake",id,t)end end
  if cp>=5 then id=available("ferocious_bite");if id then return act("Ferocious Bite",id,t)end end
  if c.clearcasting then id=available("shred");if id and c.behind then return act("Clearcasting Shred",id,t)end end
@@ -81,6 +84,7 @@ local function balance(c)
  if cfg.aoe and c.aoe_safe~=false and c.enemy_count>=5 and not c.moving then id=available("hurricane");if id then return act("Hurricane",id,t)end end
  if not c.moving and c.eclipse and(c.eclipse_remain==nil or c.eclipse_remain>2)then id=available("starfire");if id then return act("Eclipse Starfire",id,t)end end
  if not c.moving then
+  if c.mana<=35 then id=available("wrath");if id then return act("Low-mana Wrath",id,t)end end
   if c.has_eclipse then id=available("wrath");if id then return act("Wrath for Eclipse",id,t)end end
   id=available("starfire");if id then return act("Starfire",id,t)end
   id=available("wrath");if id then return act("Wrath",id,t)end
@@ -107,6 +111,7 @@ local function restoration(c)
   id=available("barkskin");if id and not S.has(p,"barkskin")then return act("Barkskin before Tranquility",id,p,nil,true)end
   if not c.moving then id=available("tranquility");if id then return act("Tranquility",id,p)end end
  end
+ if c.combat and c.tank and c.tank_hp<=70 and not S.has(c.tank,"regrowth",false,p)and not c.moving then id=available("regrowth");if id then return act("Tank Regrowth for heavy damage",id,c.tank)end end
  local hot=S.has(u,"rejuvenation",false,p)or S.has(u,"regrowth",false,p)
  if c.lowest_hp<=cfg.hp and not hot then id=available("rejuvenation");if id then return act("Rejuvenation",id,u)end end
  if c.injured>=wild_growth_count and c.lowest_hp<=80 then id=available("wild_growth");if id then return act("Wild Growth",id,u)end end

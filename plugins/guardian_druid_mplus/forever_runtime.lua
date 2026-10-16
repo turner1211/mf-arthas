@@ -18,15 +18,26 @@ local function form(player)
  local moonkin=Spells.has(player,"moonkin")or id==31 or id==4
  return id,bear==true,cat==true,moonkin==true
 end
-local function auto_profile(player)
+local function auto_profile(player,level)
  local selected=tonumber(Settings.profile:get())or 1
- local names={[2]="balance",[3]="feral_cat",[4]="feral_bear",[5]="restoration"};if names[selected]then return names[selected]end
+ local names={[2]="balance",[3]="feral_cat",[4]="feral_bear",[5]="restoration"}
+ local requested=names[selected]
+ -- A manual Feral choice must still respect quest-form availability. This is
+ -- especially important at levels 10-19 and when the Cat quest is unfinished.
+ if requested=="feral_cat"and not Spells.best("cat")then return Spells.best("bear")and"feral_bear"or"balance"end
+ if requested=="feral_bear"and not Spells.best("bear")then return"balance"end
+ if requested then return requested end
  local _,bear,cat,moonkin=form(player);if bear then return"feral_bear"elseif cat then return"feral_cat"elseif moonkin then return"balance"end
  local role=U.role(player);if role=="TANK"then return"feral_bear"elseif role=="HEALER"then return"restoration"end
  if Spells.best("wild_growth")or Spells.best("swiftmend")then return"restoration"end
  if Spells.best("moonkin")or Spells.best("insect_swarm")then return"balance"end
- if Spells.best("shifting_power")or Spells.best("primal_bite")or Spells.best("lacerate")then return"feral_cat"end
- return Spells.best("cat")and"feral_cat"or"balance"
+ -- Primal Bite and Lacerate are Bear-only signatures; treating them as Cat
+ -- caused tanks who left form between pulls to load the Cat priority.
+ if Spells.best("primal_bite")or Spells.best("lacerate")then return"feral_bear"end
+ if Spells.best("shifting_power")then return"feral_cat"end
+ if(level or 0)>=20 and Spells.best("cat")then return"feral_cat"end
+ if(level or 0)>=10 and Spells.best("bear")then return"feral_bear"end
+ return"balance"
 end
 local function members(player)
  local rows=U.members(player);local lowest,lowest_hp,injured,dead,tank,tank_hp=player,U.hp(player)or 100,0,nil,nil,100
@@ -55,9 +66,9 @@ local function threat_state(player,enemies,profile,grouped)
  end
  return taunt,loose,cower
 end
-local function context(player,mode,cfg,practice)
+local function context(player,mode,cfg,practice,level)
  local target=U.call(player.get_target,player);local list=U.enemies(player,target,40,mode);if not U.valid(target)then target=list[1]end
- local group,lowest,lowest_hp,injured,dead,tank,tank_hp=members(player);local profile=auto_profile(player);local _,bear,cat,moonkin=form(player)
+ local group,lowest,lowest_hp,injured,dead,tank,tank_hp=members(player);local profile=auto_profile(player,level);local _,bear,cat,moonkin=form(player)
  local dispel,dispel_key,dispel_score,buff_target,thorns_target,healer,healer_mana=nil,nil,-math.huge,nil,player,nil,nil
  for _,r in ipairs(group)do local role=type(r.role)=="string"and r.role:upper()or U.role(r.unit);local key=removable(r.unit);if key then local score=(100-r.hp)+(role=="TANK"and 35 or role=="HEALER"and 20 or 0);if score>dispel_score then dispel,dispel_key,dispel_score=r.unit,key,score end end;if not buff_target and not Spells.has(r.unit,"mark")and not Spells.has(r.unit,"gift")then buff_target=r.unit end;if role=="TANK"then thorns_target=r.unit end;if role=="HEALER"and r.unit~=player then healer=r.unit;healer_mana=U.power_pct(r.unit,require("common/enums").power_type.MANA)end end
  local behind=U.call(player.is_behind,player,target);local grouped=#group>1
@@ -67,7 +78,7 @@ local function context(player,mode,cfg,practice)
  for _,u in ipairs(list)do if U.call(u.get_target,u)==player then under_attack=true;break end end
  local safe_aoe=true;if cfg.aoe and #list>=2 then safe_aoe=U.aoe_safe(player,12,mode)end
  local target_ttd=tonumber(U.call(target and target.get_time_to_die,target));if target_ttd and target_ttd<=0 then target_ttd=nil end
- local c={player=player,target=target,target_hp=U.hp(target)or 100,target_ttd=target_ttd,mode=mode,pvp=Modes.pvp[mode]==true,settings=cfg,combat=U.call(player.is_in_combat,player)==true,
+ local c={player=player,level=level,target=target,target_hp=U.hp(target)or 100,target_ttd=target_ttd,mode=mode,pvp=Modes.pvp[mode]==true,settings=cfg,combat=U.call(player.is_in_combat,player)==true,
   practice=practice,profile=profile,hp=U.hp(player)or 100,members=group,group_count=#group,lowest=lowest,lowest_hp=lowest_hp,injured=injured,
   group_safe=lowest_hp>=85,dead=dead,tank=tank,tank_hp=tank_hp,enemies=list,enemy_count=#list,bear=bear,cat=cat,moonkin=moonkin,behind=behind==true,
   boss=U.call(target and target.is_boss,target)==true,moving=U.call(player.is_moving,player)==true,under_attack=under_attack,aoe_safe=safe_aoe,has_eclipse=U.known(408248),eclipse=eclipse==true,eclipse_remain=eclipse_remain,eclipse_stacks=eclipse_stacks,clearcasting=clearcasting==true,nature_grace=nature_grace==true,prowling=prowling==true,
@@ -86,11 +97,11 @@ local function tick()
  local p=U.call(core.object_manager.get_local_player);if not U.valid(p)or U.call(p.get_class,p)~=11 then return end
  if now<db_ready_at then Settings.status="Waiting for Forever database";Settings.debug="Startup safety gate";return end
  local level=Client.level(p);if not level then Settings.status="Waiting for character level";Settings.debug="Level probe unavailable";return end
- if level~=known_level then known_level=level;Spells.invalidate()end;Settings.level=level
- Settings.active_profile=auto_profile(p);local target=U.call(p.get_target,p);local practice=Settings.dummy:get_state()and Dummy.selected(p,target,40,Settings.active_profile=="restoration")
+ if level~=known_level then Spells.invalidate();known_level=level;Log.emit("LEVEL","Detected level "..tostring(level))end;Settings.level=level
+ Settings.active_profile=auto_profile(p,level);local target=U.call(p.get_target,p);local practice=Settings.dummy:get_state()and Dummy.selected(p,target,40,Settings.active_profile=="restoration")
  local mode=Modes.detect(p,target);Settings.mode=practice and"Training Dummy"or Modes.labels[mode];local cfg=Settings.get(mode)
  if not Settings.enabled:get_state()or not cfg or not cfg.enabled then Settings.status="Profile paused";return end
- local c=context(p,mode,cfg,practice);if practice then c.combat=true;c.target=target;c.enemies={target};c.enemy_count=1;c.pvp=false end
+ local c=context(p,mode,cfg,practice,level);if practice then c.combat=true;c.target=target;c.enemies={target};c.enemy_count=1;c.pvp=false end
  if now<Engine.manual_until then Settings.status="Yielding to manual input";return end
  local action=Rotation.decide(c);if action and Engine.cast(action,p)then Settings.status=action.key else Settings.status=action and("Waiting: "..action.key)or"No eligible action"end
  Settings.debug=Client.version().." "..Client.exact_version().." level "..tostring(level);Log.flush(false)
