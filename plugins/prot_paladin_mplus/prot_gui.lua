@@ -42,12 +42,12 @@ local function clean_text(value)
     s=s:gsub("\226\128\162"," | "):gsub("\226\134\146"," -> ")
         :gsub("\226\128\148"," - "):gsub("\226\128\147","-")
         :gsub("\226\128\153","'"):gsub("\226\128\152","'")
-    return (s:gsub("[\128-\255]+","_"):gsub("[%c]"," "):gsub("%s+"," "))
+    return (s:gsub("[%c]"," "):gsub("%s+"," "))
 end
 local function text(v,x,y,font,col) window:render_text(font,vec2.new(x,y),col,clean_text(v)) end
 local function hit(x1,y1,x2,y2) return window:is_rect_clicked(vec2.new(x1,y1),vec2.new(x2,y2)) end
 local function hover(x1,y1,x2,y2) return window:is_mouse_hovering_rect(vec2.new(x1,y1),vec2.new(x2,y2)) end
-local function short(v,n) v=clean_text(v);return #v<=n and v or v:sub(1,n-3).."..." end
+local function short(v,n) v=clean_text(v);return require('mf_i18n').clip(require('mf_i18n').text(v),n) end
 local function clamp_position(x,y)
     local screen=Host.static(core and core.graphics,"get_screen_size")
     if screen and type(screen.x)=="number" and type(screen.y)=="number" then

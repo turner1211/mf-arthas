@@ -51,7 +51,7 @@ local function safe(u,m,...)
 end
 local function objects()if not core.object_manager or type(core.object_manager.get_all_objects)~="function" then return{}end local ok,v=pcall(core.object_manager.get_all_objects);return ok and type(v)=="table" and v or{}end
 local function c(r,g,b,a)return color.new(r,g,b,a or 255)end
-local function compact(v,n)local s=tostring(v or ""):gsub("[\r\n]+"," "):gsub("\226\128\148","-"):gsub("[\128-\255]+","_");return #s<=n and s or s:sub(1,n-3).."..."end
+local function compact(v,n)local s=tostring(v or ""):gsub("[\r\n]+"," "):gsub("\226\128\148","-");return require('mf_i18n').clip(require('mf_i18n').text(s),n)end
 local function init()
  if initialized then return window~=nil end initialized=true
  local ok,err=pcall(function()color=require("common/color");vec2=require("common/geometry/vector_2");vec3=require("common/geometry/vector_3");enums=require("common/enums");window=core.menu.window("ret_paladin_boss_helper_hud_16120");window:set_initial_position(vec2.new(650,120));window:set_initial_size(vec2.new(WIDTH,HEIGHT));if type(window.set_render_layer)=="function"then window:set_render_layer(1)end;window:set_visibility(false)end)

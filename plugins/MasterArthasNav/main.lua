@@ -2,6 +2,8 @@
 -- Project Sylvanas keeps registered callbacks after F6. Give every callback
 -- created by this load a generation check so older runtimes become inert.
 local GENERATION_KEY="__sylvanas_arthas_nav_runtime_generation"
+local Locale=require('anav/i18n')
+local restore_menu=Locale.scope_menu()
 local generation=(tonumber(rawget(_G,GENERATION_KEY)) or 0)+1
 rawset(_G,GENERATION_KEY,generation)
 
@@ -53,6 +55,7 @@ end
 if package and type(package.loaded)=="table" then package.loaded["anav/upstream_runtime"]=nil end
 local before=rawget(_G,"AmeisenNav")
 local ok,result=pcall(require,"anav/upstream_runtime")
+restore_menu()
 for name,original in pairs(originals) do core[name]=original end
 if not ok then error(result) end
 

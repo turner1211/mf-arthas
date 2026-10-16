@@ -1,0 +1,7 @@
+#!/bin/sh
+# Validation only: never mutates, stages, commits, or pushes from a hook.
+python_bin=$(git config --get mf-arthas.python || true)
+if [ -z "$python_bin" ]; then
+    if command -v python3 >/dev/null 2>&1; then python_bin=python3; else python_bin=python; fi
+fi
+exec "$python_bin" tools/verify.py

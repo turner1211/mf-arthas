@@ -6,7 +6,7 @@
     pwsh tools/publish.ps1 -Only bg_player -Message "Update bg_player"
 #>
 param(
-    [string]$SourceRoot = (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)),
+    [string]$SourceRoot,
     [string[]]$Only,
     [Parameter(Mandatory = $true)]
     [ValidateNotNullOrEmpty()]
@@ -27,15 +27,21 @@ function Invoke-Checked([string]$Program, [string[]]$Arguments) {
     }
 }
 
-$syncArgs = @('-NoProfile', '-File', $Sync, '-SourceRoot', $SourceRoot)
-if ($Only) { $syncArgs += @('-Only', ($Only -join ',')) }
-if ($IncludeDocs) { $syncArgs += '-IncludeDocs' }
-Invoke-Checked (Get-Command pwsh -ErrorAction Stop).Source $syncArgs
-
-$Lua = Get-Command luajit -ErrorAction SilentlyContinue
-if (-not $Lua) { $Lua = Get-Command lua -ErrorAction SilentlyContinue }
-if (-not $Lua) { throw 'LuaJIT or Lua is required to validate the loader before publishing.' }
-Invoke-Checked $Lua.Source @($Test)
+$Git = (Get-Command git -ErrorAction Stop).Source
+$Python = & $Git -C $RepoRoot config --get mf-arthas.python
+if (-not $Python) { $Python = (Get-Command python3,python -ErrorAction SilentlyContinue | Select-Object -First 1).Source }
+if (-not $Python) { throw 'Python with Lupa is required. Set git config mf-arthas.python to its executable.' }
+if ($SourceRoot) {
+    $syncArgs = @('-NoProfile', '-File', $Sync, '-SourceRoot', $SourceRoot)
+    if ($Only) { $syncArgs += @('-Only', ($Only -join ',')) }
+    if ($IncludeDocs) { $syncArgs += '-IncludeDocs' }
+    Invoke-Checked (Get-Command pwsh -ErrorAction Stop).Source $syncArgs
+}
+# Direct checkout edits are now the default. Never overwrite them from a sibling folder.
+$manifestArgs = @((Join-Path $PSScriptRoot 'update_manifests.py'))
+if ($Only) { foreach ($id in ($Only -join ',' -split ',')) { $manifestArgs += @('--project', $id) } }
+Invoke-Checked $Python $manifestArgs
+Invoke-Checked $Python @((Join-Path $PSScriptRoot 'verify.py'))
 
 Push-Location $RepoRoot
 try {

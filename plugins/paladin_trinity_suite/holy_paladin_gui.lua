@@ -110,7 +110,7 @@ local function clean_text(value)
         :gsub("\226\128\147", "-")
         :gsub("\226\128\153", "'")
         :gsub("\226\128\152", "'")
-    return value_text:gsub("[\128-\255]+", "_"):gsub("[%c]", " ")
+    return value_text:gsub("[%c]", " ")
 end
 
 local function font_id(name)
@@ -122,8 +122,7 @@ local function big_font() return font_id("FONT_BIG") end
 local function semi_big_font() return font_id("FONT_SEMI_BIG") end
 local function fit_text(value, limit)
     local value_text = clean_text(value)
-    if #value_text <= limit then return value_text end
-    return value_text:sub(1, math.max(0, limit - 3)) .. "..."
+    return require('mf_i18n').clip(require('mf_i18n').text(value_text),limit)
 end
 
 pcall(function()

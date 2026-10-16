@@ -34,7 +34,7 @@ local function outline(x,y,w,h,col,r,t) if window.render_rect then window:render
 local function text(v,x,y,big,col) window:render_text(big and big_font() or small_font(),vec2.new(p(x),p(y)),col or c(221,238,220),tostring(v)) end
 local function hovered(x,y,w,h) return window.is_mouse_hovering_rect and window:is_mouse_hovering_rect(vec2.new(p(x),p(y)),vec2.new(p(x+w),p(y+h))) or false end
 local function clicked(x,y,w,h) return window:is_rect_clicked(vec2.new(p(x),p(y)),vec2.new(p(x+w),p(y+h))) end
-local function compact(s,n) s=tostring(s or ""); return #s>n and s:sub(1,n-3).."..." or s end
+local function compact(s,n) s=tostring(s or ""); return require('mf_i18n').clip(require('mf_i18n').text(s),n) end
 local function icon(id,x,y,size)
  rect(x-2,y-2,size+4,size+4,c(171,169,98,235),4); rect(x,y,size,size,c(9,28,22),3)
  if icon_texture and core.graphics.draw_texture_rect then

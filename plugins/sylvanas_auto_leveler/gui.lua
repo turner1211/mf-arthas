@@ -19,7 +19,7 @@ local ink=c(231,237,222);local muted=c(162,183,175);local gold=c(224,184,91);loc
 local good=c(92,205,139);local travel=c(92,177,214);local warn=c(236,174,74);local bad=c(228,92,92)
 local we=Enums.window_enums or Enums
 local font=(we.font_id or {}).FONT_SMALL or 0
-local function compact(s,n) s=tostring(s or "-"):gsub("[%c]"," ");return #s>n and s:sub(1,n-3).."..." or s end
+local function compact(s,n) s=tostring(s or "-"):gsub("[%c]"," ");return require('mf_i18n').clip(require('mf_i18n').text(s),n) end
 local function text(w,s,x,y,col) w:render_text(font,Vec.new(x,y),col or ink,s) end
 local function rect(w,x,y,x2,y2,col) w:render_rect_filled(Vec.new(x,y),Vec.new(x2,y2),col,5) end
 local function status_meta(state)

@@ -1,3 +1,6 @@
 # Keep bytes exactly as committed: manifest sizes are checked against the
 # files GitHub serves, so no line-ending conversion is allowed.
 * -text
+# Some preserved upstream files use CRLF. Treat CR as the line ending while
+# retaining exact bytes for manifests and HTTP delivery.
+*.lua whitespace=cr-at-eol

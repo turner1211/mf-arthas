@@ -108,8 +108,7 @@ end
 
 local function compact(value, limit)
     value = Text.clean(value)
-    if #value <= limit then return value end
-    return value:sub(1, limit - 3) .. "..."
+    return require('mf_i18n').clip(require('mf_i18n').text(value),limit)
 end
 
 local function mouse_wheel_delta()

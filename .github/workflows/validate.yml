@@ -1,0 +1,15 @@
+name: Validate plugin updates
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Install LuaJIT test runtime
+        run: python3 -m pip install 'lupa>=2,<3'
+      - name: Check manifests, loader and localization
+        run: python3 tools/verify.py

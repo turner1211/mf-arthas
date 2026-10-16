@@ -56,6 +56,18 @@ copy remains in the loader folder for older installs and repository tooling.
 
 ## Publishing an update
 
+Edit this Git checkout directly, then publish all changed plugins with:
+
+```powershell
+pwsh tools/publish.ps1 -Message "Describe the update"
+```
+
+This regenerates shared language bundles/manifests, validates all 16 plugin packages and localization contracts, commits and pushes. Configure the local test interpreter and automatic pre-push checks once with `tools/setup_dev.ps1 -PythonExecutable <python.exe>`; that Python needs `lupa>=2,<3`. The GitHub Actions workflow repeats release checks on pushes and pull requests. No background process commits partially saved edits.
+
+Language support applies across every compatible plugin, including the class suites, navigation, BG Player, Auto Leveler, probe and Universal UI. See [language coverage and extension](docs/LOCALIZATION.md) and the [MasterArthasNav architecture study](docs/MASTERARTHASNAV_STUDY.md). Stable loader files are unchanged; language updates are downloaded as project code.
+
+To import changes from external project folders instead of editing this checkout, explicitly pass `-SourceRoot` to the publisher. The older source-folder workflow is described below.
+
 Edit the project in its usual folder next to this repository (for example
 `../sylvanas_mage_v1.2.24`), then:
 
@@ -84,8 +96,10 @@ renamed release folder needs no edits. To add a project, add a line to the
 `$Projects` table at the top of the script; its loader folder is created on the
 next run. Existing `header.lua` / `main.lua` files are never rewritten.
 
-Do not edit files in `plugins/` by hand without re-running the script: the
-loader checks every file's size against the manifest.
+After editing `plugins/` directly, run the publisher or `python tools/update_manifests.py`:
+the loader checks each file's size against the manifest. Use `sync_plugins.ps1`
+only when deliberately importing an external source folder; it replaces that
+project's checkout copy.
 
 ## Notes
 

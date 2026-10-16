@@ -4,6 +4,7 @@ local V=require('common/geometry/vector_2')
 local C=require('common/color')
 local E=require('common/enums')
 local Combat=require('anav/combat_hub')
+local L=require('anav/i18n')
 local M={open=false,page=1,size=2,art=true,notice='Ready. Choose a module or navigation tab.'}
 local win,art_data,art_attempted,ui_data,ui_attempted,queue,last_refresh,drag,was_down
 local textures,ui_textures,snapshot,position={},{icons={},buttons={}},{},{x=58,y=46}
@@ -21,10 +22,14 @@ local font=(we.font_id or {}).FONT_SMALL or 0
 local function color(r,g,b,a)return C.new(r,g,b,a or 255)end
 local GOLD=color(244,190,83);local ICE=color(109,224,255);local WHITE=color(240,245,248)
 local MUTED=color(169,190,204);local GREEN=color(86,229,151);local RED=color(246,91,83)
-local function text(w,s,x,y,col)w:render_text(font,V.new(x,y),col or WHITE,tostring(s))end
+local function text(w,s,x,y,col,max_width)
+ local available=max_width or ((sizes[M.size]or sizes[2])[1]-x-16)
+ local use_font=L.font_for(font)
+ w:render_text(use_font,V.new(x,y),col or WHITE,L.fit(s,available,use_font,13))
+end
 local function box(w,x,y,width,height,col,r)w:render_rect_filled(V.new(x,y),V.new(x+width,y+height),col,r or 5)end
 local function line(w,x1,y1,x2,y2,col,width)w:render_line(V.new(x1,y1),V.new(x2,y2),col,width or 1)end
-local function short(s,n)s=tostring(s or 'Unknown');return #s>n and s:sub(1,n-3)..'...'or s end
+local function short(s,n)return L.clip(L.text(s or'Unknown'),n)end
 local function request(fn)if not queue then queue=fn end end
 local function click(w,x,y,width,height)return w.is_rect_clicked and w:is_rect_clicked(V.new(x,y),V.new(x+width,y+height))end
 local function hover(w,x,y,width,height)return w.is_mouse_hovering_rect and w:is_mouse_hovering_rect(V.new(x,y),V.new(x+width,y+height))end
@@ -47,7 +52,7 @@ local function button(w,label,x,y,width,fn,selected,kind)
  local theme=selected and 1 or kind==3 and 2 or 3;local art_id=load_ui('buttons',theme)
  if not image(w,art_id,x,y,width,h,selected and 172 or hot and 145 or 112)then box(w,x,y,width,h,color(10,25,35,82),4)end
  box(w,x+4,y+4,width-8,h-8,selected and color(8,35,34,28)or color(2,9,13,38),4)
- if kind then icon(w,kind,x+10,y+7,selected and GOLD or ICE);text(w,label,x+43,y+13,selected and GOLD or WHITE)else text(w,label,x+13,y+13,selected and GOLD or WHITE)end
+ if kind then icon(w,kind,x+10,y+7,selected and GOLD or ICE);text(w,label,x+43,y+13,selected and GOLD or WHITE,width-54)else text(w,label,x+13,y+13,selected and GOLD or WHITE,width-26)end
  if click(w,x,y,width,h)then fn()end
 end
 local function call(obj,key,...)
@@ -79,6 +84,7 @@ local function refresh()
  if M.page==5 then snapshot.report=e and e.export_logs()or'Enhancements not loaded.'end
 end
 function M.update()
+ L.refresh()
  if queue then local fn=queue;queue=nil;fn()end;if not M.open then return end
  local now=core.time();if not last_refresh or now-last_refresh>=.8 then last_refresh=now;local ok,err=pcall(refresh);if not ok then M.notice='Status read: '..short(err,90)end end
 end
@@ -93,10 +99,10 @@ local function panel(w,x,y,width,height,title)
  box(w,x,y,width,height,color(4,14,21,62),5);box(w,x,y,width,30,color(8,23,31,96),5);text(w,title,x+12,y+10,GOLD)
 end
 local function row(w,label,value,x,y,width,value_col)
- text(w,label,x,y,MUTED);text(w,short(value,math.max(12,math.floor((width-168)/7))),x+168,y,value_col or WHITE)
+ text(w,label,x,y,MUTED,158);text(w,short(value,math.max(12,math.floor((width-168)/7))),x+168,y,value_col or WHITE,width-168)
 end
 local function pill(w,label,value,x,y,width,good)
- box(w,x,y,width,50,color(5,20,28,68),5);text(w,label,x+12,y+10,MUTED);text(w,value,x+12,y+29,good==true and GREEN or good==false and RED or GOLD)
+ box(w,x,y,width,50,color(5,20,28,68),5);text(w,label,x+12,y+10,MUTED,width-24);text(w,value,x+12,y+29,good==true and GREEN or good==false and RED or GOLD,width-24)
 end
 local function module_card(w,x,y,width,title,summary,kind,fn,accent)
  box(w,x,y,width,134,color(5,18,27,62),6);box(w,x,y,4,134,accent or ICE,3);icon(w,kind,x+18,y+19,accent or ICE)
@@ -184,7 +190,9 @@ local function render_setup(w,x,y,width)
  local steps={'Install the separate ArthasNav companion package.','Run Install-ArthasNav.cmd once as the customer.','Keep MasterArthasNav beside BG Player and the 1-90 Leveler.','Start the desired bot from its own module panel.','The local helper supplies maps and path calculations automatically.'}
  for i,s in ipairs(steps)do box(w,x+15,y+30+i*44,26,26,color(22,62,76,220),13);text(w,i,x+24,y+40+i*44,GOLD);text(w,s,x+52,y+40+i*44,WHITE)end
  text(w,'CUSTOMER FOLDER: LUA + MARKDOWN ONLY',x+15,y+278,GREEN)
- button(w,'TEST LOCAL COMPANION',x+15,y+306,width-30,function()M.page=3;M.notice='Use Check Local Connection in Route Control.'end,false,6)
+ local bw=math.floor((width-44)/2)
+ button(w,L.text('Interface language')..': '..L.display_name(),x+15,y+306,bw,function()L.cycle()end,false,6)
+ button(w,'TEST LOCAL COMPANION',x+29+bw,y+306,bw,function()M.page=3;M.notice='Use Check Local Connection in Route Control.'end,false,6)
 end
 local function render_content(w,x,y,width,height)
  if M.page==1 then render_command(w,x,y,width)elseif M.page==2 then render_combat(w,x,y,width)elseif M.page==3 then render_route(w,x,y,width)elseif M.page==4 then render_safety(w,x,y,width)elseif M.page==5 then render_logs(w,x,y,width,height)elseif M.page==6 then render_metrics(w,x,y,width)else render_setup(w,x,y,width)end
@@ -214,6 +222,6 @@ function M.setup()
  local toggle=core.menu.checkbox(false,'arthas_nav_command_panel_visible_v3')
  core.register_on_update_callback(function()M.open=toggle:get_state();local ok,err=pcall(M.update);if not ok then M.notice=short(err,100)end end)
  core.register_on_render_window_callback(function()local before=M.open;local ok,err=pcall(M.render);if before and not M.open then toggle:set(false)end;if not ok then M.notice=short(err,100);if core.log_error then core.log_error('ArthasNav panel: '..tostring(err))end end end)
- core.register_on_render_menu_callback(function()toggle:render('Open MasterArthasNav Command Center','Tabbed navigation and auto-detected combat controls.');Combat.render_menu()end)
+ core.register_on_render_menu_callback(function()L.refresh();toggle:render(L.text('Open MasterArthasNav Command Center'),L.text('Tabbed navigation and auto-detected combat controls.'));Combat.render_menu()end)
 end
 return M

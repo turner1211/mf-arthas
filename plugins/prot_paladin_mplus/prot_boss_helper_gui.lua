@@ -25,7 +25,7 @@ local spec_roles={[65]="HEALER",[66]="TANK",[73]="TANK",[104]="TANK",[105]="HEAL
  [270]="HEALER",[581]="TANK",[1468]="HEALER"}
 local function c(r,g,b,a)return color.new(r,g,b,a or 255)end
 local function clean(v)return tostring(v or ""):gsub("[%c]"," "):gsub("%s+"," ")end
-local function short(v,n)v=clean(v);return #v<=n and v or v:sub(1,n-3).."..." end
+local function short(v,n)v=clean(v);return require('mf_i18n').clip(require('mf_i18n').text(v),n) end
 local function wrap(v,width,limit)
  v=clean(v);local out,line={},""
  for word in v:gmatch("%S+") do

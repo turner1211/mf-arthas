@@ -63,7 +63,7 @@ local function clean(value)
     value_text = value_text:gsub("\226\128\162", " | ")
         :gsub("\226\128\148", " - "):gsub("\226\128\147", "-")
         :gsub("\226\128\153", "'"):gsub("\226\128\152", "'")
-        :gsub("[\128-\255]+", "_"):gsub("[%c]", " ")
+        :gsub("[%c]", " ")
     return value_text
 end
 local function text(value, x, y, font, col)
@@ -78,8 +78,7 @@ local function hovered(x1, y1, x2, y2)
 end
 local function compact(value, limit)
     value = clean(value)
-    if #value <= limit then return value end
-    return value:sub(1, limit - 3) .. "..."
+    return require('mf_i18n').clip(require('mf_i18n').text(value),limit)
 end
 local function icon_tile(icon, x1, y1, x2, y2, accent, active)
     local edge = accent or c(214, 177, 93, 245)

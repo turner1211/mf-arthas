@@ -27,7 +27,7 @@ local gold=c(219,177,94);local ink=c(234,230,220);local muted=c(155,164,178)
 local red=c(130,39,44);local blue=c(42,66,106);local panel=c(26,31,43)
 local backdrop=c(12,9,14);local surface=c(30,20,28);local blood=c(104,5,18)
 local we=Enums.window_enums or Enums;local font=(we.font_id or {}).FONT_SMALL or 0
-local function compact(s,n) s=tostring(s or "-"):gsub("[%c]"," ");return #s>n and s:sub(1,n-3).."..." or s end
+local function compact(s,n) s=tostring(s or "-"):gsub("[%c]"," ");return require('mf_i18n').clip(require('mf_i18n').text(s),n) end
 local function rect(w,x,y,width,height,col) x=x+draw_offset;w:render_rect_filled(Vec.new(x,y),Vec.new(x+width,y+height),col,5) end
 local function outline(w,x,y,width,height,col,thickness)
  x=x+draw_offset

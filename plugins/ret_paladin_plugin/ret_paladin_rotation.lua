@@ -130,6 +130,7 @@ local MPLUS_IMMEDIATE_INTERRUPT_ABILITIES = {
     ["shadowbolt volley"] = true, ["light bolt volley"] = true,
 }
 
+local LocaleIds=require('mf_game_ids')
 local function active_spell_name(unit)
     local spell_id
     if unit and unit.get_active_spell_id then
@@ -140,7 +141,7 @@ local function active_spell_name(unit)
     end
     if not spell_id or spell_id <= 0 then return nil, nil end
     local ok, name = pcall(core.spell_book.get_spell_name, spell_id)
-    return ok and type(name) == "string" and string.lower(name) or tostring(spell_id), spell_id
+    return LocaleIds.spell_name(spell_id, ok and name or nil):lower(), spell_id
 end
 
 local function is_priority_mplus_interrupt(unit)
@@ -154,8 +155,7 @@ local function is_priority_mplus_interrupt(unit)
     end
     if not spell_id or spell_id <= 0 then return false end
     local name_ok, spell_name = pcall(core.spell_book.get_spell_name, spell_id)
-    if not name_ok or type(spell_name) ~= "string" then return false end
-    return MPLUS_PRIORITY_INTERRUPT_ABILITIES[string.lower(spell_name)] == true
+    return LocaleIds.is_spell(spell_id, MPLUS_PRIORITY_INTERRUPT_ABILITIES, name_ok and spell_name or nil)
 end
 local HOLY_POWER = 9
 local AOE_THRESHOLD = 2
@@ -378,7 +378,9 @@ local function get_dungeon_status()
     elseif difficulty ~= "" then
         status = status .. " (" .. difficulty .. ")"
     end
-    return status, get_current_route_guide(instance_name), true, challenge_map_id, instance_name
+    local ok_id,world_id=pcall(core.get_instance_id)
+    local route_name=LocaleIds.dungeon_name(ok_id and world_id or nil,instance_name)
+    return status, get_current_route_guide(route_name), true, challenge_map_id, instance_name
 end
 
 local function has_spell(spell_id)

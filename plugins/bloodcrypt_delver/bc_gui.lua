@@ -14,7 +14,7 @@ local function ac(a) return c(accent[1],accent[2],accent[3],a) end
 local function gc(a) return c(glow[1],glow[2],glow[3],a) end
 local function rect(x,y,w,h,col,r) window:render_rect_filled(Vec.new(x,y),Vec.new(x+w,y+h),col,r or 5) end
 local function outline(x,y,w,h,col,r) if window.render_rect then window:render_rect(Vec.new(x,y),Vec.new(x+w,y+h),col,r or 5,1) end end
-local function compact(s,n) s=tostring(s or ""):gsub("[%c]"," ");return #s>n and s:sub(1,n-3).."..." or s end
+local function compact(s,n) s=tostring(s or ""):gsub("[%c]"," ");return require('mf_i18n').clip(require('mf_i18n').text(s),n) end
 local function text(s,x,y,col,font) window:render_text(font or small,Vec.new(x,y),col or bone,tostring(s)) end
 local function panel(x,y,w,h,a) rect(x,y,w,h,c(7,14,15,a or 232),8);outline(x,y,w,h,ac(180),8) end
 local function skull(x,y,size)

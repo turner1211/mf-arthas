@@ -20,7 +20,7 @@ local function initialize()
  if not ok then init_error=tostring(err);window=nil;return false end
  return true
 end
-local function compact(v,n)v=tostring(v or'');return #v<=n and v or v:sub(1,n-3)..'...'end
+local function compact(v,n)v=tostring(v or'');return require('mf_i18n').clip(require('mf_i18n').text(v),n)end
 local function mechanic(identity)
  if identity.id==73 then return Boss.active==true,Boss.action or'MONITOR',Boss.instruction or Boss.status,Boss.remaining,Boss.active and Boss.position_text end
  local a=Dps.active

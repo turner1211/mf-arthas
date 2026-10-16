@@ -3,7 +3,7 @@
 -- a boot line to a hard-coded http://127.0.0.1:47110.
 local plugin = {
     name = "MasterArthasNav",
-    version = "2.1.2",
+    version = "2.1.3",
     author = "BLIZZ",
     short_tag = "ANAV",
     load = true,

@@ -23,7 +23,7 @@ local themes={
  [7]={40,80,170},[8]={45,125,170},[9]={110,62,150},[10]={35,130,95},[11]={44,112,67},[12]={75,145,50},[13]={48,115,105}}
 local function c(r,g,b,a) return Color.new(r,g,b,a or 255) end
 local function font(big) local e=enums.window_enums or enums; return ((e.font_id or {})[big and "FONT_BIG" or "FONT_SMALL"]) or (big and 8 or 7) end
-local function clip(v,n) v=tostring(v or ""); return #v>n and v:sub(1,n-3).."..." or v end
+local function clip(v,n) v=tostring(v or ""); return require('mf_i18n').clip(require('mf_i18n').text(v),n) end
 function M.identity()
  local player=core.object_manager.get_local_player(); if not player then return "Unknown","Unknown",0 end
  local ok,class=pcall(player.get_class,player); class=ok and tonumber(class) or 0

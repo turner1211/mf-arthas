@@ -67,9 +67,10 @@ function X.spell_name(id)
 end
 function X.classify_cast(cast,player,party,pvp,player_hp)
  local name=X.spell_name(cast.id)
- local lower=name:lower();local score=pvp and(PVP_EXACT_PRIORITY[U.number(cast.id)]or 0)or 0;local protects_healer=false
- if EXACT_CRITICAL[lower] or contains(name,CRITICAL) then score=3
- elseif EXACT_HIGH[lower] then score=2 elseif contains(name,DANGER) then score=1 end
+ local canonical=require('mf_game_ids').spell_name(cast.id,name)
+ local lower=canonical:lower();local score=pvp and(PVP_EXACT_PRIORITY[U.number(cast.id)]or 0)or 0;local protects_healer=false
+ if EXACT_CRITICAL[lower] or contains(canonical,CRITICAL) then score=3
+ elseif EXACT_HIGH[lower] then score=2 elseif contains(canonical,DANGER) then score=1 end
  -- In Arena, ordinary damage aimed at a healthy Mage should not consume the
  -- only Counterspell before a healer cast or real control attempt. Inherently
  -- critical spell names already score 3; promote generic self-target damage

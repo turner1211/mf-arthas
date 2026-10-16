@@ -36,7 +36,7 @@ local function initialize_window()
  return true
 end
 local function value(w)return w and(w.get_state and w:get_state()or w:get())end
-local function compact(v,n)v=tostring(v or'');return #v<=n and v or v:sub(1,n-3)..'...'end
+local function compact(v,n)v=tostring(v or'');return require('mf_i18n').clip(require('mf_i18n').text(v),n)end
 local function wheel_delta()
  -- Build a dense list: ipairs stops at the first nil, which previously made
  -- the root/graphics fallbacks unreachable when core.input lacked the API.

@@ -31,7 +31,7 @@ local specs={
  [577]="Havoc",[581]="Vengeance",[1467]="Devastation",[1468]="Preservation",[1473]="Augmentation",
 }
 local function c(r,g,b,a)return Color.new(r,g,b,a or 255)end
-local function compact(v,n)v=tostring(v or "");return #v<=n and v or v:sub(1,n-3).."..."end
+local function compact(v,n)v=tostring(v or "");return require('mf_i18n').clip(require('mf_i18n').text(v),n)end
 local function identity(me)
  local class=tonumber(U.call(me,"get_class")) or 0
  local spec=core.spell_book and core.spell_book.get_specialization_id and core.spell_book.get_specialization_id() or 0

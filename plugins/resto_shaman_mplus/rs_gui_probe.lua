@@ -42,7 +42,7 @@ local function image(kind,x,y,w)Icons.draw(kind,x*draw_scale,y*draw_scale,w*draw
 local function compact(v,n)
  v=tostring(v or "")
  if font_scale_pct>100 then n=math.max(8,math.floor(n*100/font_scale_pct)) end
- return #v<=n and v or v:sub(1,n-3).."..."
+ return require('mf_i18n').clip(require('mf_i18n').text(v),n)
 end
 local function button(label,x1,y1,x2,y2,action,active,icon)
  local over=hovered(x1,y1,x2,y2)

@@ -158,8 +158,8 @@ local function holy_identity(player)
 end
 local function short(value,limit)
  local text=tostring(value or "")
- text=text:gsub("[\128-\255]+","_"):gsub("[%c]"," ")
- return #text<=limit and text or text:sub(1,limit-3).."..."
+ text=text:gsub("[%c]"," ")
+ return require('mf_i18n').clip(require('mf_i18n').text(text),limit)
 end
 local function boss_fight_active(player)
  if not player or call(player,"is_in_combat")~=true or not core.object_manager
