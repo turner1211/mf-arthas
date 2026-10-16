@@ -85,8 +85,7 @@ function N.build(player,identity,mode,settings,engine)
   target=U.call(player,'get_target'),hp=U.hp(player)}
  c.level=U.number(U.call(player,'get_level'))or U.number(identity.level)or 0
  c.level_known=c.level>0
- c.level_band=not c.level_known and'unknown'or c.level>=60 and'endgame'or c.level>=40 and'40-59'or c.level>=30 and'30-39'or c.level>=26 and'26-29'or c.level>=24 and'24-25'or c.level>=20 and'20-23'or c.level>=14 and'14-19'or c.level>=10 and'10-13'or'1-9'
- c.level_band=c.level>=60 and'endgame'or c.level>=40 and'40-59'or c.level>=24 and'24-39'or c.level>=20 and'20-23'or'1-19'
+ c.level_band=not c.level_known and'unknown'or c.level>=60 and'endgame'or c.level>=58 and'58-59'or c.level>=56 and'56-57'or c.level>=48 and'48-55'or c.level>=40 and'40-47'or c.level>=38 and'38-39'or c.level>=34 and'34-37'or c.level>=30 and'30-33'or c.level>=28 and'28-29'or c.level>=26 and'26-27'or c.level>=24 and'24-25'or c.level>=22 and'22-23'or c.level>=20 and'20-21'or c.level>=18 and'18-19'or c.level>=16 and'16-17'or c.level>=14 and'14-15'or c.level>=12 and'12-13'or c.level>=10 and'10-11'or c.level>=8 and'8-9'or c.level>=6 and'6-7'or c.level>=4 and'4-5'or'1-3'
  c.precognition,c.precognition_left=N.precognition(player)
  local player_key=U.guid(player)or tostring(player)
  local pressure=N.health_pressure

@@ -2,6 +2,7 @@ local S=require('sm_spells');local R={}
 function R.decide(c,e)
  if c.spec~=63 or not c.settings.damage then return end
  local a;local level=c.level and c.level>0 and c.level or 60;local hot=c.stacks(S.aura.hot_streak);local _,hot_left=c.buff(S.aura.hot_streak)
+ local aoe_budget=(c.mana_pct or 100)>=35 or(c.ttd or math.huge)<=6
  local vulnerability=c.stacks(S.aura.fire_vulnerability,true)
  local short_pyro=hot>=3 or hot>=2 and (c.execute or hot_left and hot_left<=4 or c.pvp and not c.moving and require('sm_pvp').channel_safe(c,2000))
  -- October 15: every Fire Blast supplies one Heating Up charge (two on a
@@ -18,8 +19,8 @@ function R.decide(c,e)
   return c.pick('fire_blast','level-aware early Fire movement damage')
  end
  if c.talent('improved_scorch')and vulnerability<5 and not c.moving then a=c.pick('scorch','build five Forever Improved Scorch vulnerability stacks');if a then return a end end
- if c.aoe_safe and c.enemy_count>=(c.settings.fire_flamestrike or 3)then a=c.pick('blast_wave','Forever close area burst');if a then return a end;a=c.pick('flamestrike','Forever area damage');if a then return a end end
- if c.aoe_safe and c.enemy_count>=(c.settings.fire_flamestrike or 3)then a=c.pick('arcane_explosion','Forever instant area fallback after Fire area actions');if a then return a end end
+ if c.aoe_safe and aoe_budget and c.enemy_count>=(c.settings.fire_flamestrike or 3)then a=c.pick('blast_wave','Forever close area burst with escape mana reserved');if a then return a end;a=c.pick('flamestrike','Forever area damage with escape mana reserved');if a then return a end end
+ if c.aoe_safe and aoe_budget and c.enemy_count>=(c.settings.fire_flamestrike or 3)then a=c.pick('arcane_explosion','Forever instant area fallback with escape mana reserved');if a then return a end end
  if c.execute then a=c.pick('fire_blast','Forever instant low-health finisher');if a then return a end end
  if c.moving then a=c.pick('fire_blast','Forever movement damage');if a then return a end;return c.pick('scorch','Forever mobile filler')end
  if c.known('frostfire_bolt')then a=c.pick('frostfire_bolt','Forever dual-school filler for learned hybrid build');if a then return a end end
