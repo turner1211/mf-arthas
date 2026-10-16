@@ -150,7 +150,7 @@ function M.run(me,rows,profile,pressure)
         C.projection_status="Held to preserve an active rescue, control, or cleansing totem";return false
     end
     local surging=S.ground_record(S.SURGING)
-    if not surging or core.time()-surging.time>=22 then C.projection_status="Waiting for active Surging Totem";return false end
+    if not surging or core.time()-surging.time>=23 then C.projection_status="Waiting for active Surging Totem";return false end
     local center,count
     if profile.pvp and not profile.battleground and pressure.target then
         center=pressure.target;count=1

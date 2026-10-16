@@ -83,4 +83,4 @@ core.register_on_game_event_callback(function(event,args)
  RT.safe("aura_event",module("rs_auras").event,event,args);RT.safe("telemetry_event",module("rs_telemetry").event,event,args)
  RT.last_tick=-math.huge
 end)
-core.log("[Shaman Suite] 5.11.0 loaded: area-damage pull and crowd-control protection.")
+core.log("[Shaman Suite] 5.12.0 loaded: current imbues, Totemic timing, and Forever healer damage.")

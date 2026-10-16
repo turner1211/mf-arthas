@@ -5,10 +5,10 @@ local M={}
 -- place so Downpour never treats an expired 18-second Healing Rain as active.
 function M.window()
     local age=A.since(S.SURGING)
-    if age<24 then
+    if age<25 then
         local record=S.ground_record(S.SURGING)
-        return {active=true,age=age,duration=24,closing=age>=16,kind="Surging Totem",
-            position=record and core.time()-record.time<24 and record.position or nil}
+        return {active=true,age=age,duration=25,closing=age>=17,kind="Surging Totem",
+            position=record and core.time()-record.time<25 and record.position or nil}
     end
     age=A.since(S.RAIN)
     if age<18 then

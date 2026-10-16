@@ -1,3 +1,14 @@
+# Shaman Suite 5.12.0
+
+- Maintains Windfury Weapon and Flametongue Weapon automatically for Retail Enhancement and Flametongue Weapon for Retail Elemental when learned.
+- Updates confirmed Surging Totem duration, placement history, Downpour timing, and Projection cutoff from the old 24-second model to Midnight's current 25-second duration.
+- Keeps discounted Rain Dance Surging Totem active during safe PvP downtime while preventing repeated relocation casts during the same active window.
+- Adds mana-conservative, crowd-control-safe Fire Nova damage for WoW Forever Restoration in healthy grouped pulls with an active Fire totem and at least three enemies.
+- Retains the v5.11 accidental-pull and crowd-control protections for every splash and area spell.
+- Adds regression coverage for Retail weapon imbues, the 25-second rain window, PvP Surging upkeep, relocation suppression, and Forever Restoration Fire Nova packaging.
+
+## Previous release notes
+
 # Shaman Suite 5.11.0
 
 - Prevents Retail Elemental and Enhancement area rotations from counting or striking nearby unengaged enemies.
@@ -6,8 +17,6 @@
 - Keeps PvP target selection conservative when the optional control/immunity helper cannot confirm safety.
 - Adds regression coverage for unengaged packs, controlled secondary targets, controlled primary targets, and Voltaic Blaze splash safety.
 - Adds a packaging guard for the shared loader, localization, game-ID, and Unicode-font runtime modules.
-
-## Previous release notes
 
 # Shaman Suite 5.10.0
 

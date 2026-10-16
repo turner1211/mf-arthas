@@ -388,6 +388,12 @@ local function restoration(me,context)
  if worst.hp<=90 and (mp>=policy.heal_reserve or worst.hp<=65) and cast(F.HEALING_WAVE,worst.unit,me,true,worst.hp<=60 and 0 or downrank) then C.status="Forever Restoration: level-aware rank Healing Wave";return true end
  local t=hostile
  if t and worst.hp>=96 and mp>=80 and C.get("dps_purge") and magic_buff(t) and cast(F.PURGE,t,me) then C.status="Forever Restoration: safe-window Purge";return true end
+ local fire_position=M.totem_positions.fire
+ local fire_count=fire_position and #enemies_at(me,fire_position,10) or 0
+ if C.get("forever_healer_damage") and #rows>1 and worst.hp>=96 and mp>=85 and fire_count>=3
+  and active_element("fire") and aoe_safe(me,fire_position,10) and cast(F.FIRE_NOVA,me,me) then
+  C.status="Forever Restoration: safe-window positioned Fire Nova";return true
+ end
  if C.get("forever_healer_damage") and t and worst.hp>=96 and mp>=75 and not reserve_shock(me)
   and cast(F.LIGHTNING_BOLT,t,me,true,1) then C.status="Forever Restoration: safe-window downranked Lightning Bolt";return true end
  return travel(me,rows)

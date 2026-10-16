@@ -246,7 +246,7 @@ function M.projected_to(position)
     -- Projection relocates active totems. Healing Rain is a ground effect, and
     -- tier-set Rains are explicitly immovable, so never rewrite every ground
     -- record indiscriminately.
-    local lifetimes={[M.SURGING]=24,[M.CAPACITOR]=3,[M.STATIC]=6,
+    local lifetimes={[M.SURGING]=25,[M.CAPACITOR]=3,[M.STATIC]=6,
         [M.EARTHGRAB]=8,[M.EARTHBIND]=8}
     local now=core.time()
     for id,record in pairs(ground_history) do

@@ -346,6 +346,14 @@ function M.run(me)
             if H.spread(me,rows,100,true) then return end
             if T.has(nil,"Swelling Tides") and H.riptide_count(rows)>=2
                 and S.cast(S.STREAM,me,me) then return end
+            -- Rain Dance makes Totemic's defining field instant and 60% cheaper.
+            -- Keep it active in safe PvP downtime without repeatedly firing the
+            -- live relocation override during the same 25-second window.
+            if T.hero()=="Totemic" and T.has(290250,"Rain Dance") and S.known(S.SURGING)
+                and A.since(S.SURGING)>=25 and Mana.allow_full_health_upkeep(me,profile,pressure.burst) then
+                local upkeep=H.ground(rows,true)
+                if upkeep and S.cast(S.SURGING,upkeep,me,true) then return end
+            end
             if S.capped(S.STREAM) and S.cast(S.STREAM,me,me) then return end
         end
         if profile.pvp and PvP.control(me,rows,pressure) then return end

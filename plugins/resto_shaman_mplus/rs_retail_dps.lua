@@ -8,6 +8,7 @@ local ID={
  STORMSTRIKE=17364,LAVA_LASH=60103,CRASH_LIGHTNING=187874,SUNDERING=197214,
  DOOM_WINDS=384352,ENHANCEMENT_ASCENDANCE=114051,FERAL_SPIRIT=51533,SURGING_TOTEM=444995,
  PRIMORDIAL_STORM=1218125,MAELSTROM_WEAPON=344179,ANCESTRAL_SWIFTNESS=443454,
+ WINDFURY_WEAPON=319773,FLAMETONGUE_WEAPON=319778,
 }
 local function enemy_scan(me,target,radius,context)
  local n,unsafe=1,false;local seen={}
@@ -44,6 +45,13 @@ local function survival(me)
  local hp=U.health(me) or 100
  if C.get("dps_defensives") and C.get("defensives") and hp<=(C.get("personal") or 45) and S.cast(S.SHIFT,me,me,false,false,true) then C.status="DPS survival: Astral Shift";return true end
  if C.get("dps_self_heal") and hp<=(C.get("dps_self_heal_hp") or 55) and S.cast(ID.HEALING_SURGE,me,me,false,true) then C.status="DPS survival: Healing Surge";return true end
+ return false
+end
+local function maintain_imbues(me,spec)
+ if spec=="enhancement" and not A.present(me,ID.WINDFURY_WEAPON)
+  and S.cast(ID.WINDFURY_WEAPON,me,me) then C.status="Enhancement: Windfury Weapon";return true end
+ if (spec=="enhancement" or spec=="elemental") and not A.present(me,ID.FLAMETONGUE_WEAPON)
+  and S.cast(ID.FLAMETONGUE_WEAPON,me,me) then C.status=spec:gsub("^%l",string.upper)..": Flametongue Weapon";return true end
  return false
 end
 local function utility(me,t,context)
@@ -96,6 +104,7 @@ local function enhancement(me,t,context)
 end
 function M.run(me,context,spec)
  if survival(me) then return true end
+ if maintain_imbues(me,spec) then return true end
  local t=target(me,context);if not t then C.status=spec:gsub("^%l",string.upper)..": waiting for safe hostile target";return false end
  if utility(me,t,context) then return true end
  if spec=="enhancement" then return enhancement(me,t,context) end

@@ -1,4 +1,4 @@
-# WoW Forever Shaman research — version 5.11.0
+# WoW Forever Shaman research — version 5.12.0
 
 Reviewed October 15, 2026 against public beta information for builds through 1.60.1.70374.
 
@@ -11,12 +11,15 @@ Reviewed October 15, 2026 against public beta information for builds through 1.6
 - Lightning Shield is maintained before combat. A missing shield during combat is refreshed only just after a Shock and with safe mana, following current level-30 guidance.
 - Grouped Elemental and Enhancement characters maintain Mana Spring when their mana has begun to fall, while Totemic Recall continues to reclaim mana after combat.
 - Low-level characters retain larger healing and damage reserves because their mana pools and rank efficiency differ from level-60 play.
+- Restoration can use Fire Nova during healthy grouped dungeon windows, but only with an active Fire totem, at least three enemies, 85% mana, and crowd-control-safe placement.
 
 ## Sources
 
 - [Icy Veins — Forever Enhancement Shaman](https://www.icy-veins.com/wow-forever/enhancement-shaman-melee-dps-pve-guide/)
 - [Icy Veins — Forever Elemental Shaman](https://www.icy-veins.com/wow-forever/elemental-shaman-ranged-dps-pve-guide)
 - [Icy Veins — Forever Restoration Shaman](https://www.icy-veins.com/wow-forever/restoration-shaman-healer-pve-guide)
+- [Wowhead — level 30 Forever Restoration Shaman](https://www.wowhead.com/forever/guide/classes/shaman/restoration/level-30-healer-overview)
+- [Wowhead — Forever Enhancement Shaman](https://www.wowhead.com/forever/guide/classes/shaman/enhancement/overview-pve-dps)
 - [ForeverDB — current Shaman guide](https://foreverdb.net/class/Shaman)
 - [ForeverDB — Shaman PvP guide](https://foreverdb.net/class/Shaman/pvp?spec=Restoration)
 - [SixtySpec — Shaman talent data](https://sixtyspec.com/shaman-talent-calculator/)
