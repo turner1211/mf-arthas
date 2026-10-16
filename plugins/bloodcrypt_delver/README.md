@@ -1,4 +1,6 @@
-# Bloodcrypt Delver — development build 0.6.35
+# Bloodcrypt Delver — development build 0.6.36
+
+Build 0.6.36 is audited against the supplied Sylvanas API reflection dump. The navigation, delve, interaction, recovery, loot, mount, targeting and BigWigs API names match. Automatic UI locale detection now includes the reflected `core.get_language()` API, preventing non-English clients from silently falling back to English when the newer locale aliases are unavailable. The supplied dump identifies itself as TBC, so its absence of Retail-only data is not treated as evidence that Midnight APIs should be removed.
 
 Build 0.6.35 fixes a long-route deadlock in automatic mount preparation. Characters with no usable collected mount, an unavailable mount collection, or no compatible mount now continue by walking, allowing ArthasNav to receive the route instead of repeatedly stopping before navigation starts.
 
