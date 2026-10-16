@@ -11,6 +11,7 @@ local PathPreflight=require("bg_path_preflight")
 local NavProgressWatch=require("bg_nav_progress_watch")
 local NavOwnership=require("bg_nav_ownership")
 local PathCorridor=require("bg_path_corridor")
+local MMapError=require("bg_mmap_error")
 local C={};C.__index=C
 local Predictive=require("bg_predictive_logic")
 local function native_bool(object,method)
@@ -1099,10 +1100,8 @@ function C:tick()
     if not ok then
      self.destination=nil;self.navigation_retry_at=a.time()+3
      local message=tostring(err or "unknown")
-     local severe=message:find("max_stuck",1,true) or message:find("422",1,true) or message:find("height_projection_conflict",1,true) or
-      message:find("height_projection_unavailable",1,true) or
-      message:find("destination_unreachable",1,true) or
-      message:find("not on navmesh",1,true) or message:find("No path",1,true) or message:find("no path",1,true)
+     local mmap_error=MMapError.classify(message)
+     local severe=mmap_error.severe
      local rerouted_now=false
      if severe then
       local memory=self.route_memory[current_leg] or {successes=0,failures=0}
@@ -1126,14 +1125,19 @@ function C:tick()
       on_route_leg and goal_distance<=50 and math.abs(goal.z-pos.z)<=8
      local bounded_offmesh=message:find("height_projection_unavailable",1,true) and
       on_route_leg and goal_distance<=50 and math.abs(goal.z-pos.z)<=8
+     -- A missing/incompatible map or tile will not improve after a retry. Use
+     -- the same short, authored, height-bounded escape corridor immediately;
+     -- never apply this to a long or steep unscripted destination.
+     local bounded_missing_mesh=(mmap_error.category=="coverage" or mmap_error.category=="format") and
+      on_route_leg and goal_distance<=50 and math.abs(goal.z-pos.z)<=8
      if severe and type(plan.route)=="table" and #plan.route>0 and
-      (bounded_authored or bounded_offmesh) and
+      (bounded_authored or bounded_offmesh or bounded_missing_mesh) and
       type(a.move_direct)=="function" then
       self.path_timeout_count=(self.path_timeout_count or 0)+1
       self.direct_route_fallback[fallback_scope]=a.time()+120
       if a.route_memory_event then
        a.route_memory_event("navigation_corridor_direct_fallback",fallback_scope,
-        {timeouts=self.path_timeout_count,error=message})
+        {timeouts=self.path_timeout_count,error=message,error_category=mmap_error.category})
       end
       -- The remote service has already proved that this battleground endpoint
       -- has no usable height projection. Retry the same short authored leg by

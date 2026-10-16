@@ -1,4 +1,14 @@
-SYLVANAS BATTLEGROUND COMMAND - v1.94.0 - October 15, 2026
+SYLVANAS BATTLEGROUND COMMAND - v1.95.0 - October 15, 2026
+
+Version 1.95.0 integrates the safe runtime findings from the supplied Forever
+MMap compatibility package. ArthasNav map/tile absence and mmap/Detour format
+errors are now classified as permanent pack failures instead of ordinary path
+retries. On a short authored waypoint leg with an eight-yard vertical bound,
+the controller immediately uses its existing direct escape corridor; long,
+steep, or unscripted destinations still fail closed. The unverified legacy map
+archive is deliberately not installed. Raw TrinityCore Forever version-16 mmap
+output must first be converted to ArthasNav's header and filename layout and
+kept in a separate build-specific profile.
 
 Version 1.94.0 completes ID-first discovery for all six published Darkspear
 recovery supplies, so localized item names no longer hide Field/Iron/Enriched
