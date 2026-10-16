@@ -7,6 +7,15 @@ local valid_modes={pve=true,mythic_plus=true,delve=true,arena=true,battleground=
 local dirty,last_flush=false,-math.huge
 local max_rows=256
 local function key(mode,id) return tostring(mode or 'world')..':'..tostring(tonumber(id) or 0) end
+local function replace_data(text)
+ if type(core.create_data_file)~='function' or type(core.write_data_file)~='function' then return false end
+ local size=type(core.get_data_file_size)=='function' and core.get_data_file_size(data_path) or 0
+ if type(size)=='number' and size>0 then
+  if type(core.delete_data_file)~='function' or core.delete_data_file(data_path)~=true then return false end
+ end
+ if core.create_data_file(data_path)==false then return false end
+ return core.write_data_file(data_path,text)~=false
+end
 function M.reset() learned={} end
 function M.export()
  local rows={}
@@ -39,8 +48,7 @@ function M.flush(force,n)
  n=tonumber(n) or core.time()
  if not force and n-last_flush<2 then return false end
  local ok=pcall(function()
-  assert(type(core.write_data_file)=='function','data writer unavailable')
-  core.write_data_file(data_path,M.export())
+  assert(replace_data(M.export()),'data writer rejected bounded snapshot')
  end)
  if ok then dirty=false;last_flush=n end
  return ok

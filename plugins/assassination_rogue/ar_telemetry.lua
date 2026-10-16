@@ -24,16 +24,19 @@ local function replace_history(text)
     or type(core.write_data_file)~='function' then return false,'replace API unavailable' end
  local size=type(core.get_data_file_size)=='function' and core.get_data_file_size(data_path) or 0
  if type(size)=='number' and size>0 and core.delete_data_file(data_path)~=true then return false,'history delete failed' end
- core.create_data_file(data_path)
+ if core.create_data_file(data_path)==false then return false,'history create failed' end
  if core.write_data_file(data_path,text)==false then return false,'history write failed' end
  return true
 end
 function M.flush(force)
  if #batch==0 or now()<write_retry or not force and now()-last_flush<0.5 then return end
  last_flush=now()
- local text=table.concat(batch);batch={};batch_bytes=0
+ -- Keep the pending batch intact until the host confirms the append. A
+ -- transient OneDrive or host writer failure must remain retryable in memory.
+ local text=table.concat(batch)
  local ok,err=pcall(function()
-  assert(core.write_log_file,'log writer unavailable');core.write_log_file(path,text)
+  assert(core.write_log_file,'log writer unavailable')
+  assert(core.write_log_file(path,text)~=false,'log writer rejected append')
   if type(core.write_data_file)=='function' then
    persistent=persistent..text
    if #persistent>persistent_limit then
@@ -46,6 +49,7 @@ function M.flush(force)
    end
   end
  end)
+ if ok then batch={};batch_bytes=0 end
  M.status=ok and 'Recording / '..count..' lines' or 'File unavailable; memory retained / '..clean(err)
  if not ok then write_retry=now()+5 end
 end

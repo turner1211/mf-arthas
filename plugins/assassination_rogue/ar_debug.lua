@@ -6,7 +6,10 @@ local last_error,last_time=nil,-math.huge
 local Text=require('ar_text')
 local function emit(kind,body)
  local line='[ARDEBUG] | entity='..Identity.debugger..' | '..kind..' | t='..tostring(core.time())..' | '..body..'\n'
- local ok=pcall(function()core.write_log_file(path,line)end)
+ local ok=pcall(function()
+  assert(type(core.write_log_file)=='function','log writer unavailable')
+  assert(core.write_log_file(path,line)~=false,'log writer rejected append')
+ end)
  M.status=ok and kind..' recorded' or 'File unavailable; copy snapshot from GUI'
  return line
 end
@@ -33,6 +36,7 @@ function M.error(err,c)
  local trace=tostring(err)
  if debug and type(debug.traceback)=='function' then trace=debug.traceback(trace,2) end
  trace=trace:sub(1,4000)
+ M.last_error=trace
  if M.enabled and (trace~=last_error or core.time()-last_time>=5) then
   last_error,last_time=trace,core.time();M.errors=M.errors+1
   emit('ERROR',trace);M.snapshot(c,'runtime error')

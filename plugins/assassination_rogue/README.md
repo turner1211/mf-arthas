@@ -1,8 +1,8 @@
 # Assassination Rogue — Valeera Activity Profiles
 
-Version 1.2.11 prevents the automatic skinning/looting walker from competing with MasterArthasNav. When either supported navigation export reports an active route, gathering releases only its own movement helper and waits without stopping the route owner. The Rogue loader does not use `os.time()`, so the separate shared-loader clock issue described in the audit does not apply to this plugin source.
+Version 1.2.12 hardens logging, learned prediction and gathering against transient host failures. Session-log batches remain in memory until the host confirms the append, so a rejected OneDrive or Project Sylvanas write can retry instead of silently losing crash-recovery rows. Debug writes now distinguish a rejected append and preserve the latest error in memory; predictive threat learning keeps unsaved observations dirty for its next retry. Looting, skinning, profession startup and corpse-approach vector creation now contain invalidated native handles without aborting the complete Rogue update callback. Version 1.2.11 prevents the gathering walker from competing with MasterArthasNav.
 
-Project Sylvanas / IZI plugin, version 1.2.11. Built from the Holy Paladin GUI and aura compatibility layer, with Rogue damage, control, survival, gathering and logging modules.
+Project Sylvanas / IZI plugin, version 1.2.12. Built from the Holy Paladin GUI and aura compatibility layer, with Rogue damage, control, survival, gathering and logging modules.
 
 ## Controls
 

@@ -108,7 +108,7 @@ end
 
 local function compact(value, limit)
     value = Text.clean(value)
-    return require('mf_i18n').clip(require('mf_i18n').text(value),limit)
+    return require("mf_i18n").clip(require("mf_i18n").text(value), limit)
 end
 
 local function mouse_wheel_delta()

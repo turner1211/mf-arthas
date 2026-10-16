@@ -81,7 +81,10 @@ function M.update(p,opts,T,cached_objects)
   if call(p,"is_casting_spell")==true or call(p,"is_channelling_spell")==true or call(p,"is_moving")==true then return end
   if now-last_fish>=2 then
    last_fish=now
-   local started=core.profession and core.profession.open_profession and core.profession.open_profession(core.profession.FISHING)
+   local started=false
+   if core.profession and type(core.profession.open_profession)=='function' then
+    local opened,value=pcall(core.profession.open_profession,core.profession.FISHING);started=opened and value==true
+   end
    next_action=now+2;note(T,started and "Fishing cast accepted" or "Fishing waiting for profession")
   end
   return
@@ -119,8 +122,10 @@ function M.update(p,opts,T,cached_objects)
    local a,b=call(p,"get_position"),call(nearest,"get_position")
    if a and b then
     local scale=(range-1.5)/range
-    call(movement,"move_to_position",vec3.new(a.x+(b.x-a.x)*scale,a.y+(b.y-a.y)*scale,a.z+(b.z-a.z)*scale))
-    call(movement,"process");movement_owned=true;M.status="Skinning: approaching corpse";return
+    local made,destination=pcall(vec3.new,a.x+(b.x-a.x)*scale,a.y+(b.y-a.y)*scale,a.z+(b.z-a.z)*scale)
+    if made and destination and call(movement,"move_to_position",destination)~=false then
+     call(movement,"process");movement_owned=true;M.status="Skinning: approaching corpse";return
+    end
    end
   end
   M.status="Skinning: move within 2 yd (navigation unavailable)";return
@@ -153,8 +158,10 @@ function M.update(p,opts,T,cached_objects)
  end
  local fn=kind=="loot" and core.input.loot_object or core.input.skin_object
  if type(fn)~="function" then M.status=kind.." API unavailable";return end
- local accepted
- if kind=="loot" then accepted=fn(nearest,true) else accepted=fn(nearest) end
+ local invoked,result
+ if kind=="loot" then invoked,result=pcall(fn,nearest,true) else invoked,result=pcall(fn,nearest) end
+ local accepted=invoked and result==true
+ if not invoked then T.note('GATHERING_API_ERROR',{'action='..kind,'target='..tostring(call(nearest,'get_name') or key),'error='..tostring(result)}) end
  local skin_spell_known=false
  local skin_method='native interaction'
  if kind=='skin' then
