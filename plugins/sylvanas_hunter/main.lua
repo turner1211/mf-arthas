@@ -13,7 +13,7 @@ local function perf_sample(kind,milliseconds)
  p[maximum]=math.max(p[maximum] or 0,milliseconds)
 end
 C.init()
-L.enabled=C.logging:get_state();L.emit('session_start',nil,'Hunter v1.6.8; runtime='..Runtime.family..'; exact='..tostring(Runtime.exact)..'; level-band mana policy, isolated settings, spells and rotations')
+L.enabled=C.logging:get_state();L.emit('session_start',nil,'Hunter v1.6.8; runtime='..Runtime.family..'; exact='..tostring(Runtime.exact)..'; level-band mana, early control, isolated settings, spells and rotations')
 local function stop(reason,now,hide)
  C.status=reason;engine:reset(nil,now);current=nil;Boss.active=nil;C.recommendation=nil
  if hide then C.identity=nil;C.mode=nil end
@@ -121,6 +121,7 @@ if core.register_on_game_event_callback then core.register_on_game_event_callbac
  end
 end)end
 _G.SylvanasHunterStatus=function()return {version='1.6.8',runtime=Runtime.family,client=Runtime.version,exact=Runtime.exact,level=current and current.level,level_band=current and current.level_band,spec=C.identity and C.identity.id,mode=C.mode,status=C.status,enabled=C.enabled:get_state(),paused=C.pause:get_state()}end
+
 
 
 

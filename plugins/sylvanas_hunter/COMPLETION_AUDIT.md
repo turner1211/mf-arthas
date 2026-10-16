@@ -141,3 +141,5 @@ Version 1.6.5 adds Survival-only Track Humanoids upkeep for the Improved Trackin
 Version 1.6.6 adds native character-level detection and explicit Forever unlock boundaries, corrects BM to the current Multi-Shot/Arcane simulator priority, reserves Rapid Fire by context, and makes Pet-first engagement safety functional with a bounded hand-off.
 
 Version 1.6.7 adds level-gated Track Hidden, Scare Beast pet control, guarded healer-peel Distracting Shot, level-scaled mana floors, short-target Sting suppression, and breakable-fear protection without changing Midnight modules.
+
+Version 1.6.8 adds early-level Monkey aspect transitions, level-8 solo Concussive Shot approach control, and explicit unlock checks for defensive, pet, trap, and kiting utility. Offline tests cover both sides of each new level boundary; live Forever testing remains necessary to tune timing against server latency and current NPC behavior.

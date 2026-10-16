@@ -4,8 +4,12 @@ function R.decide(c,e)
  local distance=U.distance(c.player,c.target);local melee=distance<=5.5;local a
  a=F.pvp_tracking(c,e);if a then return a end
  if melee and c.settings.forever_melee~=false then
-  local defensive_monkey=c.pvp and c.hp and c.hp<=c.settings.low_hp and F.has(c.player,S.aura.monkey)
-  if F.level(c,30)and not defensive_monkey then a=F.aspect(c,'aspect_beast',S.aura.beast,'maintain melee Aspect of the Beast');if a then return a end end
+  local defensive_monkey=c.pvp and c.hp and c.hp<=c.settings.low_hp
+  if not F.level(c,30)or defensive_monkey then
+   a=F.melee_aspect(c,defensive_monkey and'switch from Beast to Monkey during dangerous PvP melee pressure'or'maintain the level-4 melee dodge aspect');if a then return a end
+  else
+   a=F.aspect(c,'aspect_beast',S.aura.beast,'maintain melee Aspect of the Beast');if a then return a end
+  end
   a=F.mark_and_sting(c,e);if a then return a end
   if F.rapid_fire(c)then a=c.pick('rapid_fire','accelerate the Survival melee attack window');if a then return a end end
   a=F.burst_reset(c,{'rapid_fire'},'reset spent Survival burst abilities for a durable target');if a then return a end

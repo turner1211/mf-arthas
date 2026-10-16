@@ -46,6 +46,10 @@ end
 function F.aspect(c,key,aura,why)
  if not has_any(c,aura,false)then return c.pick(key,why)end
 end
+function F.melee_aspect(c,why)
+ if not F.level(c,4)then return end
+ return F.aspect(c,'aspect_monkey',S.aura.monkey,why or'maintain Aspect of the Monkey while forced into melee')
+end
 function F.open(c,e)
  local a
  if F.level(c,10)then a=F.aspect(c,'aspect_hawk',S.aura.hawk,'maintain ranged Aspect of the Hawk');if a then return a end end

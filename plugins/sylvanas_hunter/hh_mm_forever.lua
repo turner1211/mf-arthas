@@ -2,7 +2,10 @@ local F=require('hh_forever_common');local U=require('hh_util');local R={spec=25
 function R.decide(c,e)
  if c.spec~=254 then return end
  local distance=U.distance(c.player,c.target)
- if distance<8 then return c.pick('raptor_strike','MM dead-zone melee fallback')end
+ if distance<8 then
+  local a=F.melee_aspect(c,'switch to dodge aspect before the MM dead-zone trade');if a then return a end
+  return c.pick('raptor_strike','MM dead-zone melee fallback')
+ end
  local a=F.pvp_tracking(c,e);if a then return a end
  a=F.open(c,e);if a then return a end
  if F.level(c,25)then a=F.aspect(c,'trueshot_aura',require('hh_spells').aura.trueshot,'maintain party ranged attack power');if a then return a end end

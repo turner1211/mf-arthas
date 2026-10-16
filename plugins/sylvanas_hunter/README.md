@@ -14,6 +14,15 @@ jump. The rotation raises its mana reserve in that band, adjusts Serpent Sting's
 target-life floor by level, and requires three targets before Multi-Shot while
 mana pooling is active. Live learned spells and costs remain authoritative for
 future cap increases. Status and snapshots expose the detected level band.
+Version 1.6.8 strengthens level-aware Forever leveling and PvP survival. BM and
+Marksmanship now enter Aspect of the Monkey before a forced melee trade from
+level 4 onward. Survival uses Monkey before Aspect of the Beast unlocks and
+returns to Monkey during dangerous PvP melee pressure. Solo PvE uses
+Concussive Shot from level 8 while a target closes, gaining more ranged attacks
+before the dead zone. Pet recovery, Mend Pet, Wing Clip, Frost Trap,
+Disengage, Deterrence, Feign Death, and Readiness now have explicit character
+level boundaries in addition to spell-book validation.
+
 
 Version 1.6.7 extends the level-aware Forever policy. BM and Marksmanship can
 maintain Track Hidden from level 24 against Rogue and Druid targets without
@@ -408,6 +417,7 @@ Version 1.4.54 makes Arena Trap cleanliness precise without guessing: Hunter's M
 Version 1.4.55 hardens Midnight aura visibility. Positive `get_auras` or `get_all_buffs` evidence, alternate native spell-ID fields, duration fields and stack fields are recognized before a stale manager inactive result; fully missing data remains unknown.
 ends. The Arena-only option is enabled by default and includes active-Trap,
 same-healer, timing, duplicate-cast, and hidden-aura safeguards.
+
 
 
 

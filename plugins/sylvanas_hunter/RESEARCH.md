@@ -915,3 +915,26 @@ Sources:
 - https://foreverdb.net/spell/1513
 - https://foreverdb.net/spell/19885
 - https://foreverdb.net/sim/hunter/marksmanship
+
+# 1.6.8 WoW Forever early-level control pass — 2026-10-15
+
+The current leveling guide teaches Aspect of the Monkey at level 4 for enemies
+that reach the Hunter, then Concussive Shot at level 8 so approaching targets
+take longer to enter melee. The PvP guide uses the same transition: slow the
+enemy while it closes, switch to Monkey once melee connects, and apply Wing
+Clip before creating distance. The rotation now follows those boundaries for
+all three specs. Survival keeps its level-30 Aspect of the Beast damage stance,
+but switches back to Monkey during dangerous PvP melee pressure.
+
+Utility unlocks now use explicit character-level checks as well as the native
+spellbook. This prevents transient or incomplete spellbook data from requesting
+pet recovery, traps, movement tools, or defensive cooldowns before their
+documented training or talent level.
+
+Sources:
+- https://foreverdb.net/guide/leveling-hunter
+- https://foreverdb.net/class/Hunter/pvp
+- https://foreverdb.net/class/Hunter/builds
+- https://foreverdb.net/class/Hunter/pve
+- https://foreverdb.net/spell/13163
+- https://foreverdb.net/spell/5116
