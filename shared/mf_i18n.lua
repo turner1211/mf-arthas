@@ -139,11 +139,11 @@ function L.font_for(original)
  if L.font_id then return L.font_id end
  if L.locale~='enUS'then
   local ok,font=pcall(native_require,'mf_unicode_font')
-  if ok then local id=font.get(16);if id then return id end end
+  if ok and type(font)=='table'and type(font.get)=='function'then local loaded,id=pcall(font.get,16);if loaded and id then return id end end
  end
  return original
 end
-local proxies=setmetatable({},{__mode='k'})
+local proxies=setmetatable({},{__mode='kv'})
 function L.wrap_control(real)
  if type(real)~='table'and type(real)~='userdata'then return real end
  if proxies[real]then return proxies[real]end
@@ -187,7 +187,7 @@ function L.start(project)
 end
 function L.with_scope(fn,...)
  if L.depth and L.depth>0 then return fn(...)end
- L.depth=1;L.refresh()
+ L.refresh();L.depth=1
  local restore_menu=L.scope_menu();local saved={};local graphics=core and core.graphics
  if type(graphics)=='table'then for _,key in ipairs({'text_2d','text_3d'})do
   local original=graphics[key];if type(original)=='function'then

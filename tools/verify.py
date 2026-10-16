@@ -8,6 +8,7 @@ for command in [
     [sys.executable, 'tools/update_manifests.py', '--check'],
     [sys.executable, 'tools/run_lua.py', 'tools/test_loader.lua'],
     [sys.executable, 'tools/run_lua.py', 'tools/test_localization.lua'],
+    [sys.executable, 'tools/run_lua.py', 'tools/test_audit.lua'],
 ]:
     result = subprocess.run(command, cwd=ROOT)
     if result.returncode:

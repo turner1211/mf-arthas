@@ -22,7 +22,12 @@ function P.export()
  return table.concat(rows,'\n')
 end
 function P.inspect(path,goal,opts)
- opts=opts or {};if type(path)~='table' or #path<2 or #path>8192 then return nil,'bad_path',0 end
+ opts=opts or {};if type(opts)~='table'then return nil,'bad_route_options',0 end
+ for _,key in ipairs({'allow_falling','allow_partial'})do if opts[key]~=nil and type(opts[key])~='boolean'then return nil,'bad_route_options',0 end end
+ local max_drop=opts.max_drop==nil and 8 or tonumber(opts.max_drop)
+ local min_confidence=opts.min_confidence==nil and 40 or tonumber(opts.min_confidence)
+ if not max_drop or max_drop~=max_drop or max_drop<0 or max_drop==math.huge or not min_confidence or min_confidence~=min_confidence or min_confidence<0 or min_confidence>100 then return nil,'bad_route_options',0 end
+ if type(path)~='table' or #path<2 or #path>8192 then return nil,'bad_path',0 end
  if type(goal)~='table' then return nil,'bad_path',0 end
  for _,k in ipairs({'x','y','z'}) do local v=goal[k];if type(v)~='number' or v~=v or math.abs(v)>100000 then return nil,'bad_path',0 end end
  local length,rise=0,0;local normalized={}
@@ -32,14 +37,14 @@ function P.inspect(path,goal,opts)
   for _,k in ipairs({'x','y','z'}) do local v=p[k];if type(v)~='number' or v~=v or math.abs(v)>100000 then return nil,'bad_path',0 end end
   if i>1 then
    local q=normalized[i-1];local span=dist(q,p);length=length+span;rise=rise+math.abs(p.z-q.z)
-   if not opts.allow_falling and q.z-p.z>(tonumber(opts.max_drop) or 8) then return nil,'unsafe_drop',0 end
+   if not opts.allow_falling and q.z-p.z>max_drop then return nil,'unsafe_drop',0 end
   end
  end
  path=normalized
  local gap=dist(path[#path],goal)
  local confidence=math.max(0,100-math.min(35,rise/math.max(length,1)*35)-math.min(60,gap*4))
  if gap>5 and not opts.allow_partial then return nil,'unreachable',confidence end
- if confidence<(tonumber(opts.min_confidence) or 40) then P.metrics.confidence_rejected=P.metrics.confidence_rejected+1;return nil,'low_route_confidence',confidence end
+ if confidence<min_confidence then P.metrics.confidence_rejected=P.metrics.confidence_rejected+1;return nil,'low_route_confidence',confidence end
  -- Subdivide existing segments, preserving every original corner and altitude.
  local out={path[1]}
  for i=2,#path do
