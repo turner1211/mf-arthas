@@ -1,0 +1,50 @@
+-- Midnight Season 2 encounter cards. Tank placement and Hunter positioning
+-- are kept separate; live timers and casts select immediate mechanic cues.
+local dungeons={'Ruby Life Pools','Altar of Fangs','Voidscar Arena','The Blinding Vale','Den of Nalorakk',"King's Rest",'Temple of Sethraliss','Murder Row'}
+local function b(summary,tank,dps,direction)return{summary=summary,tank=tank,dps=dps,direction=direction}end
+local bosses={
+ ['Melidrussa Chillworn']=b('Bait Hailburst; move Chillstorm away; break Ice Bulwark.','Hold center, then rotate into clean floor.','Group for the bait, then fan out.','HOLD'),
+ ['Kokia Blazehoof']=b('Bait Molten Boulder; kill Firestorm; avoid fire.','Use outer clean floor; face boss away.','Use the flank and rotate from fire.','FLANK'),
+ ['Kyrakka']=b('Spread fire; dodge breath and winds; hit active target.','Keep the active boss at an edge; breath away.','Use open flank space; avoid the frontal.','FLANK'),
+ ['Erkhart Stormvein']=b('Spread fire; dodge breath and winds; hit active target.','Keep the active boss at an edge; breath away.','Use open flank space; avoid the frontal.','FLANK'),
+ ["Rav'i"]=b('Soak Messy Eater; break shield; dodge Regurgitate.','Move Rav’i away from Fresh Meat before Ssscavenging.','Stay off the frontal and take a nearby soak.','FLANK'),
+ ['The Writhing Coil']=b('Use Vine Grip on Death Rattle; swap during Uncoil.','Keep exposed serpents together.','Use a clear flank and swap to exposed serpents.','FLANK'),
+ ["Zul'jan"]=b('Avoid poison lines; swap to summons; use a defensive.','Hold clean floor with the front away.','Keep a clear ranged lane around poison.','FLANK'),
+ ["Taz'Rah"]=b('Group Nether Dash drops; dodge Dark Bloom orbs.','Start at a wall and rotate around the edge.','Group at the edge, then follow the rotation.','EDGE'),
+ ['Atroxus']=b('Dodge Noxious Breath; defensive for Splash; kill Creeper.','Keep boss and Creeper close, but kite its melee.','Use the flank; swap to Creeper.','FLANK'),
+ ['Charonus']=b('Clear Gravitic Orbs at stars; avoid Void Cascade.','Place Charonus in the middle of the three stars.','Pre-position by a star; keep frontal clear.','CENTER'),
+ ['Lightblossom Trinity']=b('Kick Light Bolt; avoid loam; soak Lightblossom Beam.','Stack all three bosses for cleave.','Use the shared flank; take assigned blossom.','FLANK'),
+ ['Lekshi']=b('Kick Light Bolt; avoid loam; soak Lightblossom Beam.','Stack all three bosses for cleave.','Use the shared flank; take assigned blossom.','FLANK'),
+ ['Kezkitt']=b('Kick Light Bolt; avoid loam; soak Lightblossom Beam.','Stack all three bosses for cleave.','Use the shared flank; take assigned blossom.','FLANK'),
+ ['Meittik']=b('Kick Light Bolt; avoid loam; soak Lightblossom Beam.','Stack all three bosses for cleave.','Use the shared flank; take assigned blossom.','FLANK'),
+ ['Ikuzz the Light Hunter']=b('Kite Bloodthirsty Gaze through roots; avoid edges.','Keep Ikuzz close to rooted players for cleave.','Keep distance and kite Gaze through roots.','AWAY'),
+ ['Lightwarden Ruia']=b('Kick Warden’s Wrath; spread cones; dodge Lightfall.','Hold steady in clean floor.','Spread so red cones never overlap.','AWAY'),
+ ['Ziekket']=b('Soak essence; avoid Lightsap; group Lashers.','Gather Lashers beside the boss.','Use flank, soak essence, swap to Lashers.','FLANK'),
+ ['The Hoardmonger']=b('Soak mushrooms; dodge Earthshatter Slam.','Help soak extras; point frontal away.','Spread to mushrooms; avoid the frontal.','AWAY'),
+ ['Sentinel of Winter']=b('Kill Shivercores; use Snowdrift for Tempest.','Move boss beside each Shivercore for cleave.','Follow add, soak Rimeshatter, use Snowdrift.','TO_BOSS'),
+ ['Nalorakk']=b('Corner Echoing Maul; hide for Onslaught; soak shades.','After Onslaught, intercept Forceful Slam.','Get behind shield; block red shades before center.','TO_BOSS'),
+ ['The Golden Serpent']=b('Stack Spit Gold; slow and kill Animated Gold.','Hold stable with a clear add lane.','Drop gold at edge; swap to Animated Gold.','EDGE'),
+ ['Mchimba the Embalmer']=b('Handle Drain Fluids; find shaking sarcophagus.','Hold center so every coffin remains reachable.','Keep a clear route to the shaking coffin.','HOLD'),
+ ['The Council of Tribes']=b('Dodge axes; soak Barrel Through; kill totems.','Stack active bosses without aiming frontals at party.','Use flank; collapse for Barrel Through.','FLANK'),
+ ['Dazar, the First King']=b('Dodge spear and leaps; swap to Reban and T’zala.','Keep stable front; prepare for buster overlaps.','Spread for Smash; avoid spear and leap paths.','AWAY'),
+ ['Adderis']=b('Hit boss without Storm Blessed; spread then collapse.','Hold both close; keep frontals away.','Spread Gale Force; collapse for split damage.','TO_BOSS'),
+ ['Aspix']=b('Hit boss without Storm Blessed; spread then collapse.','Hold both close; keep frontals away.','Spread Gale Force; collapse for split damage.','TO_BOSS'),
+ ['Merektha']=b('Avoid Blinding Sand; break traps; dodge poison.','Face Sand away and move gradually from poison.','Use flank and free trapped players.','FLANK'),
+ ['Galvazzt']=b('Take energy cores only when assigned; avoid beams.','Hold center so energy lanes remain reachable.','Take assigned core and keep beams clear.','HOLD'),
+ ['Avatar of Sethraliss']=b('Kill and control plague adds before the Avatar.','Gather plague adds in clean floor.','Intercept adds; never damage the Avatar.','TO_BOSS'),
+ ['Kystia Manaheart']=b('Focus Nibbles; CC Images; run from Fel Nova.','Stack Kystia and Nibbles for cleave.','Use shared flank; run out for Fel Nova.','AWAY'),
+ ['Zaen Bladesorrow']=b('Hide behind freight for Murder in a Row.','Hold clean floor with access to freight.','Pre-position beside freight and hide.','COVER'),
+ ['Xathuux the Annihilator']=b('Bring Axe Toss close; kill axe; avoid Burning Steps.','Move Xathuux beside the axe for cleave.','Move in with Axe Toss, then focus axe.','TO_BOSS'),
+ ['Lithiel Cinderfury']=b('Kick Chaos Bolt; stop imps; use Demonic Gateway.','Avoid the Infernal and preserve gateway route.','Use gateway for Wave; swap to Vilefiend.','COVER'),
+}
+local mechanics={
+ ['Hailburst']={'STACK','Stack bait, then rotate together','TO_BOSS'},['Chillstorm']={'SPREAD','Move away from the group','AWAY'},['Frost Overload']={'SWAP','Kill whelps and break the shield','TO_BOSS'},
+ ['Ssscavenging']={'SOAK','Soak Messy Eater and break shield','HOLD'},['Regurgitate']={'DODGE','Sidestep the acid frontal','FLANK'},['Death Rattle']={'SPECIAL','Use Vine Grip extra action','TO_BOSS'},
+ ['Nether Dash']={'STACK','Group drops near the edge','EDGE'},['Dark Bloom']={'DODGE','Dodge incoming orbs','AWAY'},['Poison Splash']={'DEFENSIVE','Use Survival of the Fittest','HOLD'},['Noxious Breath']={'DODGE','Move across the boss flank','FLANK'},['Monstrous Roar']={'SWAP','Swap to Toxic Creeper','TO_BOSS'},
+ ['Gravitic Orbs']={'SPECIAL','Move to a nearby star','HOLD'},['Void Cascade']={'DODGE','Keep moving out of the frontal','AWAY'},['Lightblossom Beam']={'SOAK','Enter an assigned yellow circle','HOLD'},['Bloodthirsty Gaze']={'KITE','Run from boss through roots','AWAY'},['Pulverizing Strikes']={'SPREAD','Spread so red cones do not overlap','AWAY'},['Convoke the Spirits']={'DEFENSIVE','Defensive and dodge repeats','HOLD'},
+ ['Bedrock Slam']={'DEFENSIVE','Brace for the tank hit and incoming Bedrock Surge','HOLD'},['Fertile Loam']={'DODGE','Leave the slowing loam immediately','AWAY'},['Lightsower Dash']={'DODGE','Clear Lekshi’s dash lane','AWAY'},['Lightbloom Overgrowth']={'DEFENSIVE','Use a defensive if beam soaks were missed','HOLD'},['Thornblade']={'DEFENSIVE','Bleed active; preserve health and avoid overlap','HOLD'},['Light Bolt']={'INTERRUPT','Interrupt Kezkitt’s Light Bolt','TO_BOSS'},
+ ['Spoiled Supplies']={'SOAK','Clear a mushroom before it expires','AWAY'},['Earthshatter Slam']={'DODGE','Leave the boss frontal','FLANK'},['Frozen Tempest']={'STACK','Stand in Snowdrift cover','COVER'},['Echoing Maul']={'SPREAD','Place echoes together in a corner','EDGE'},['Overwhelming Onslaught']={'SPECIAL','Move behind Nalorakk’s shield','COVER'},['Echoing Fury']={'SOAK','Intercept a red shade before center','TO_BOSS'},
+ ['Spit Gold']={'SPREAD','Drop puddles beside existing puddles','EDGE'},["Lucre's Call"]={'SWAP','Slow and kill Animated Gold','TO_BOSS'},['Serpentine Gust']={'DEFENSIVE','Use Survival of the Fittest','HOLD'},['Drain Fluids']={'DEFENSIVE','Use a defensive; follow assignment','HOLD'},['Entomb']={'SPECIAL','Find the shaking sarcophagus','HOLD'},
+ ['Gale Force']={'SPREAD','Spread and brace against knockback','AWAY'},['Thunder and Lightning']={'STACK','Collapse into melee to split damage','TO_BOSS'},['Fel Nova']={'DODGE','Run away from Kystia','AWAY'},['Mirror Images']={'SWAP','Interrupt or CC and kill images','TO_BOSS'},['Murder in a Row']={'SPECIAL','Hide behind Forbidden Freight','COVER'},['Axe Toss']={'SWAP','Bring the axe close, then kill it','TO_BOSS'},['Malefic Wave']={'SPECIAL','Use the Demonic Gateway','COVER'},
+}
+return {dungeons=dungeons,bosses=bosses,mechanics=mechanics}

@@ -1,0 +1,8 @@
+# mf-arthas-manifest 1
+build db1b2150278c5ed5
+project sylvanas_bg_link_probe
+version 0.1.1
+entry main.lua
+header header.lua
+file 94 a605566853c23fc0438af9b30f813f4951bc75b7cc931b76447877c02296b059 header.lua
+file 1389 ab6e8ed0b3dbef4b68de886d2a87d4dbb9aafa2d41ff46e36aec6aaca41bd9d2 main.lua

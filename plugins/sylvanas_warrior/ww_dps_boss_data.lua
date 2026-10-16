@@ -1,0 +1,46 @@
+-- Midnight Season 2 melee-DPS encounter cards. These are coaching summaries;
+-- BigWigs timing and live casts choose the immediate prompt.
+local dungeons={'Ruby Life Pools','Altar of Fangs','Voidscar Arena','The Blinding Vale','Den of Nalorakk',"King's Rest",'Temple of Sethraliss','Murder Row'}
+local bosses={
+ ['Melidrussa Chillworn']='Group Hailburst bait; drop Chillstorm away; swap to whelps and break Ice Bulwark.',
+ ['Kokia Blazehoof']='Bait and dodge Molten Boulder; kill Blazebound Firestorm; avoid fire patches.',
+ ['Kyrakka']='Spread fire drops; dodge breath and winds; keep damage on the active dragon target.',
+ ['Erkhart Stormvein']='Spread fire drops; dodge breath and winds; keep damage on the active dragon target.',
+ ["Rav'i"]='Soak Messy Eater during Ssscavenging; break the shield; dodge Regurgitate waves.',
+ ['The Writhing Coil']='Use Vine Grip to stop Death Rattle; swap to exposed serpents during Uncoil.',
+ ["Zul'jan"]='Respect poison lines and ground effects; swap to priority summons; defensive for group damage.',
+ ["Taz'Rah"]='Spread near the edge for Nether Dash; dodge Dark Bloom orbs; rotate from Umbral Rupture.',
+ ['Atroxus']='Stay close to dodge Noxious Breath; defensive for Poison Splash; kill Toxic Creeper.',
+ ['Charonus']='Dodge void zones and beams; swap to priority manifestations; defensive for arena-wide damage.',
+ ['Lightblossom Trinity']='Pummel Light Bolt; avoid dash lines; soak a yellow Lightblossom Beam circle.',
+ ['Meittik']='Kite Bloodthirsty Gaze through roots; dodge ground effects; defensive for Thorncaller Roar.',
+ ['Ikuzz the Light Hunter']='Kite Bloodthirsty Gaze through roots; dodge ground effects; defensive for Thorncaller Roar.',
+ ['Lightwarden Ruia']='Pummel Warden Wrath; dodge Lightfall; spread frontals; defensive during Convoke.',
+ ['Ziekket']='Avoid beams and area denial; handle priority adds; save mobility for forced movement.',
+ ['The Hoardmonger']='Step on expiring mushrooms; dodge Bonespike Slam; defensive for Bellow.',
+ ['Sentinel of Winter']='Bait tornadoes together; kill and Pummel adds; use snow cover for Frozen Tempest.',
+ ['Nalorakk']='Spread Echoing Maul; hide behind the friendly NPC; soak red echoes during Echoing Fury.',
+ ['The Golden Serpent']='Drop Spit Gold together; slow and kill Animated Gold; defensive for Serpentine Gust.',
+ ['Mchimba the Embalmer']='Use a defensive for Drain Fluids; find the shaking sarcophagus; Pummel spawned mummies.',
+ ['The Council of Tribes']='Dodge axes; soak Barrel Through; Pummel Poison Nova; kill dangerous totems first.',
+ ['Dazar, the First King']='Dodge spear and raptor paths; swap to Reban and Tzala; defensive for major overlaps.',
+ ['Adderis']='Attack the boss without Storm Blessed; spread Gale Force; collapse for Thunder and Lightning.',
+ ['Aspix']='Attack the boss without Storm Blessed; spread Gale Force; collapse for Thunder and Lightning.',
+ ['Merektha']='Avoid Blinding Sand facing; break traps quickly; dodge burrow and poison zones.',
+ ['Galvazzt']='Rotate through energy cores only when assigned; avoid beams; defensive during energy pressure.',
+ ['Avatar of Sethraliss']='Kill plague adds before the Avatar; interrupt and control them; avoid green ground effects.',
+ ['Kystia Manaheart']='Focus Nibbles; interrupt or CC Mirror Images; step out of Fel Nova.',
+ ['Zaen Bladesorrow']='Avoid weapon lines and frontals; swap to priority summons; defensive for unavoidable damage.',
+ ['Xathuux the Annihilator']='Dodge annihilation zones; interrupt priority casts; preserve mobility for displacement.',
+ ['Lithiel Cinderfury']='Avoid fire zones and lines; swap to priority adds; defensive for overlapping group damage.',
+}
+local mechanics={
+ ['Hailburst']={'STACK','Stack bait, then rotate together','toward_boss'},['Chillstorm']={'SPREAD','Move away from the group','spread_party'},['Frost Overload']={'SWAP','Kill whelps and break the shield'},
+ ['Ssscavenging']={'SOAK','Soak Messy Eater and break shield','toward_boss'},['Regurgitate']={'DODGE','Dodge the acid wave','sidestep'},['Death Rattle']={'SPECIAL','Use Vine Grip and move far from boss','away_boss'},
+ ['Nether Dash']={'SPREAD','Group near wall; rotate around edge','spread_party'},['Dark Bloom']={'DODGE','Dodge incoming orbs','sidestep'},['Poison Splash']={'DEFENSIVE','Use a Warrior defensive'},['Monstrous Roar']={'SWAP','Swap to Toxic Creeper'},
+ ['Lightblossom Beam']={'SOAK','Enter an assigned yellow circle','toward_boss'},['Bloodthirsty Gaze']={'KITE','Run from boss through roots','away_boss'},['Convoke the Spirits']={'DEFENSIVE','Defensive and dodge repeated mechanics'},
+ ['Spoiled Supplies']={'SOAK','Clear a mushroom before it expires'},['Frozen Tempest']={'STACK','Stand by a snow pile for cover'},['Echoing Maul']={'SPREAD','Place echoes at a nearby corner','away_boss'},['Overwhelming Onslaught']={'SPECIAL',"Hide behind Zul'jarra's shield"},['Echoing Fury']={'SOAK','Intercept a charging echo'},
+ ['Spit Gold']={'SPREAD','Drop puddles beside existing puddles'},["Lucre's Call"]={'SWAP','Slow and kill Animated Gold'},['Serpentine Gust']={'DEFENSIVE','Use a Warrior defensive'},['Drain Fluids']={'DEFENSIVE','Use a defensive for the channel'},['Entomb']={'SPECIAL','Find the shaking sarcophagus'},
+ ['Gale Force']={'SPREAD','Spread and brace against knockback','spread_party'},['Thunder and Lightning']={'STACK','Collapse into melee to split damage','toward_boss'},['Fel Nova']={'DODGE','Step out of the nova','away_boss'},['Fel Spray']={'DODGE','Move out of Nibbles frontal','sidestep'},['Mirror Images']={'SWAP','Interrupt or CC and kill images'},
+}
+return {dungeons=dungeons,bosses=bosses,mechanics=mechanics}

@@ -1,0 +1,12 @@
+# mf-arthas-manifest 1
+build 8449b2ff1ab7083d
+project ret_paladin_plugin
+version 1.61.54
+entry main.lua
+header header.lua
+file 241 40e576f4ca0a7a26186097f392f3701da88615615005a5ebd819890af05172a6 header.lua
+file 297 5d583a13774bcd2ed1066aad3677d3cc048fff5b402d8da86e4cd579e06ea908 main.lua
+file 1979797 3fd6573c1a879c5896d84cbc16070be63dbbdfbce5f179b1a1736ea64753def0 ret_paladin_art.lua
+file 20647 6e08c191904956096bd9df80e0406730aad5c699255fa8b522c31f73a4353944 ret_paladin_boss_hud.lua
+file 28797 369e486565e96f3beb6e76ade80e917fc5e4a785a819cd66ca1e092d22d5f92f ret_paladin_gui.lua
+file 307842 80a4bcf290643120e6cc2eca8de2bb3cc39b3311e03e16853fccd44af251ffd3 ret_paladin_rotation.lua

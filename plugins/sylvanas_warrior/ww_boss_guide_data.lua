@@ -1,0 +1,77 @@
+-- Midnight Season 2 boss handling, cross-checked with Method's 12.1 dungeon guides.
+-- Action: defensive, interrupt, spread, stack, move, kite, face, pickup, priority.
+local function r(spell,action,text,radius,position) return {spell=spell,action=action,text=text,radius=radius,position=position} end
+return {
+ altaroffangs={
+  r("Ravenous Stomp","defensive","Use a defensive; party hit incoming"),r("Triple Shot","spread","Spread from allies",5),
+  r("Regurgitate","move","Dodge the incoming waves",6,"sidestep"),r("Ssscavenging","stack","Take the soaks and break the shield",3,"toward_boss"),
+  r("Toxic Atrophy","interrupt","Interrupt every Toxic Atrophy"),r("Vindictive Onslaught","move","Dodge charge, then frontal",7),
+  r("Death Rattle","move","Break tether; control spawned writhes",6,"away_boss"),r("Ritual of the Fang","stack","Soak a beam to the boss",3,"toward_boss"),
+  r("Chop Down","defensive","Major tank combo: defensive now"),r("Axegrinder","move","Avoid the bouncing axes",6),
+ },
+ murderrow={
+  r("Fel Nova","move","Move out of Fel Nova",6,"away_boss"),r("Mirror Images","interrupt","Stop or kill the mirror images"),
+  r("Fel Spray","face","Face Nibbles away from the party",7,"face_away"),r("Chaos Barrage","defensive","Tank hit and chain damage incoming"),
+  r("Same-Day Delivery","move","Avoid barrels",6),r("Fire Bomb","priority","Cleave the Fel-Infused Freight"),
+  r("Murder In A Row","move","Hide behind your own barrel",8),r("Killing Spree","defensive","Party channel: use mitigation"),
+  r("Legion Strike","face","Face the frontal away from the party",8,"face_away"),r("Axe Toss","stack","Drop axe beside boss; kill it",3,"near_boss"),
+  r("Infernal Crush","spread","Spread from allies",5,"spread_party"),r("Demonic Rage","kite","Kite boss slowly along arena edge",8,"away_boss"),
+  r("Chaos Bolt","interrupt","Interrupt Chaos Bolt"),r("Summon Vilefiend","pickup","Pick up the Vilefiend add"),
+  r("Fingers of Gul'dan","spread","Spread but overlap circles",4),r("Malefic Wave","move","Wait, then take gateway to safe side",9),
+ },
+ denofnalorakk={
+  r("Ravenous Bellow","defensive","Party hit; brace for knockback"),r("Earthshatter Slam","move","Move out of the impact",6),
+  r("Bonespike Slam","move","Move out; avoid remaining spikes",6),r("Spoiled Supplies","stack","Soak mushrooms carefully",3),
+  r("Raging Squall","stack","Stack to bait tornadoes, then rotate",3),r("Shattering Frostspike","move","Leave circles; kill spawned adds",6),
+  r("Winter's Shroud","interrupt","Interrupt Winter's Shroud"),r("Frozen Tempest","stack","Use snow pile to stop pushback",3),
+  r("Echoing Maul","spread","Place echoes at a nearby corner",5,"away_boss"),r("Overwhelming Onslaught","stack","Stand behind Zul'jarra's shield",3),
+  r("Forceful Slam","stack","Tank return to boss and soak",3,"toward_boss"),r("Fury Of The War God","stack","Stand between charging echoes and Zul'jarra",3),
+ },
+ theblindingvale={
+  r("Light Bolt","interrupt","Interrupt Light Bolt"),r("Thornblade","spread","Move away, then leave leap impact",5),
+  r("Bedrock Slam","defensive","Tank buster: defensive now"),r("Lightsower Dash","move","Dodge the line through loam circles",7),
+  r("Lightblossom Beam","stack","Tank soak one Fertile Loam circle",3),r("Thorncaller Roar","defensive","Party damage incoming"),
+  r("Verdant Stomp","move","Avoid the edge and roots during knockback",5,"toward_boss"),r("Bloodthirsty Gaze","kite","Fixate: kite boss across roots",8,"away_boss"),
+  r("Warden's Wrath","interrupt","Interrupt Warden's Wrath"),r("Lightfall","move","Move out of circles",6),
+  r("Lightfire","spread","Stack debuffs together, then dodge",4),r("Grievous Thrash","defensive","Bleed buster: self-heal or defensive"),
+  r("Pulverizing Strikes","spread","Spread targeted frontals",5,"spread_party"),r("Awaken The Lightbloom","priority","Kill adds; aim Lightbeam through corpses"),
+  r("Lightbloom's Essence","stack","Soak an orb before it reaches boss",3),r("Thornspike","defensive","Tank hit and knockback incoming"),
+ },
+ voidscararena={
+  r("Nether Dash","spread","Group near a wall; rotate around the edge",5,"spread_party"),r("Void Blast","defensive","Tank buster and knockback incoming"),
+  r("Dark Bloom","move","Dodge incoming orbs",7,"sidestep"),r("Noxious Breath","move","Stay close and sidestep frontal",5,"sidestep"),
+  r("Monstrous Roar","priority","Cleave Toxic Creeper but never let it melee you",nil,"away_boss"),r("Hulking Claw","defensive","Major tank buster: defensive now"),
+  r("Unstable Singularity","move","Pre-position near a star without touching it",7),r("Cosmic Crash","spread","Spread from allies",5,"spread_party"),
+  r("Gravitic Orbs","kite","Take your orb into a nearby singularity",8),r("Dark Waves","face","Face tank frontal away",8,"face_away"),
+  r("Void Cascade","move","Run out, then dodge projectiles",8),
+ },
+ kingsrest={
+  r("Spit Gold","spread","Drop gold near existing puddles",5),r("Lucre's Call","priority","Control and kill Animated Gold"),
+  r("Serpentine Gust","defensive","Party channel: group mitigation"),r("Tail Thrash","defensive","Tank hit incoming"),
+  r("Drain Fluids","move","Avoid circles; defensive if targeted",6),r("Burn Corruption","move","Drop fire away from boss and tombs",7),
+  r("Awakening Slam","defensive","Party hit; pick up spawned mummies"),r("Entomb","priority","Find the shaking sarcophagus"),
+  r("Barrel Through","stack","Group in the soak",3),r("Debilitating Backhand","defensive","Large tank buster and damage amp"),
+  r("Poison Nova","interrupt","Interrupt Poison Nova"),r("Call the Elements","priority","Kill Explosive, Thundering, Torrent"),
+  r("Hunting Leap","face","Aim Reban frontal away",8),r("Deathly Roar","interrupt","Interrupt Deathly Roar"),
+  r("Blade Combo","defensive","Dazar tank combo: defensive now"),r("Quaking Leap","spread","Move away from leap impact",5),
+ },
+ rubylifepools={
+  r("Frigid Shard","interrupt","Interrupt Frigid Shard"),r("Hailburst","stack","Stack to bait ice, then rotate",3),
+  r("Chillstorm","move","Drop away and fight the pull",7),r("Awaken Whelps","pickup","Pick up all Infused Whelps"),
+  r("Frost Overload","priority","Break Ice Bulwark immediately"),r("Ritual Of Blazebinding","spread","Drop add where party can reach it",5),
+  r("Blaze Volley","interrupt","Interrupt Blaze Volley"),r("Molten Boulder","move","Move off the boulder path",7),
+  r("Searing Blows","defensive","Tank combo: defensive every cast"),r("Inferno Spit","spread","Drop fire away from group",5),
+  r("Roaring Flamebreath","move","Sidestep the dragon frontal",7,"sidestep"),r("Stormslam","defensive","Tank hit; clear magic debuff"),
+  r("Interrupting Cloudburst","move","Stop casting before completion"),r("Winds Of Change","move","Brace for wind and moving fire",7),
+ },
+ templeofsethraliss={
+  r("Gale Force","spread","Spread lines and brace at a wall",5),r("Thunder And Lightning","stack","Collapse in melee to soak",3),
+  r("Tempest Winds","spread","Drop puddle away from party",5),r("Overload","defensive","Adderis empowered: defensive"),
+  r("Lightning Bite","defensive","Tank buster: defensive every cast"),r("Knot of Snakes","stack","Stack in melee; AoE snakes",3),
+  r("Thunder Spit","spread","Drop circle at arena edge",5),r("Serpentstorm","defensive","Party damage and knockback"),
+  r("Lightning Spire","spread","Non-tank soaks; reposition boss",5),r("Induction","move","Move boss away from puddle",6),
+  r("Consume Charge","defensive","Emergency: boss reached full energy"),r("Vile Charge","defensive","Defensive if charge targets you"),
+  r("Tainted Strike","defensive","Guardian tank buster incoming"),r("Corruption Burst","stack","Collect lifeforce soak before explosion",3),
+  r("Flame Shock","interrupt","Interrupt Flame Shock"),r("Latent Hex","move","Drop puddle at room edge",7),
+ }
+}
