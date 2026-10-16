@@ -20,6 +20,9 @@ local function annotate_deadlines(snapshot)
  -- Five yards per second deliberately allows for turns and short route bends.
  -- It is an estimate for prioritization, never permission for direct movement.
  local travel_speed=snapshot.mounted==true and 9 or 5
+ if snapshot.carrying and finite(snapshot.carrier_speed_cap) and snapshot.carrier_speed_cap>0 and snapshot.carrier_speed_cap<=1 then
+  travel_speed=travel_speed*snapshot.carrier_speed_cap
+ end
  for _,group in ipairs(groups) do
   for _,row in ipairs(snapshot[group] or {}) do
    local left,source=remaining(row,observed)

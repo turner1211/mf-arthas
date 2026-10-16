@@ -1,6 +1,16 @@
 -- Concrete battleground identifiers and positions imported from TrinityCore
 -- commit 7abb5096bc06ecde73455d0456e9044a85c862af.
 local T={commit="7abb5096bc06ecde73455d0456e9044a85c862af"}
+T.forever={profiles={"warsong","arathi","alterac","darkspear_islands"},
+ queue_method="battlemaster_or_battleground_entrance",random_matchmaking=false,brawl=false,epic=false,
+ darkspear={team_size=15,capture_points=4,score_to_win=2000,min_level=30,max_level=60,
+  central_flag=true,flag_requires_owned_base=true,flag_aura=1284560,carrier_speed_cap=.85}}
+T.forever.darkspear.recovery={known_item=272055,
+ names={"Darkspear Islands Field Ration","Darkspear Islands Iron Ration","Darkspear Islands Enriched Ration"},
+ spells={field_ration=1290860,iron_ration=1290859,first_aid={1290863,1290865,1290867}}}
+T.forever.darkspear.recovery.known_bandage=272057
+T.forever.warsong={flag_auras={23333,23335},carrier_speed_cap=.85,captures_to_win=3,
+ capture_requires_own_flag_home=true}
 T.queue_slots=3
 T.status={none=0,wait_queue=1,preparation=2,active=3,finished=4}
 T.battlemaster={alterac=1,warsong=2,arathi=3,eye=7,strand=9,isle=30,random=32,

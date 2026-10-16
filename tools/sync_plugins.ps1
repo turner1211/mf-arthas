@@ -43,7 +43,7 @@ $CompatibilityShim = Join-Path $RepoRoot 'tools/loader_template/mf_loader.lua'
 $Projects = @(
     @{ Id = 'MasterArthasNav';        Source = 'MasterArthasNav';             Name = 'MasterArthasNav' }
     @{ Id = 'assassination_rogue';    Source = 'assassination_rogue_v*';      Name = 'Assassination Rogue Activity Profiles'; ClassIds = @(4) }
-    @{ Id = 'bg_player';              Source = 'bg player';                   Name = 'Sylvanas Battleground Command' }
+    @{ Id = 'bg_player';              Source = @('bg player', 'sylvanas_battleground_bot'); Name = 'Sylvanas Battleground Command' }
     @{ Id = 'bloodcrypt_delver';      Source = 'bloodcrypt_delver';           Name = 'Bloodcrypt Delver' }
     @{ Id = 'guardian_druid_mplus';   Source = 'guardian_druid_mplus_v*';     Name = 'Arthas Druid Suite 12.1.5'; ClassIds = @(11) }
     @{ Id = 'holy_paladin_mplus';     Source = 'holy_paladin_mplus_v*';       Name = 'Holy Paladin Healing Profiles'; ClassIds = @(2) }
@@ -64,7 +64,11 @@ $Sha = [System.Security.Cryptography.SHA256]::Create()
 function Get-Hex([byte[]]$Bytes) { -join ($Sha.ComputeHash($Bytes) | ForEach-Object { $_.ToString('x2') }) }
 
 function Resolve-Source($Pattern) {
-    $dirs = @(Get-ChildItem -LiteralPath $SourceRoot -Directory | Where-Object { $_.Name -like $Pattern })
+    $patterns = @($Pattern)
+    $dirs = @(Get-ChildItem -LiteralPath $SourceRoot -Directory | Where-Object {
+        $name = $_.Name
+        @($patterns | Where-Object { $name -like $_ }).Count -gt 0
+    } | Sort-Object -Property FullName -Unique)
     if ($dirs.Count -le 1) { return $dirs | Select-Object -First 1 }
     $dirs | Sort-Object -Descending -Property @{ Expression = {
         $v = $null
@@ -117,7 +121,7 @@ function Sync-Loader($P) {
 foreach ($p in $Projects) {
     if ($Only -and ($Only -notcontains $p.Id)) { continue }
     $src = Resolve-Source $p.Source
-    if (-not $src) { Write-Warning "$($p.Id): no folder matches '$($p.Source)' in $SourceRoot"; continue }
+    if (-not $src) { Write-Warning "$($p.Id): no folder matches '$(@($p.Source) -join "', '")' in $SourceRoot"; continue }
     if (-not (Test-Path -LiteralPath (Join-Path $src.FullName 'main.lua'))) { Write-Warning "$($p.Id): $($src.Name) has no main.lua"; continue }
 
     $dest = Join-Path $RepoRoot "plugins/$($p.Id)"
@@ -134,9 +138,15 @@ foreach ($p in $Projects) {
         if (-not $runtime -and -not $keepDoc) { continue }
         $target = Join-Path $dest $f.Rel
         New-Item -ItemType Directory -Force -Path (Split-Path -Parent $target) | Out-Null
-        Copy-Item -LiteralPath $f.File.FullName -Destination $target
+        if ($f.File.Extension -in @('.lua', '.md', '.txt')) {
+            $text = [regex]::Replace([IO.File]::ReadAllText($f.File.FullName), "`r+`n", "`n").Replace("`r", "`n")
+            [IO.File]::WriteAllText($target, $text, $Utf8)
+        }
+        else {
+            Copy-Item -LiteralPath $f.File.FullName -Destination $target
+        }
         if ($runtime) {
-            $bytes = [IO.File]::ReadAllBytes($f.File.FullName)
+            $bytes = [IO.File]::ReadAllBytes($target)
             $entries.Add("file $($bytes.Length) $(Get-Hex $bytes) $($f.Rel)")
         }
     }

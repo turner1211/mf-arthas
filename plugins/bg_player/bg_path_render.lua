@@ -1,7 +1,6 @@
 local M={height=0.18,max_route_points=16,max_nav_points=48}
 local ok_color,Color=pcall(require,"common/color")
 local ok_vec,Vec3=pcall(require,"common/geometry/vector_3")
-local RuntimeApi=require("bg_runtime_api")
 local function lift(p,extra)
  if not p then return nil end
  local ok,x,y,z=pcall(function() return p.x,p.y,p.z end)
@@ -28,7 +27,7 @@ end
 function M.draw(core,controller,nav,combat,performance_tier)
  local paints=colors()
  if not core or not controller or not core.graphics or not paints then return end
- local player=RuntimeApi.player()
+ local player=core.object_manager and core.object_manager.get_local_player and core.object_manager.get_local_player()
  if not player or not controller.destination then return end
  local ok,player_position=pcall(function() return player:is_valid() and player:get_position() end)
  if not ok or not player_position then return end

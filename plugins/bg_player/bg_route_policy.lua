@@ -9,7 +9,7 @@ end
 function P.allowed(client_family,profile)
  local f=family(client_family)
  if f=="unknown" or f=="" then return true,"client_loading" end
- if f=="forever" then return forever[profile]==true,forever[profile] and "shared_or_forever" or "retail_only" end
+ if f:find("forever",1,true) then return forever[profile]==true,forever[profile] and "shared_or_forever" or "retail_only" end
  if f=="midnight" or f=="retail" or f=="war_within" or f=="dragonflight" then
   return retail[profile]~=false,retail[profile]==false and "forever_only" or "retail"
  end

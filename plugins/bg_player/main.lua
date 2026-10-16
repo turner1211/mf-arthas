@@ -1,4 +1,3 @@
-local ArthasBootstrap=require("arthas_bootstrap")
 -- Stop the previously loaded generation before replacing its public API. Core
 -- callbacks cannot be unregistered, so every callback below also checks this
 -- generation token and becomes inert after the next script reload. This keeps
@@ -22,6 +21,7 @@ if type(core.cpu_ticks)=="function" and type(core.cpu_ticks_per_second)=="functi
 elseif os and type(os.clock)=="function" then plugin_load_clock=os.clock;plugin_load_clock_source="os.clock" end
 local plugin_load_clock_started=plugin_load_clock()
 local Controller=require("bg_controller")
+local ObstacleProbe=require("bg_obstacle_probe")
 local ok_vec,Vec3=pcall(require,"common/geometry/vector_3")
 local function vec3(x,y,z) return ok_vec and Vec3 and Vec3.new and Vec3.new(x,y,z) or {x=x,y=y,z=z} end
 local Planner=require("bg_planner")
@@ -48,6 +48,7 @@ local Builtin=require("bg_builtin_objectives")
 local PathRender=require("bg_path_render")
 local Routes=require("bg_routes")
 local Darkspear=require("bg_darkspear")
+local ForeverRecovery=require("bg_forever_recovery")
 local MountSelection=require("bg_mount_selection")
 local Navigation=require("bg_navigation")
 local MountRecovery=require("bg_mount_recovery")
@@ -67,7 +68,6 @@ local TargetForecast=require("bg_target_forecast")
 local TrinityForever=require("bg_trinitycore_forever")
 local NavFaction=require("bg_nav_faction")
 local Object=require("bg_object")
-Object.api=require("bg_runtime_api")
 local LocalLink=require("bg_local_link").new()
 Compat.set_local_queue_reader(LocalLink.queues)
 local tree=core.menu.tree_node()
@@ -152,7 +152,11 @@ local window_key_down=false
 local tick_objects
 local function runtime_objects()
  if tick_objects then return tick_objects end
- tick_objects=Object.api.objects()
+ local manager=core.object_manager or {};local ok,objects=pcall(function()
+  if type(manager.get_all_objects)=="function" then return manager.get_all_objects() end
+  if type(manager.get_visible_objects)=="function" then return manager.get_visible_objects() end
+ end)
+ tick_objects=ok and type(objects)=="table" and objects or {}
  return tick_objects
 end
 local function mount_detail(detail,now)
@@ -370,7 +374,7 @@ local navigation=Navigation.new(nav,function(event,goal) debugger:add(event,"des
   local input=core.input or {};if type(input.move_forward_stop)=="function" then input.move_forward_stop() end
  end,
  function()
-  local player=Object.api.player()
+  local player=core.object_manager.get_local_player()
   return player and type(player.is_swimming)=="function" and player:is_swimming()==true
  end)
 local mount_recovery=MountRecovery.new(function() navigation:stop() end,core.input and core.input.dismount)
@@ -396,6 +400,7 @@ local api={
   critical_health_pursuit=false
   if callouts and type(callouts.reset)=="function" then callouts:reset() end
   if faction and type(faction.reset)=="function" then faction:reset() end
+  Darkspear.reset()
   census_seen={};census_count=0;next_census=0
   route_seen={};next_route_sample=0
   if seething_launch_active and core.input and type(core.input.move_forward_stop)=="function" then core.input.move_forward_stop() end
@@ -404,7 +409,7 @@ local api={
   if mount_vendor then mount_vendor:reset() end
   Powerups.reset(powerups,nil)
  end,
- time=core.time,player=Object.api.player,
+ time=core.time,player=core.object_manager.get_local_player,
  instance_type=core.get_instance_type,
  corpse_position=core.game_ui.get_corpse_position,
  corpse_delay=core.game_ui.get_resurrect_corpse_delay,
@@ -457,7 +462,7 @@ local api={
  release=core.input.release_spirit,target=core.input.set_target,clear_target=core.input.clear_target,
  current_target=function(player) return player and player:get_target() end,
  interact=function(object)
-  local player=Object.api.player()
+  local player=core.object_manager.get_local_player()
   if player and type(player.is_mounted)=="function" and player:is_mounted() then
    if core.input and type(core.input.dismount)=="function" then core.input.dismount() end
    return false,"objective_dismounting"
@@ -469,7 +474,7 @@ local api={
   return Preparation.choose(preparation,runtime_objects(),p,match,now,{healthstone=has_healthstone(now)})
  end,
  prepare_use=function(row,now)
-  local player=Object.api.player()
+  local player=core.object_manager.get_local_player()
   if player and type(player.is_mounted)=="function" and player:is_mounted() then
    if core.input and type(core.input.dismount)=="function" then core.input.dismount() end
    return false,"preparation_dismounting"
@@ -482,6 +487,19 @@ local api={
   return Powerups.choose(powerups,runtime_objects(),player,snapshot.player_position,snapshot.match_id,now,
    snapshot.player_role,snapshot.travel_distance)
  end,
+ forever_recovery=function(player,snapshot,now)
+  if not Client:is_forever() then return nil end
+  return ForeverRecovery.choose(snapshot)
+ end,
+ use_forever_recovery=function(row,now)
+  local input=core.input or {}
+  if type(input.use_item)~="function" or type(row)~="table" or not tonumber(row.item_id) then return false end
+  local ok,accepted=pcall(input.use_item,row.item_id)
+  if ok and accepted==true then
+   debugger:add("forever_recovery",tostring(row.kind or "item")..":"..tostring(row.item_id),now);return true
+  end
+  return false
+ end,
  prepare_skip=function(row,now)
   Preparation.used(preparation,row,now)
  end,
@@ -492,7 +510,7 @@ local api={
   return handled,state
  end,
  recover_mounted=function(position,reason,now)
-  local player=Object.api.player()
+  local player=core.object_manager.get_local_player()
   if not player then return false end
   local recovered=mount_recovery:recover(player,position,now)
   if recovered then mount_settle=nil;mount_detail("dismount_recovery:"..tostring(reason),now) end
@@ -686,6 +704,18 @@ local api={
  escape_direction=function(direction)
   local n=nav();local movement=n and n.movement
   if movement and type(movement.strafe)=="function" then movement:strafe(direction) end
+ end,
+ obstacle_escape_side=function(position,goal)
+  local graphics=core.graphics
+  if type(graphics)~="table" or type(graphics.trace_line)~="function" then return nil end
+  local side=ObstacleProbe.escape_side(function(a,b,flags) return graphics.trace_line(a,b,flags) end,
+   position,goal,vec3)
+  return side
+ end,
+ recovery_jump=function()
+  local input=core.input or {}
+  if type(input.jump)~="function" then return false end
+  local ok=pcall(input.jump);return ok
  end,
  reverse_rebound=function(point)
   local input=core.input or {}
@@ -983,7 +1013,8 @@ local api={
     -- targets remain actionable so carriers and emergency assaults are not lost.
     if critical_health_pursuit and dist>15 and
      not objective_pursuit and not current_pursuit then return nil end
-    local has_los=Object.api.los(player,o)==true
+    local los_ok,has_los=pcall(core.graphics.is_line_of_sight,player,o)
+    has_los=los_ok and has_los==true
     local pursuit=team_fight or objective_pursuit
     local eye_profile=snapshot.rule_profile=="eye_standard" or snapshot.rule_profile=="eye_blitz" or snapshot.rule_profile=="eye_blitz_legacy"
     -- A verified priority/assisted target may briefly disappear behind a
@@ -1246,7 +1277,7 @@ local function debug_rows()
   {"TrinityCore catalog","random="..tostring(TrinityForever.battlemaster.random).." / modern="..
    tostring(TrinityForever.battlemaster.random_modern).." / epic="..tostring(TrinityForever.battlemaster.random_epic)..
    " / live catalog remains authoritative"},
-  {"Forever readiness",Client:is_forever() and "4 BG catalog; Darkspear landmark fallback (native mmap 2524 unavailable); Brawl/Epic unavailable" or "Not running Forever"},
+  {"Forever readiness",Client:is_forever() and "4 BG catalog; battlemaster/entrance queue; deterministic Darkspear fallback; Brawl/Epic unavailable" or "Not running Forever"},
   {"Vehicle / siege handlers",(objective_actions and type(objective_actions.vehicle)=="function" and "vehicle ready" or "vehicle unavailable").." / "..
    (objective_actions and type(objective_actions.siege_gate)=="function" and "siege ready" or "siege unavailable")},
   {"Plugin initialization",plugin_init_ms and string.format("%.1fms",plugin_init_ms) or "measuring"},
@@ -1281,7 +1312,7 @@ _G.SylvanasBattlegroundBot={
  end,
  get_capabilities=function() return Compat.capabilities(selected_mode().key) end,
  get_forever_readiness=function()
-  return {detected=Client:is_forever(),queue_modes={random=true,brawl=false,epic=false},
+  return {detected=Client:is_forever(),queue_modes={configured_battleground=true,random_matchmaking=false,brawl=false,epic=false},
    profiles={"warsong","arathi","alterac","darkspear_islands"},darkspear_rules=Darkspear.rules,
    darkspear_navigation="landmark_fallback_no_native_mmap_2524",live_validation_required=true,route_scope=Client.route_scope,build=Build.version}
  end,
@@ -1313,7 +1344,6 @@ _G.SylvanasBattlegroundBot={
  start=function() Health:reset();Reader:reset();enabled:set(true);debugger:add("control","started",core.time()) end
 }
 core.register_on_update_callback(function()
-    ArthasBootstrap.tick("bg_player", enabled:get_state())
  if not instance_current() then return end
  local now=core.time()
  local logic_due=now>=(controller.next_logic_tick or 0)
@@ -1484,7 +1514,7 @@ core.register_on_render_window_callback(function()
  if not Gui.open and not show_hud:get_state() then return end
  local now=render_time()
  Renderer:run("window",now,function()
- local player=Renderer:read("player",now,Object.api.player,false)
+ local player=Renderer:read("player",now,core.object_manager.get_local_player,false)
  local theme=Renderer:read("class and specialization",now,function() return Theme.detect(player) end,Theme.resolve(nil,nil))
  local detected_name,detected_flags=detected_role(player)
  local detected_style,style_source=detected_damage_style(player)
@@ -1498,7 +1528,7 @@ core.register_on_render_window_callback(function()
   context=context,provider_ready=Renderer:read("objectives",now,api.objective_provider_ready,false),navigation_ready=Renderer:read("navigation",now,api.navigation_ready,false),
   sentinel_provider=type(rawget(_G,"ArthasNavEnhancements"))=="table" or type(rawget(_G,"ArthasNav"))=="table",sentinel_client=nav()~=nil,sentinel_provider_kind=sentinel_provider_kind,sentinel_state=nav_health_state,
   readiness=readiness_report(now),route_index=controller.route_index or 0,route_total=route_total,route_distance=route_distance,
-  area=Renderer:read("area",now,core.get_instance_name,"Loading"),version=Build.version,log_rows=log_rows,
+  area=Renderer:read("area",now,core.get_instance_name,"Loading"),profile=Renderer:read("battleground profile",now,detected_profile,nil),version=Build.version,log_rows=log_rows,
   log_text=function() return debugger:export(debug_rows()) end,report=report}
  if s.area=="" then s.area="Outside battleground" end
  s.role_label=({[2]="Tank",[4]="Healer",[8]="Damage"})[s.role_flags] or "Custom roles"

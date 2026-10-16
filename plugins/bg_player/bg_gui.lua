@@ -1,19 +1,17 @@
 local Color=require("common/color")
 local Vec=require("common/geometry/vector_2")
 local Enums=require("common/enums")
--- Follow the Rogue GUI's image-backed presentation. Local class/spec art is the
--- primary source; the shared icon helper supplies newer or missing WoW assets.
+-- Battleground artwork and objective identity drive the command dashboard.
 local embedded_ok,EmbeddedIcons=pcall(require,"bg_icon_data")
 if not embedded_ok then EmbeddedIcons={} end
 local horror_ok,HorrorArt=pcall(require,"bg_horror_art")
 if not horror_ok then HorrorArt={} end
-local class_art_ok,ClassArt=pcall(require,"bg_class_art")
-if not class_art_ok then ClassArt={} end
 local icon_ok,IconHelper=pcall(require,"common/utility/icons_helper")
 if not icon_ok then IconHelper=nil end
 local icon_aliases={battle="achievement_bg_killxenemies_generalsroom",orb="spell_holy_powerinfusion",
  helm="inv_helmet_96",skull="ability_rogue_bloodyeye",shield="inv_shield_06"}
 local Theme=require("bg_theme")
+local BattlegroundTheme=require("bg_battleground_theme")
 local theme=Theme.resolve(nil,nil)
 -- Keep the optional command window cold during normal play. Constructing its
 -- native windows during every F6 hot reload stalls the game client. The API
@@ -23,17 +21,19 @@ local block_controls=false
 local main,hud,initialized;local positions={};local dragging,was_down
 local textures={};local texture_attempts={}
 local horror_textures={};local horror_attempted={}
+local draw_offset=0
 local function c(r,g,b,a) return Color.new(math.floor(r),math.floor(g),math.floor(b),a or 255) end
 local gold=c(219,177,94);local ink=c(234,230,220);local muted=c(155,164,178)
 local red=c(130,39,44);local blue=c(42,66,106);local panel=c(26,31,43)
 local backdrop=c(12,9,14);local surface=c(30,20,28);local blood=c(104,5,18)
 local we=Enums.window_enums or Enums;local font=(we.font_id or {}).FONT_SMALL or 0
 local function compact(s,n) s=tostring(s or "-"):gsub("[%c]"," ");return #s>n and s:sub(1,n-3).."..." or s end
-local function rect(w,x,y,width,height,col) w:render_rect_filled(Vec.new(x,y),Vec.new(x+width,y+height),col,5) end
+local function rect(w,x,y,width,height,col) x=x+draw_offset;w:render_rect_filled(Vec.new(x,y),Vec.new(x+width,y+height),col,5) end
 local function outline(w,x,y,width,height,col,thickness)
+ x=x+draw_offset
  if type(w.render_rect)=="function" then w:render_rect(Vec.new(x,y),Vec.new(x+width,y+height),col,5,thickness or 1) end
 end
-local function text(w,s,x,y,col) w:render_text(font,Vec.new(x,y),col or ink,s) end
+local function text(w,s,x,y,col) x=x+draw_offset;w:render_text(font,Vec.new(x,y),col or ink,s) end
 local function asset_key(name)
  if name==theme.class_icon then return theme.class_asset end
  if name==theme.spec_icon then return theme.spec_asset end
@@ -53,6 +53,7 @@ local function local_texture(name)
  textures[key]=false;return nil
 end
 local function draw_art(w,name,x,y,width,height,tint)
+ x=x+draw_offset
  local texture=local_texture(name)
  if texture and core.graphics and type(core.graphics.draw_texture)=="function" then
   local p=w:get_position()
@@ -62,10 +63,10 @@ local function draw_art(w,name,x,y,width,height,tint)
  return false
 end
 local function draw_horror_background(w,width,height)
- local key=tonumber(theme.class_id) or 0
+ local key=tostring(theme.profile or "battleground")
  if not horror_attempted[key] then
   horror_attempted[key]=true
-  local bytes=ClassArt[key] or HorrorArt.background
+  local bytes=HorrorArt.background
   if bytes and core.graphics and type(core.graphics.load_texture)=="function" then
    local ok,result=pcall(core.graphics.load_texture,bytes)
    if ok and result then horror_textures[key]=result end
@@ -79,31 +80,56 @@ local function draw_horror_background(w,width,height)
  return false
 end
 local function icon(w,name,x,y,size)
- rect(w,x-2,y-2,size+4,size+4,gold)
- local slug=icon_aliases[name] or name;local drawn=draw_art(w,name,x,y,size,size,c(255,255,255,255))
+ -- Layered heraldic plaque: dark drop shadow, blood-metal surround, gold lip,
+ -- then the actual class/spec art. This stays crisp at every UI scale.
+ rect(w,x-4,y-3,size+8,size+8,c(3,3,5,235))
+ rect(w,x-3,y-4,size+6,size+6,c(theme.blood[1],theme.blood[2],theme.blood[3],245))
+ outline(w,x-3,y-4,size+6,size+6,gold,2)
+ rect(w,x-1,y-2,size+2,size+2,c(theme.shadow[1],theme.shadow[2],theme.shadow[3],255))
+ local slug=icon_aliases[name] or name;local drawn=draw_art(w,name,x+1,y-1,size-2,size-2,c(255,255,255,255))
  if IconHelper and type(IconHelper.draw_icon)=="function" then
   local p=w:get_position()
-  local ok,result=pcall(IconHelper.draw_icon,IconHelper,slug,Vec.new(p.x+x,p.y+y),size,size,c(255,255,255),true,
+  local ok,result=pcall(IconHelper.draw_icon,IconHelper,slug,Vec.new(p.x+x+draw_offset+1,p.y+y-1),size-2,size-2,c(255,255,255),true,
    {size=size>=40 and "large" or "medium",persist_to_disk=true})
   drawn=ok and result==true
  end
- if not drawn then rect(w,x,y,size,size,blue);text(w,tostring(name):sub(1,1):upper(),x+size/3,y+size/3,gold) end
+ if not drawn then rect(w,x+1,y-1,size-2,size-2,blue);text(w,tostring(name):sub(1,1):upper(),x+size/3,y+size/3,gold) end
+ rect(w,x-3,y-4,3,9,c(theme.accent[1],theme.accent[2],theme.accent[3],255))
+ rect(w,x+size,y+size-7,3,9,c(theme.accent[1],theme.accent[2],theme.accent[3],255))
 end
 local function button(w,label,x,y,width,fn,active,name,danger)
  if width>=98 then name=name or theme.spec_icon end
- local hover=w:is_mouse_hovering_rect(Vec.new(x,y),Vec.new(x+width,y+36))
- rect(w,x,y,width,36,danger and blood or active and blue or hover and c(theme.accent[1]*.32+24,theme.accent[2]*.32+18,theme.accent[3]*.32+20) or surface)
- outline(w,x,y,width,36,hover and gold or active and c(theme.accent[1],theme.accent[2],theme.accent[3],220) or c(theme.blood[1],theme.blood[2],theme.blood[3],150),hover and 2 or 1)
- if active then rect(w,x,y,4,36,gold) end
+ local hit_x=x+draw_offset
+ local hover=w:is_mouse_hovering_rect(Vec.new(hit_x,y),Vec.new(hit_x+width,y+36))
+ local fill=danger and blood or active and c(theme.accent[1]*.26+20,theme.accent[2]*.26+16,theme.accent[3]*.26+18) or
+  hover and c(theme.accent[1]*.18+28,theme.accent[2]*.18+23,theme.accent[3]*.18+25) or surface
+ rect(w,x+2,y+3,width,35,c(2,2,4,210))
+ rect(w,x,y,width,36,fill)
+ outline(w,x,y,width,36,hover and gold or active and c(theme.accent[1],theme.accent[2],theme.accent[3],245) or c(theme.blood[1],theme.blood[2],theme.blood[3],185),(hover or active) and 2 or 1)
+ rect(w,x+2,y+2,width-4,2,hover and gold or c(theme.color[1],theme.color[2],theme.color[3],90))
+ if active then
+  rect(w,x,y,5,36,c(theme.accent[1],theme.accent[2],theme.accent[3],255))
+  rect(w,x+5,y,9,36,c(theme.accent[1],theme.accent[2],theme.accent[3],55))
+ end
  if name then icon(w,name,x+8,y+7,22) end
  text(w,label,x+(name and 40 or 12),y+11,active and gold or ink)
- if not block_controls and w:is_rect_clicked(Vec.new(x,y),Vec.new(x+width,y+36)) then fn() end
+ if width>=140 and not label:match("^ON") and not label:match("^OFF") then
+  local ax=x+width-18;local arrow=hover and gold or c(theme.color[1],theme.color[2],theme.color[3],170)
+  rect(w,ax,y+11,3,3,arrow);rect(w,ax+3,y+14,3,3,arrow);rect(w,ax,y+17,3,3,arrow)
+ end
+ local state=label:match("^(ON)") or label:match("^(OFF)")
+ if state and width>=180 then
+  local sx=x+width-58;rect(w,sx,y+9,42,18,state=="ON" and c(35,104,48,235) or c(62,50,55,235))
+  outline(w,sx,y+9,42,18,state=="ON" and c(110,235,91) or muted,1)
+  rect(w,state=="ON" and sx+27 or sx+3,y+12,12,12,state=="ON" and c(139,255,112) or c(130,125,130))
+ end
+ if not block_controls and w:is_rect_clicked(Vec.new(hit_x,y),Vec.new(hit_x+width,y+36)) then fn() end
 end
 local function init()
  if initialized then return end
  main=main or core.menu.window("sylvanas_bg_command_v1")
  hud=hud or core.menu.window("sylvanas_bg_hud_v1")
- positions[main]=positions[main] or {x=38,y=42,width=1000,height=660}
+ positions[main]=positions[main] or {x=24,y=28,width=1210,height=660}
  positions[hud]=positions[hud] or {x=840,y=100,width=360,height=248}
  for w,p in pairs(positions) do w:set_initial_position(Vec.new(p.x,p.y));w:set_initial_size(Vec.new(p.width,p.height)) end
  initialized=true
@@ -147,18 +173,19 @@ local function paint_backdrop(w,width,height)
  if width>=900 then
   -- A dedicated war-banner column keeps the class/spec horror identity fully
   -- visible instead of burying the art beneath functional controls.
-  rect(w,760,12,226,height-24,c(theme.shadow[1],theme.shadow[2],theme.shadow[3],190))
-  outline(w,760,12,226,height-24,c(theme.blood[1],theme.blood[2],theme.blood[3],245),3)
-  draw_art(w,theme.spec_asset,775,42,196,196,c(255,255,255,255))
-  rect(w,775,242,196,6,c(theme.blood[1],theme.blood[2],theme.blood[3],255))
-  draw_art(w,theme.class_asset,797,366,152,152,c(theme.color[1],theme.color[2],theme.color[3],235))
-  icon(w,"skull",851,536,34)
-  text(w,compact(theme.title or "BLOOD AND GLORY",27),776,274,c(theme.accent[1],theme.accent[2],theme.accent[3]))
-  text(w,compact(theme.label or "UNKNOWN",28),776,300,ink)
-  text(w,"PVP WAR BANNER",811,334,blood)
+  local bx=width-240
+  rect(w,bx,12,226,height-24,c(theme.shadow[1],theme.shadow[2],theme.shadow[3],190))
+  outline(w,bx,12,226,height-24,c(theme.blood[1],theme.blood[2],theme.blood[3],245),3)
+  draw_art(w,theme.spec_asset,bx+15,42,196,196,c(255,255,255,255))
+  rect(w,bx+15,242,196,6,c(theme.blood[1],theme.blood[2],theme.blood[3],255))
+  draw_art(w,theme.class_asset,bx+37,366,152,152,c(theme.color[1],theme.color[2],theme.color[3],235))
+  icon(w,"skull",bx+91,536,34)
+  text(w,compact(theme.title or "BLOOD AND GLORY",27),bx+16,274,c(theme.accent[1],theme.accent[2],theme.accent[3]))
+  text(w,compact(theme.label or "UNKNOWN",28),bx+16,300,ink)
+  text(w,"PVP WAR BANNER",bx+51,334,blood)
   for i=0,7 do
    local drip=8+((i*17+(theme.motif or 1)*11)%52)
-   rect(w,766+i*28,18,8,drip,c(theme.blood[1],theme.blood[2],theme.blood[3],235))
+   rect(w,bx+6+i*28,18,8,drip,c(theme.blood[1],theme.blood[2],theme.blood[3],235))
   end
  end
  outline(w,1,1,width-2,height-2,c(theme.blood[1],theme.blood[2],theme.blood[3],235),2)
@@ -173,7 +200,7 @@ end
 local function readable(status)
  local names={disabled="Stopped",queued="Waiting in queue",queueing="Joining queue",accepting="Accepting invitation",
  waiting_start="Waiting for battle to begin",finished="Battle complete",waiting_resurrection="Waiting for resurrection",
- mounting="Mounting while out of combat",collect_powerup="Collecting nearby battleground buff",preparing_healthstone="Moving to Soulwell",using_healthstone="Collecting Healthstone",
+ mounting="Mounting while out of combat",collect_powerup="Collecting nearby battleground buff",preparing_healthstone="Moving to Soulwell",using_healthstone="Collecting Healthstone",using_forever_ration="Using Darkspear Islands ration",forever_ration_recovering="Recovering with Darkspear Islands ration",using_forever_bandage="Applying Darkspear Islands bandage",forever_bandage_recovering="Recovering with Darkspear Islands bandage",
  preparing_feast="Moving to feast",using_feast="Eating feast",
  preparing_refreshments="Moving to refreshment table",using_refreshments="Collecting refreshments",preparation_interaction_hold="Waiting for supply interaction",using_objective="Claiming objective",
  preparing_cauldron="Moving to potion cauldron",using_cauldron="Collecting battle potions",
@@ -199,6 +226,8 @@ names.healer_casting_hold="Holding position while healing"
  names.navigation_replanning="Replanning stalled movement"
  names.navigation_trackback_replanning="Correcting a predicted path loop"
  names.navigation_progress_replanning="Correcting a route that stopped advancing"
+ names.navigation_corridor_replanning="Returning to the safe path corridor"
+ names.navigation_jump_recovery="Jumping over a path obstruction"
  names.navigation_destination_reclaiming="Restoring the battleground route"
  names.mounted_narrow_corridor_dismounting="Dismounting before a narrow corridor"
  names.navigation_wrong_way_recovery="Correcting movement away from destination"
@@ -243,8 +272,10 @@ local function status_style(status,enabled)
 end
 function M.render(s,action)
  block_controls=false
+ draw_offset=0
  init()
- theme=s.theme or Theme.resolve(nil,nil)
+ local role_theme=s.theme or Theme.resolve(nil,nil)
+ theme=BattlegroundTheme.resolve(s.profile,role_theme)
  gold=c(theme.color[1],theme.color[2],theme.color[3])
  blue=c(theme.accent[1]*0.45,theme.accent[2]*0.45,theme.accent[3]*0.45)
  blood=c(theme.blood[1],theme.blood[2],theme.blood[3])
@@ -271,16 +302,34 @@ function M.render(s,action)
  local cap=s.capabilities or {};local ctx=s.context or {};local plan=ctx.plan or {}
  main:set_visibility(M.open)
  if M.open then begin(main,function()
-  rect(main,10,10,740,86,panel);rect(main,10,10,5,86,gold)
-  icon(main,theme.class_icon,26,27,48)
-  text(main,"BATTLEGROUND COMMAND",91,24,gold)
-  text(main,compact(theme.title or theme.epithet,48),91,46,c(theme.accent[1],theme.accent[2],theme.accent[3]))
-  text(main,compact(theme.label,48),91,65,muted)
-  text(main,compact(cap.version or "Unknown client",20),536,28,gold)
-  button(main,"HIDE",652,51,82,function() M.open=false end)
-  for i,label in ipairs({"BATTLE","OPTIONS","WAR LOG","DEBUG"}) do
-   local page=i;button(main,label,24+(i-1)*180,110,172,function() M.page=page end,M.page==i,({theme.class_icon,theme.spec_icon,"skull","helm"})[i])
+  local role_section=theme.role=="healer" and "TRIAGE & SUPPORT" or theme.role=="tank" and "FRONTLINE ORDERS" or
+   theme.damage_style=="ranged" and "FIRE SUPPORT" or "HUNT ORDERS"
+  local role_motto=theme.role=="healer" and "KEEP THE WAR PARTY ALIVE" or theme.role=="tank" and "HOLD THE LINE" or
+   theme.damage_style=="ranged" and "CONTROL RANGE • BREAK HEALERS" or "CLOSE THE GAP • TAKE THE CARRIER"
+  rect(main,220,10,740,86,panel);rect(main,220,10,5,86,gold)
+  icon(main,theme.class_icon,236,27,48)
+  text(main,string.upper(theme.title or theme.epithet or "BATTLEGROUND COMMAND"),301,24,gold)
+  text(main,"SYLVANAS BATTLEGROUND SUITE  •  "..compact(theme.objective_line,34),301,47,c(theme.accent[1],theme.accent[2],theme.accent[3]))
+  text(main,role_motto,301,69,muted)
+  text(main,compact(cap.version or "Unknown client",20),746,28,gold)
+  button(main,"HIDE",862,51,82,function() M.open=false end)
+  rect(main,12,110,190,500,c(theme.shadow[1],theme.shadow[2],theme.shadow[3],225))
+  outline(main,12,110,190,500,c(theme.color[1],theme.color[2],theme.color[3],185),2)
+  rect(main,31,122,152,152,c(2,3,4,220));outline(main,31,122,152,152,gold,2)
+  draw_art(main,theme.spec_asset,35,126,144,144,c(255,255,255,235))
+  rect(main,31,122,18,4,c(theme.accent[1],theme.accent[2],theme.accent[3],255))
+  rect(main,31,122,4,18,c(theme.accent[1],theme.accent[2],theme.accent[3],255))
+  rect(main,165,270,18,4,c(theme.accent[1],theme.accent[2],theme.accent[3],255))
+  rect(main,179,256,4,18,c(theme.accent[1],theme.accent[2],theme.accent[3],255))
+  text(main,compact(theme.title,24),24,278,gold)
+  text(main,role_motto,24,300,muted)
+  local pages={"WAR ROOM",role_section,"WAR CHRONICLE","FIELD INTEL"}
+  for i,label in ipairs(pages) do
+   local page=i;button(main,label,22,330+(i-1)*54,170,function() M.page=page end,M.page==i,({theme.class_icon,theme.spec_icon,"skull","helm"})[i])
   end
+  text(main,"F2  OPEN / CLOSE",42,566,gold)
+  text(main,"AUTO THEME: "..string.upper(theme.role or "UNKNOWN"),28,590,muted)
+  draw_offset=210
   if M.page==1 then
    local status_color,status_hint=status_style(s.status,s.enabled)
    rect(main,24,163,712,76,panel);icon(main,theme.spec_icon,40,181,36)
@@ -320,16 +369,26 @@ function M.render(s,action)
    button(main,(s.queue_label or "Random Battleground").."  v",24,184,712,function() M.queue_dropdown=not M.queue_dropdown end,true,"battle")
    block_controls=M.queue_dropdown
    number(s.queue_id==0 and ("Auto queue ID: "..tostring(s.resolved_queue_id or "Waiting")) or "Queue ID for selected mode",s.queue_id,230,"queue",1,0,2000)
-   number("Combat positioning range",s.combat_range,300,"range",1,3,40)
+   local range_label=theme.role=="healer" and "Healing anchor range" or theme.role=="tank" and "Frontline engage range" or
+    theme.damage_style=="ranged" and "Ranged pressure distance" or "Melee closing distance"
+   number(range_label,s.combat_range,300,"range",1,3,40)
    text(main,"QUEUE ROLE",24,370,gold)
    for i,row in ipairs({{"TANK",2,"shield"},{"HEALER",4,"orb"},{"DAMAGE",8,"battle"}}) do
     local flag=row[2];button(main,row[1],24+(i-1)*241,395,230,function() action("role",flag) end,s.role_flags==flag,row[3])
    end
    text(main,"ACTIVE ROLE POLICY",24,439,gold)
    text(main,compact(s.role_policy or "Automatic objective and combat support",88),24,459,muted)
-   text(main,"DAMAGE STYLE  "..string.upper(s.damage_style or "unknown").." / "..string.upper(s.damage_style_source or "automatic"),24,482,gold)
-   for i,label in ipairs({"AUTO","MELEE","RANGED"}) do
-    local choice=i;button(main,label,24+(i-1)*241,500,230,function() action("damage_style",choice) end,s.damage_style_choice==choice,"battle")
+   if theme.role=="damage" or theme.role=="unknown" then
+    text(main,"DAMAGE STYLE  "..string.upper(s.damage_style or "unknown").." / "..string.upper(s.damage_style_source or "automatic"),24,482,gold)
+    for i,label in ipairs({"AUTO","MELEE","RANGED"}) do
+     local choice=i;button(main,label,24+(i-1)*241,500,230,function() action("damage_style",choice) end,s.damage_style_choice==choice,"battle")
+    end
+   else
+    local order=theme.role=="healer" and "Anchor to injured allies • prioritize carriers • avoid solo captures" or
+     "Lead safe pushes • peel attackers • guard threatened objectives"
+    rect(main,24,490,712,46,panel);icon(main,theme.spec_icon,36,499,25)
+    text(main,theme.role=="healer" and "HEALING PLAYBOOK" or "TANK PLAYBOOK",76,496,gold)
+    text(main,compact(order,77),76,517,muted)
    end
    button(main,(s.show_hud and "ON" or "OFF").."  BATTLE HUD",24,546,350,function() action("hud",not s.show_hud) end,s.show_hud,"helm")
    button(main,(s.show_path and "ON" or "OFF").."  PATH OVERLAY",386,546,350,function() action("path",not s.show_path) end,s.show_path,"battle")
@@ -368,6 +427,7 @@ function M.render(s,action)
    end
   end
   text(main,compact(M.notice,85),24,624,gold);text(main,"v"..s.version,667,624,muted)
+  draw_offset=0
  end) end
  hud:set_visibility(s.show_hud)
  if s.show_hud then begin(hud,function()

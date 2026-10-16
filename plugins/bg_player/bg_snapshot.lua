@@ -78,6 +78,9 @@ function V.normalize(s)
  for _,key in ipairs({"team_score","enemy_score","score_limit"}) do
   if s[key]~=nil and (not V.finite(s[key]) or s[key]<0) then return nil,"invalid_score:"..key end
  end
+ if s.carrier_speed_cap~=nil and (not V.finite(s.carrier_speed_cap) or s.carrier_speed_cap<=0 or s.carrier_speed_cap>1) then
+  return nil,"invalid_carrier_speed_cap"
+ end
  for _,key in ipairs({"friendly_respawn_wave_at","match_ends_at"}) do
   if s[key]~=nil and not V.finite(s[key]) then return nil,"invalid_match_time:"..key end
  end

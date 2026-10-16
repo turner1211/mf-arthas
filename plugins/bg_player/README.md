@@ -1,12 +1,71 @@
-SYLVANAS BATTLEGROUND COMMAND - v1.82.1 - October 14, 2026
+SYLVANAS BATTLEGROUND COMMAND - v1.91.0 - October 15, 2026
 
-Version 1.82.1 adds a BG Player-only Project Sylvanas runtime adapter. Local
-player and object-list reads are protected during loading and recycled-handle
-transitions, while target visibility uses a directional weak-key cache for at
-most 60 ms. Random Battlegrounds, Random Epic Battlegrounds, and Battleground
-Blitz retain separate queue selection and rules. BG Player keeps its own PvP
-GUI, navigation owner, settings, logs, and objective logic and does not import
-the 1–90 Leveler or a class/spec interface.
+Version 1.91.0 adds safe Darkspear Islands First Aid recovery. The live bag
+scanner recognizes Silk, Mageweave, and Runecloth battleground bandages and
+verified Mageweave item 272057. At 35% health or lower it prefers the strongest
+bandage for an eight-second recovery; critical mana selects a ration instead.
+Combat, a nearby enemy, flag possession, or restored health cancels the hold.
+
+Version 1.90.0 makes Forever flag travel predictions carrier-aware. WSG and
+Darkspear carriers now use their documented 85% speed cap for arrival estimates
+instead of normal walking speed. Darkspear fallback snapshots expose the
+verified 2,000-point win limit, allowing fresh live score feeds to drive the
+existing all-in, close-race, and protect-lead strategy without inventing scores.
+Snapshot validation rejects impossible carrier speed values.
+
+Version 1.89.0 adds safe active-match recovery with Forever's Darkspear Islands
+rations. The controller discovers Field, Iron, and Enriched rations from live
+bag data, prefers the strongest available rank, and eats only on Darkspear while
+out of combat with low health or mana and no enemy within 45 yards. It holds
+movement during recovery and cancels for threats, combat, flag possession, or
+recovered resources. Published First Aid spell ranks are cataloged for future
+targeted-item support but are not dispatched without a verified item binding.
+
+Version 1.88.0 adds live Darkspear Islands flag-carrier behavior from Forever's
+published spell data. Aura 1284560 now identifies the player, friendly, and
+enemy flag carriers. Player carriers cannot mount or abandon the objective;
+friendly carriers receive role-aware escorts; enemy carriers override routine
+base patrols. Without a live friendly-owned turn-in point, the carrier safely
+regroups instead of guessing a base. The shared carrier scan now honors the
+requested battleground detector for enemies as well as allies.
+
+Version 1.87.0 hardens WoW Forever support from current published rules. Every
+Forever build alias now stays inside the four-map WSG, AB, AV, and Darkspear
+catalog in route selection and live validation. Darkspear fallback objectives
+use a deterministic faction-aware patrol, cache converted landmarks per map and
+match, and reset them between matches. The queue UI now describes the published
+battlemaster or battleground-entrance flow without claiming an unverified
+random, Brawl, Epic, or Darkspear queue ID.
+
+Version 1.86.0 changes the dashboard identity from class/spec artwork to the
+active battleground and mode. Warsong, Twin Peaks, Arathi, Gilneas, Eye of the
+Storm, Deepwind, Kotmogu, Silvershard, Seething Shore, Deephaul, epic maps,
+Blitz variants, training modes, and Forever's Darkspear profile receive their
+own title, objective directive, colors, icon, and battlefield motif. Class and
+specialization detection now affects gameplay role controls only.
+
+Version 1.85.1 adds layered heraldic icon plaques, beveled buttons, active edge
+glows, hover highlights, navigation chevrons, illustrated portrait corners, and
+compact ON/OFF switch treatments. Every element inherits the detected class and
+specialization palette.
+
+Version 1.85.0 rebuilds the F2 interface as a class-themed PvP dashboard.
+The window now uses a persistent specialization header, illustrated left command
+rail, central workspace, and war banner. Its second page changes identity and
+wording for healer, tank, melee damage, and ranged damage play. Non-damage roles
+receive their own playbook instead of irrelevant melee/ranged controls.
+
+Version 1.84.0 completes the SentinelCore reference audit. Stalled movement now
+uses a bounded jump as its first recovery stage, then uses an optional three-ray
+Project Sylvanas collision probe to choose the clear side before strafing. When
+the trace API is absent or ambiguous, the existing alternating recovery remains
+in control. ArthasNav still owns every path request and movement route.
+
+Version 1.83.0 adds provider-neutral path-corridor supervision inspired by the
+useful recovery concepts in SentinelCore. ArthasNav remains the only navigation
+engine. Two confirmed lateral/vertical path departures now trigger a controlled
+replan, severe wrong-floor departures trigger immediately, and reverse recovery
+is suppressed near steep ramp samples so it cannot back the player off a ramp.
 
 NAVIGATION POLICY
 - ArthasNav is the only navmesh provider selected by this plugin.

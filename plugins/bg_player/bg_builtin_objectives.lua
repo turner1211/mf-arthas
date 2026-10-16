@@ -36,6 +36,7 @@ for team,route in pairs(warsong_routes) do
  route.source="live_warsong_census"
 end
 local warsong_carrier_auras={[23333]=true,[23335]=true,[34976]=true,[34977]=true}
+local darkspear_carrier_auras={[1284560]=true}
 local flag_pressure_auras={[46392]=true,[46393]=true}
 local function aura_id(a)
  if type(a)~="table" then return nil end
@@ -55,6 +56,15 @@ local function carrying_warsong_flag(player)
   local ok,list=pcall(function() return type(player[method])=="function" and player[method](player) end)
   if ok and type(list)=="table" then
    for _,aura in pairs(list) do if warsong_carrier_auras[aura_id(aura)] then return true end end
+  end
+ end
+ return false
+end
+local function carrying_darkspear_flag(player)
+ for _,method in ipairs({"get_auras","get_buffs","get_debuffs","get_all_buffs"}) do
+  local ok,list=pcall(function() return type(player[method])=="function" and player[method](player) end)
+  if ok and type(list)=="table" then
+   for _,aura in pairs(list) do if darkspear_carrier_auras[aura_id(aura)] then return true end end
   end
  end
  return false
@@ -123,7 +133,7 @@ local function warsong_support_anchor(core,player,position,carrier_detector)
     local row={position=p,target=object,id=Object.guid(object) or string.format("enemy_%.0f_%.0f",p.x,p.y),
      reachable=true,attackable=true,dead=false}
     enemies[#enemies+1]=row
-    if carrying_warsong_flag(object) then enemy_carrier=row;enemy_pressure=flag_pressure(object) end
+    if carrier_detector(object) then enemy_carrier=row;enemy_pressure=flag_pressure(object) end
    end
   end
  end
@@ -289,22 +299,36 @@ end
 local function darkspear(core,player,match,now,team,position,player_role)
  local s,reason=formation(core,"darkspear_islands",player,match,now,team,position,player_role)
  if not s then return nil,reason end
+ local support,friendly_carrier,healer_position,enemy_carrier,enemies,friendly_pressure,enemy_pressure=
+  warsong_support_anchor(core,player,position,carrying_darkspear_flag)
+ s.enemies=enemies or s.enemies
+ s.friendly_group_position=support or s.friendly_group_position
+ if player_role=="healer" then s.healer_position=healer_position or s.healer_position end
+ if friendly_carrier then
+  s.friendly_flag_carrier_position=support
+  s.flags={{id="darkspear_flag",team=team,carrier=true,carrier_enemy=false,position=support,
+   carrier_pressure=friendly_pressure,reachable=true}}
+ elseif enemy_carrier then
+  enemy_carrier.objective_carrier=true
+  s.flags={{id="darkspear_flag",team=1-team,carrier=enemy_carrier.target,carrier_enemy=true,
+   position=enemy_carrier.position,carrier_pressure=enemy_pressure,reachable=true}}
+ end
+ if carrying_darkspear_flag(player) then
+  -- A legal turn-in requires a live, friendly-controlled base. The built-in
+  -- reader cannot prove ownership, so fail closed at the friendly formation;
+  -- an external live objective provider can replace this with an owned node.
+  s.carrying=true;s.carrier_speed_cap=Darkspear.rules.carrier_speed_cap;s.has_owned_node=false;s.carry_destination_valid=false
+  s.safe_position=s.friendly_group_position or position
+ end
+ s.score_limit=Darkspear.rules.score_to_win
  if player_role=="healer" then return s end
  local landmarks=Darkspear.landmarks(core,position.z)
  if not landmarks then return s end
  local anchor=s.friendly_group_position or position
- local selected,selected_id,best
- for id,node in pairs(landmarks) do
-  -- The central flag is actionable only after live data proves that our team
-  -- owns a delivery base. With formation-only data, patrol the four published
-  -- capture points and never invent a legal flag turn-in.
-  if id~="center_flag" then
-   local score=distance(anchor,node)
-   -- Move on after reaching a landmark instead of camping an unverified state.
-   if distance(position,node)<=10 then score=score+500 end
-   if not best or score<best then selected,selected_id,best=node,id,score end
-  end
- end
+ -- The central flag is actionable only after live data proves that our team
+ -- owns a delivery base. Formation fallback uses a stable faction-aware patrol
+ -- of the four published capture points and never invents a legal turn-in.
+ local selected,selected_id=Darkspear.patrol_target(landmarks,position,anchor,team)
  if selected then
   s.nodes={{id="strategic_advance:"..selected_id,fallback_advance=true,active=true,reachable=true,
    position={x=selected.x,y=selected.y,z=selected.z}}}
@@ -348,6 +372,7 @@ local function warsong(core,player,match,now,team,position,player_role)
  local live_state_count=observed_count+(friendly_carrier and 1 or 0)+(enemy_carrier and 1 or 0)
  return {valid=true,match_id=match,observed_at=now,team=team,rule_profile="warsong",kind="ctf",
   player_position=position,player_role=player_role,flags=flags,enemies=enemies,carrying=carrying_flag,
+  carrier_speed_cap=carrying_flag and .85 or nil,
   own_flag_home=own_home,carry_destination=own.position,safe_position=own.position,
   carry_route=warsong_routes[1-team],friendly_group_position=support,
   friendly_flag_carrier_position=friendly_carrier and support or nil,

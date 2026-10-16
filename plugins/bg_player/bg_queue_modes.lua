@@ -1,7 +1,10 @@
 -- Mode names are stable integration keys; queue IDs are client-specific.
 local M={labels={"Random Battleground","Brawl","Epic Battleground","Battleground Blitz"}}
 local keys={"random","brawl","epic","blitz"}
-M.forever_labels={"Random Battleground"}
+-- Forever publicly documents battlemaster/entrance queues rather than the
+-- modern Retail random/brawl/epic selector. Keep one configured queue surface
+-- and describe it accurately; its ID comes from live data or user selection.
+M.forever_labels={"Forever Battleground"}
 local function is_forever(version)
  return tostring(version or ""):lower():find("forever",1,true)~=nil
 end

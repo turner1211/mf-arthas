@@ -253,6 +253,18 @@ function P.choose(s,previous)
    end
   end
  end
+ if s.rule_profile=="darkspear_islands" then
+  for _,flag in ipairs(s.flags or {}) do
+   if flag.reachable~=false and flag.position then
+    if flag.carrier_enemy then
+     offer("intercept",Predictive.intercept_position(flag,s.player_position),185,nil,flag.carrier,flag.id)
+    elseif flag.carrier then
+     local role_bonus=s.player_role=="healer" and 55 or s.player_role=="tank" and 35 or 15
+     offer("escort",flag.position,125+role_bonus+math.min(40,(flag.carrier_pressure or 0)*6),nil,nil,flag.id)
+    end
+   end
+  end
+ end
  -- When the objective API is missing, live nearby enemies are still verified.
  -- DPS and tanks join that fight instead of following a synthetic moving cart.
  if s.formation_fallback and (s.player_role=="damage" or s.player_role=="tank") then

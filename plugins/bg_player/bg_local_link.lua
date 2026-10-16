@@ -1,7 +1,6 @@
 -- Diagnostic candidate transport only. Does not certify invitations/objectives.
 local QueueLink=require("bg_queue_link")
 local FlagLink=require("bg_flag_link")
-local RuntimeApi=require("bg_runtime_api")
 local M={};M.__index=M
 local function clean(err) return tostring(err):gsub("[%z\1-\8\11\12\14-\31]"," "):sub(1,500) end
 function M.new() return setmetatable({state="not_tested",receipts=0,last_poll=-100,bars_observed=0,queues=QueueLink.new(),flags=FlagLink.new()},M) end
@@ -22,7 +21,7 @@ function M:poll(core,now)
  self.last_error=nil
  self.state=self.receipts>0 and "local_data_received" or "waiting_for_local_bar"
  local got,guid=pcall(function()
-  local p=RuntimeApi.player();return p and p:is_valid() and p:get_guid()
+  local p=core.object_manager.get_local_player();return p and p:is_valid() and p:get_guid()
  end)
  if not got or type(guid)~="string" then
   self.state="player_identity_unavailable";self.last_error=not got and clean(guid) or nil;self.queues:invalidate(self.state);return

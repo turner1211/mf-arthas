@@ -10,6 +10,7 @@ local Object=require("bg_object")
 local PathPreflight=require("bg_path_preflight")
 local NavProgressWatch=require("bg_nav_progress_watch")
 local NavOwnership=require("bg_nav_ownership")
+local PathCorridor=require("bg_path_corridor")
 local C={};C.__index=C
 local Predictive=require("bg_predictive_logic")
 local function native_bool(object,method)
@@ -34,7 +35,7 @@ local function route_scope(settings)
  return value:gsub("[^%w_:%.%-]","_"):sub(1,80)
 end
 function C.new(api,settings)
- return setmetatable({api=api,progress=Progress.new(),advancement=Advancement.new(),nav_progress=NavProgressWatch.new(6,2),nav_ownership=NavOwnership.new(3),recovery=Recovery.new(api),predictive=Predictive.new(),settings=settings,state="disabled",next_action=0,next_target=0,epoch=0,confirmable_slots={},blocked_legs={},leg_points={},reroutes={},route_memory=settings.route_memory or {},direct_route_fallback={},death_hotspots={}},C)
+ return setmetatable({api=api,progress=Progress.new(),advancement=Advancement.new(),nav_progress=NavProgressWatch.new(6,2),nav_ownership=NavOwnership.new(3),path_corridor=PathCorridor.new(2),recovery=Recovery.new(api),predictive=Predictive.new(),settings=settings,state="disabled",next_action=0,next_target=0,epoch=0,confirmable_slots={},blocked_legs={},leg_points={},reroutes={},route_memory=settings.route_memory or {},direct_route_fallback={},death_hotspots={}},C)
 end
 -- Failed corridors are remembered by position so the route graph can steer
 -- around them (soft penalty, never a hard block) instead of retrying the same leg.
@@ -119,6 +120,7 @@ end
 function C:stop_motion(preserve_plan)
  self.progress:reset()
  self.advancement:reset()
+ self.path_corridor:reset()
  if self.mounted_escape and self.api.recovery_step then self.api.recovery_step(nil) end
  if self.escape_until and self.api.escape_direction then self.api.escape_direction(nil) end
  if self.reverse_until and self.api.reverse_rebound then self.api.reverse_rebound(nil) end
@@ -143,8 +145,9 @@ function C:reset_match()
  self.path_preflight_signature=nil;self.path_preflight_attempts=0
  self.nav_progress:reset(true)
  self.nav_ownership:reset(true)
+ self.path_corridor:reset()
  self.reroutes={}
- self.preparation_key=nil;self.preparation_started_at=nil;self.preparation_hold_until=nil;self.premature_arrivals=0;self.premature_goal=nil;self.path_blocked_position=nil;self.path_probe_at=nil;self.force_graph_until=nil
+ self.preparation_key=nil;self.preparation_started_at=nil;self.preparation_hold_until=nil;self.forever_recovery_until=nil;self.forever_recovery_kind=nil;self.forever_recovery_retry_at=0;self.premature_arrivals=0;self.premature_goal=nil;self.path_blocked_position=nil;self.path_probe_at=nil;self.force_graph_until=nil
  self.combat_hold_target=nil;self.combat_hold_guid=nil;self.combat_holding=nil;self.combat_reacquire_until=nil;self.last_combat_position=nil
  self.activity_position=nil;self.activity_goal=nil;self.activity_at=nil;self.activity_recoveries=0
  self.interaction_key=nil;self.interaction_failures=0;self.interaction_retry_at=0
@@ -373,6 +376,32 @@ function C:tick()
  end
  snapshot.post_resurrection=type(self.respawn_reintegrate_until)=="number" and now<self.respawn_reintegrate_until
  snapshot.objective_history=self.objective_history
+ if self.forever_recovery_until and now<self.forever_recovery_until then
+  local threatened=false
+  for _,enemy in ipairs(snapshot.enemies or {}) do
+   local p=Snapshot.position(enemy.position or enemy)
+   if enemy.dead~=true and enemy.reachable~=false and p and Planner.distance(snapshot.player_position,p)<=45 then threatened=true;break end
+  end
+  local _,in_combat=native_bool(player,"is_in_combat")
+  local recovered=(tonumber(snapshot.player_health_ratio) or 0)>=.90 and
+   (snapshot.player_mana_ratio==nil or snapshot.player_mana_ratio>=.85)
+  if not threatened and not in_combat and not recovered and not snapshot.carrying then
+   self:stop_motion(true);self:status("forever_"..tostring(self.forever_recovery_kind or "ration").."_recovering");return
+  end
+  self.forever_recovery_until=nil;self.forever_recovery_kind=nil;self.forever_recovery_retry_at=now+10
+ end
+ if a.forever_recovery and a.use_forever_recovery and now>=(self.forever_recovery_retry_at or 0) then
+  local recovery=a.forever_recovery(player,snapshot,now)
+  if recovery then
+   self:stop_motion(true)
+   if a.use_forever_recovery(recovery,now) then
+    self.forever_recovery_kind=recovery.kind or "ration"
+    self.forever_recovery_until=now+(tonumber(recovery.hold_seconds) or 20);self.forever_recovery_retry_at=now+60
+    self:status("using_forever_"..self.forever_recovery_kind);return
+   end
+   self.forever_recovery_retry_at=now+30
+  end
+ end
  local avoid_points=self:avoid_list(snapshot.rule_profile,now)
  -- Objective scoring uses authored-graph travel distance on folded maps.
  if a.travel_distance then snapshot.travel_distance=function(point) return a.travel_distance(snapshot,point) end end
@@ -849,6 +878,14 @@ function C:tick()
   if self.destination and not direct_route and type(a.navigation_path)=="function" then
    local path=a.navigation_path();local index=type(a.navigation_path_index)=="function" and a.navigation_path_index() or 1
    local widths=type(a.navigation_corridor_widths)=="function" and a.navigation_corridor_widths() or nil
+   local deviated,deviation=self.path_corridor:observe(pos,path,index,widths)
+   if deviated then
+    if a.route_memory_event then a.route_memory_event("navigation_corridor_deviation",current_leg,deviation) end
+    self:stop_motion(true);self.destination=nil;self.navigation_retry_at=now+0.7
+    self.progress:reset();self.advancement:reset()
+    if a.replan then a.replan("battleground_corridor_deviation") end
+    self:status("navigation_corridor_replanning");return
+   end
    local narrow=PathPreflight.narrow(widths,index,4,1.8)
    if narrow and type(player.is_mounted)=="function" and player:is_mounted() and a.ensure_on_foot and
     a.ensure_on_foot(player,"predicted_narrow_corridor:"..tostring(narrow.width),now) then
@@ -886,7 +923,10 @@ function C:tick()
    self.premature_goal={x=goal.x,y=goal.y,z=goal.z}
    if self.premature_arrivals>=2 and self:recover_mounted(pos,goal,now,"premature_arrival") then return end
    self:stop_motion(true)
-   if self.premature_arrivals>=3 and a.reverse_rebound then
+   local ramp_near=PathCorridor.ramp_near(pos,
+    type(a.navigation_path)=="function" and a.navigation_path() or nil,
+    type(a.navigation_path_index)=="function" and a.navigation_path_index() or 1)
+   if self.premature_arrivals>=3 and not ramp_near and a.reverse_rebound then
     local dx,dy=goal.x-pos.x,goal.y-pos.y;local length=math.sqrt(dx*dx+dy*dy)
     if length>0.1 and a.reverse_rebound({x=pos.x-dx/length*4,y=pos.y-dy/length*4,z=pos.z})~=false then
      self.reverse_until=now+0.8;self.navigation_retry_at=now
@@ -978,9 +1018,18 @@ function C:tick()
    end
    if self:recover_mounted(pos,goal,now,forward_only and "no_forward_progress" or "position_stalled") then return end
    self.stall_count=(self.stall_count or 0)+1
+   -- Small doodads and lips are often cleared more safely by one jump than by
+   -- replacing the route. Keep this as the first bounded recovery stage.
+   if self.stall_count==1 and a.recovery_jump and a.recovery_jump() then
+    if a.replan then a.replan("battleground_jump_recovery") end
+    self.navigation_retry_at=now+0.8;self:status("navigation_jump_recovery");return
+   end
    local reverse_threshold=direct_route and 2 or 3
    local escape_threshold=direct_route and 1 or 2
-   if self.stall_count>=reverse_threshold and a.reverse_rebound then
+   local recovery_ramp=PathCorridor.ramp_near(pos,
+    type(a.navigation_path)=="function" and a.navigation_path() or nil,
+    type(a.navigation_path_index)=="function" and a.navigation_path_index() or 1)
+   if self.stall_count>=reverse_threshold and not recovery_ramp and a.reverse_rebound then
     local dx,dy=goal.x-pos.x,goal.y-pos.y
     local length=math.sqrt(dx*dx+dy*dy)
     if length>0.1 then
@@ -998,7 +1047,8 @@ function C:tick()
    end
    if self.stall_count>=escape_threshold then
     if a.escape_direction then
-     local direction=(self.escape_side or 1)>0 and "right" or "left"
+     local probed=type(a.obstacle_escape_side)=="function" and a.obstacle_escape_side(pos,goal) or nil
+     local direction=probed or ((self.escape_side or 1)>0 and "right" or "left")
      self.escape_side=-(self.escape_side or 1)
      local duration=direct_route and 0.55 or 0.9
      a.escape_direction(direction);self.escape_until=now+duration

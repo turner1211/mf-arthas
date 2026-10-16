@@ -14,7 +14,7 @@ local REQUIRED_MATCHES_PER_FACTION=2
 
 local function family(value)
  value=tostring(value or "retail"):lower()
- return value=="forever" and "forever" or "retail"
+ return value:find("forever",1,true) and "forever" or "retail"
 end
 
 local function safe(value)

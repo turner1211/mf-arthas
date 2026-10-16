@@ -4,7 +4,7 @@ local M={}
 local MAP_ID=2524
 local INSTANCE_ID=2997
 local rules={team_size=15,capture_points=4,score_to_win=2000,central_flag=true,
- flag_requires_owned_base=true,min_level=30,max_level=60}
+ flag_requires_owned_base=true,flag_aura=1284560,carrier_speed_cap=.85,min_level=30,max_level=60}
 local points={
  shipwreck_cove={x=.415,y=.434},abandoned_tower={x=.616,y=.452},
  center_flag={x=.511,y=.524},camp={x=.421,y=.624},ruins={x=.613,y=.621}
@@ -16,11 +16,17 @@ local links={
  camp={"shipwreck_cove","center_flag","ruins"},
  ruins={"abandoned_tower","center_flag","camp"}
 }
-local cache
+local cache,cache_key
+local patrol={"shipwreck_cove","abandoned_tower","ruins","camp"}
 local function finite(n) return type(n)=="number" and n==n and math.abs(n)<math.huge end
 local function distance(a,b) return math.sqrt((a.x-b.x)^2+(a.y-b.y)^2+(a.z-b.z)^2) end
 function M.landmarks(core,reference_z)
- if cache then return cache end
+ local function scoped_value(name)
+  if not core or type(core[name])~="function" then return "?" end
+  local ok,value=pcall(core[name]);return ok and value or "?"
+ end
+ local scope=tostring(scoped_value("get_instance_id"))..":"..tostring(scoped_value("get_map_id"))
+ if cache and cache_key==scope then return cache end
  local ui=core and core.game_ui
  if type(ui)~="table" or type(ui.get_world_pos_from_map_pos)~="function" or
   type(core.get_height_for_position)~="function" then return nil,"map_conversion_unavailable" end
@@ -39,10 +45,29 @@ function M.landmarks(core,reference_z)
   if not height_ok or not finite(z) then return nil,"terrain_height_unavailable:"..id end
   resolved[id]={x=xy.x,y=xy.y,z=z,id=id,map_x=map.x,map_y=map.y}
  end
- cache=resolved
+ cache=resolved;cache_key=scope
  return cache
 end
-function M.reset() cache=nil end
+function M.reset() cache=nil;cache_key=nil end
+function M.patrol_target(nodes,position,anchor,team)
+ if type(nodes)~="table" or not position then return nil end
+ anchor=anchor or position
+ local best_index,best
+ for i,id in ipairs(patrol) do
+  local node=nodes[id]
+  if node then local d=distance(anchor,node);if not best or d<best then best_index,best=i,d end end
+ end
+ if not best_index then return nil end
+ -- Once the player reaches that foothold, continue around the island instead
+ -- of choosing from pairs() order or oscillating between equal-distance nodes.
+ local current=nodes[patrol[best_index]]
+ if current and distance(position,current)<=12 then
+  local direction=team==1 and -1 or 1
+  best_index=((best_index-1+direction)%#patrol)+1
+ end
+ local id=patrol[best_index]
+ return nodes[id],id
+end
 function M.route(core,start,goal)
  if not start or not goal then return nil end
  local nodes=M.landmarks(core,start.z);if not nodes then return nil end
@@ -67,4 +92,5 @@ function M.route(core,start,goal)
 end
 M.map_id=MAP_ID;M.instance_id=INSTANCE_ID;M.points=points
 M.rules=rules
+M.patrol=patrol
 return M
