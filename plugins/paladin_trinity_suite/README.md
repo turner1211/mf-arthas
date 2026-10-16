@@ -62,6 +62,13 @@ starts or resumes the selected GUI and runtime.
   Light's Vigil now respects its one-active-target party rule and its cast time.
   The October 15 Salvation change is handled as a separate non-tank threat buff;
   Protection cancels it automatically instead of treating it as a Blessing.
+- Forever 1.7.0 fixes Sacred Arbiter detection so Twist of Light no longer
+  suppresses required Crusader Judgement refreshes. Retribution selects Command
+  for reported weapon speeds of 3.0 seconds or slower and Righteousness for faster
+  weapons, with safe fallbacks when speed is unavailable. Its Consecration target
+  and Mana requirements now scale with character level. Holy consumes confirmed
+  Infusion of Light before another Holy Shock and can down-rank Holy Light when a
+  leveling character is low on Mana.
 - The selector writes only to `paladin_trinity_suite/status.md`.
 - No combat, utility, route, overlay, hotkey, log, or render callback can run when
   it belongs to an inactive specialization.

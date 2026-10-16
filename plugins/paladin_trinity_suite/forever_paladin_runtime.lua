@@ -85,6 +85,15 @@ local function distance(a,b)
     return tonumber(call(a,"get_distance",b)) or tonumber(call(b,"get_distance",a)) or 999
 end
 
+local function weapon_speed(unit)
+    local speed=tonumber(call(unit,"get_main_hand_attack_speed"))
+        or tonumber(call(unit,"get_main_hand_speed"))
+        or tonumber(call(unit,"get_weapon_speed"))
+        or tonumber(call(unit,"get_attack_speed"))
+    if speed and speed>20 then speed=speed/1000 end
+    return speed and speed>0 and speed or nil
+end
+
 local function creature_kind(unit)
     return tostring(call(unit,"get_creature_type") or call(unit,"get_type_name") or ""):lower()
 end
@@ -360,8 +369,16 @@ local function holy(instance,me)
             and mana(me)>=35 and not group_has_aura("LIGHTS_VIGIL")
             and cast("LIGHTS_VIGIL",ally,instance) then return true end
         if health<=38 and cast("DIVINE_FAVOR",me,instance) then return true end
+        -- Forever Infusion shortens Holy Light after a Holy Shock or Flash of
+        -- Light critical. Spend it before another Holy Shock can overwrite it.
+        if aura(me,"INFUSION_LIGHT") and health<=72
+            and cast("HOLY_LIGHT",ally,instance) then return true end
         if cast("HOLY_SHOCK",ally,instance) then return true end
-        if health<=58 and cast("HOLY_LIGHT",ally,instance) then return true end
+        if health<=58 then
+            local conserve=value(instance.config.mana_conserve,true)
+                and mana(me)<=value(instance.config.mana_floor,18) and health>42
+            if cast("HOLY_LIGHT",ally,instance,conserve and 0.72 or false) then return true end
+        end
         local conserve=value(instance.config.mana_conserve,true)
             and mana(me)<=value(instance.config.mana_floor,18) and health>value(instance.config.emergency,25)
         -- While levelling, down-rank more aggressively when the deficit is small;
@@ -440,7 +457,7 @@ local function ret(instance,me)
         and resolve("SEAL_CRUSADER") and mana(me)>=25 then
         local now=tonumber(call(core,"time")) or 0
         local needs_judgement=instance.crusader_target~=foe
-            or (not known(1310735) and now-(instance.crusader_judged_at or -math.huge)>=35)
+            or (not resolve("SACRED_ARBITER") and now-(instance.crusader_judged_at or -math.huge)>=35)
         if instance.crusader_stage_target and instance.crusader_stage_target~=foe then
             instance.crusader_stage_target=nil
         end
@@ -459,7 +476,10 @@ local function ret(instance,me)
         end
     end
     if not instance.recovery_seal and not aura(me,"SEAL_COMMAND") and not aura(me,"SEAL_RIGHTEOUSNESS") then
-        if cast("SEAL_COMMAND",me,instance) or cast("SEAL_RIGHTEOUSNESS",me,instance) then return true end
+        local speed=weapon_speed(me)
+        local preferred=(speed and speed<3.0) and "SEAL_RIGHTEOUSNESS" or "SEAL_COMMAND"
+        local fallback=preferred=="SEAL_COMMAND" and "SEAL_RIGHTEOUSNESS" or "SEAL_COMMAND"
+        if cast(preferred,me,instance) or cast(fallback,me,instance) then return true end
     end
     if hp(foe)<=20 and cast("HAMMER_WRATH",foe,instance) then return true end
     if value(instance.config.cooldowns,true) and call(foe,"is_boss")==true and hp(me)>80
@@ -467,7 +487,9 @@ local function ret(instance,me)
     -- Establish Judgement first; Sacred Arbiter then lets Holy Strike refresh it.
     return cast("JUDGEMENT",foe,instance) or cast("HOLY_STRIKE",foe,instance)
         or cast("HOLY_SHOCK",foe,instance)
-        or (mana(me)>=45 and nearby_enemies(instance,me,8)>=2 and cast("CONSECRATION",me,instance))
+        or (mana(me)>=((instance.level or 60)<40 and 60 or 45)
+            and nearby_enemies(instance,me,8)>=((instance.level or 60)<40 and 4 or 3)
+            and cast("CONSECRATION",me,instance))
         or (nearby_enemies(instance,me,20,true)>=2 and mana(me)>=55 and cast("HOLY_WRATH",me,instance))
         or (holy_target(foe) and cast("EXORCISM",foe,instance))
 end
