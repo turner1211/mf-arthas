@@ -49,6 +49,7 @@ $Projects = @(
     @{ Id = 'holy_paladin_mplus';     Source = 'holy_paladin_mplus_v*';       Name = 'Holy Paladin Healing Profiles'; ClassIds = @(2) }
     @{ Id = 'prot_paladin_mplus';     Source = 'prot_paladin_mplus_v*';       Name = 'Protection Paladin Mythic+'; ClassIds = @(2) }
     @{ Id = 'paladin_trinity_suite';  Source = 'work/paladin_trinity_suite_v*'; Name = 'Paladin Trinity Suite'; ClassIds = @(2) }
+    @{ Id = 'priest_trinity';         Source = 'priest_trinity_v*';          Name = 'Priest Trinity - Discipline / Holy / Shadow'; ClassIds = @(5) }
     @{ Id = 'resto_shaman_mplus';     Source = 'resto_shaman_mplus_v*';       Name = 'Resto Shaman M+'; ClassIds = @(7) }
     @{ Id = 'ret_paladin_plugin';     Source = 'ret_paladin_plugin_v*';       Name = 'Ret Paladin 12.1'; ClassIds = @(2) }
     @{ Id = 'sylvanas_auto_leveler';  Source = 'sylvanas_auto_leveler';       Name = 'Sylvanas Auto Leveler (development)' }

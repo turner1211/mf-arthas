@@ -91,6 +91,11 @@ For the unified Paladin package, use `-Only paladin_trinity_suite`. Its stable
 loader remains in `loaders/paladin_trinity_suite_loader/`; only the manifest
 and versioned code under `plugins/paladin_trinity_suite/` change on updates.
 
+For Priest Trinity, edit `plugins/priest_trinity/` and publish with
+`-Only priest_trinity`. Its permanent installed folder is
+`priest_trinity_v1.0.0`; that folder contains only the stable loader, while
+downloaded versioned code is cached atomically in `scripts_data`.
+
 The script finds the newest `_v<version>` folder for versioned projects, so a
 renamed release folder needs no edits. To add a project, add a line to the
 `$Projects` table at the top of the script; its loader folder is created on the

@@ -1,5 +1,5 @@
 # mf-arthas-manifest 1
-build 27a0475f21079742
+build 7748fa108103c01b
 project paladin_trinity_suite
 version 1.2.8
 entry mf_entry.lua
@@ -19,7 +19,7 @@ file 20689 94de9ac0c02a354177dfd8a59dd6f2fd23eea05b0901de41b5c5b60ead35e1e4 holy
 file 5097 f65ab6eedc325e1bea50020d0fcac024dd1b7272e3890ef7d4de02d70b1b6c25 main.lua
 file 288 9b56fc1f55ade9e3db1238448a2a46d7f8c3eed7e99f816f9cbccdf196a57761 mf_entry.lua
 file 1841 306a065c5c36a200adf923a291bb1e1690ec186f831b684f65909648efcbb41c mf_game_ids.lua
-file 13914 96825594052004db6c5e322365410b313a98bee8bd66c44ff6da55e504db1731 mf_i18n.lua
+file 13937 b12d28bf926e2ebc5193de543890c90a91be6e2bb67e007691a239a664e6fd76 mf_i18n.lua
 file 64121 7e2e155eb92c9a5826704b4f8e57204aeaa73ee6b38ed88fbd566a0f7bda564b mf_locales.lua
 file 69 5ba693a92bb19c3eb9c307ebf782877b6cf61f7ac31438698b514b506589ac2f mf_project.lua
 file 2493 9b1542da73d22a45dc31ce69c441c3afedd541d3ac5ba0e4b83b948687c24a20 mf_unicode_font.lua

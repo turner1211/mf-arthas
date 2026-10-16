@@ -1,5 +1,5 @@
 # mf-arthas-manifest 1
-build aba8dac918f194b2
+build d067644984f554ae
 project guardian_druid_mplus
 version 8.11.0
 entry mf_entry.lua
@@ -63,7 +63,7 @@ file 413 5b717e4e6a73703ad0f99fdabd2766feab2b4b7f1a38d4a09584f056f1a14f64 header
 file 3194 9ac205ea49d02c65db196dbb25281445257214ca80cbdeda1dd5fc09746cde6d main.lua
 file 288 9b56fc1f55ade9e3db1238448a2a46d7f8c3eed7e99f816f9cbccdf196a57761 mf_entry.lua
 file 1841 306a065c5c36a200adf923a291bb1e1690ec186f831b684f65909648efcbb41c mf_game_ids.lua
-file 13914 96825594052004db6c5e322365410b313a98bee8bd66c44ff6da55e504db1731 mf_i18n.lua
+file 13937 b12d28bf926e2ebc5193de543890c90a91be6e2bb67e007691a239a664e6fd76 mf_i18n.lua
 file 64121 7e2e155eb92c9a5826704b4f8e57204aeaa73ee6b38ed88fbd566a0f7bda564b mf_locales.lua
 file 68 9a9b3d6b808b4ce819dbc44a2750a010b25918f851f137e9d380181adb973669 mf_project.lua
 file 2493 9b1542da73d22a45dc31ce69c441c3afedd541d3ac5ba0e4b83b948687c24a20 mf_unicode_font.lua

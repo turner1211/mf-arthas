@@ -28,7 +28,7 @@ function L.detect()
  local function add(fn,owner)if type(fn)=='function'then candidates[#candidates+1]={fn,owner}end end
  add(rawget(_G,'GetLocale'))
  if core then
-  add(core.get_locale);add(core.get_client_locale);add(core.get_game_locale)
+  add(core.get_locale);add(core.get_client_locale);add(core.get_game_locale);add(core.get_language)
   local ui=core.game_ui;if type(ui)=='table'then add(ui.get_locale,ui);add(ui.get_client_locale,ui)end
  end
  for _,entry in ipairs(candidates)do
