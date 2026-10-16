@@ -1,4 +1,4 @@
-local D={version="1.8.0",data_build="1.60.1.70374"}
+local D={version="1.9.0",data_build="1.60.1.70374"}
 
 -- Highest rank first.  A character only casts an id that the host reports known.
 D.spells={

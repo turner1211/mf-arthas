@@ -2,8 +2,8 @@ local Gate=require("paladin_suite_gate")
 local Edition=require("paladin_edition")
 Gate.install()
 
-local Suite={version="1.2.7",active=nil,loaded={},next_probe=-math.huge,ready_at=nil,
-    components={holy="4.71.0",ret="1.64.0",prot="6.15.0",forever="1.8.0"}}
+local Suite={version="1.2.8",active=nil,loaded={},failures={},next_probe=-math.huge,ready_at=nil,
+    components={holy="4.71.0",ret="1.64.0",prot="6.15.0",forever="1.9.0"}}
 
 local function call(owner,method,...)
     local fn=owner and owner[method]
@@ -74,6 +74,9 @@ end
 
 local function activate(profile,reason)
     if Suite.active==profile then return end
+    local clock=now()
+    local failure=profile and Suite.failures[profile]
+    if failure and clock<(failure.retry_at or 0) then return end
     local old=Suite.active
     if old then hide(old) end
     Gate.set_active(nil)
@@ -84,6 +87,9 @@ local function activate(profile,reason)
         local ok,result=Gate.run(profile,function() return start(profile) end)
         if not ok then
             Gate.set_active(nil)
+            local attempts=(failure and failure.attempts or 0)+1
+            local delay=math.min(30,2^(math.min(attempts,5)-1))
+            Suite.failures[profile]={attempts=attempts,retry_at=clock+delay}
             status("Failed to start "..profile..": "..tostring(result))
             if type(core.log_warning)=="function" then
                 pcall(core.log_warning,"[Paladin Trinity] "..profile.." startup failed: "..tostring(result))
@@ -91,6 +97,7 @@ local function activate(profile,reason)
             return
         end
         Suite.loaded[profile]=true
+        Suite.failures[profile]=nil
     end
     Suite.active=profile
     status("Active profile: "..string.upper(profile)

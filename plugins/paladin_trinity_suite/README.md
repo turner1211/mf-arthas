@@ -1,4 +1,4 @@
-# Paladin Trinity Suite 1.2.7
+# Paladin Trinity Suite 1.2.8
 
 One Project Sylvanas plugin containing Holy Paladin 4.71.0, Retribution Paladin
 1.64.0, and Protection Paladin 6.15.0.
@@ -24,6 +24,13 @@ spell-book state during character transitions cannot activate a Paladin profile
 on another class. Ret's long runtime now stores persistent state in its existing
 runtime table, reducing active function locals from 194 to 179 and restoring a
 safe margin below Lua's 200-local compilation ceiling.
+
+Version 1.2.8 expands WoW Forever cast and channel detection across the current
+and legacy Project Sylvanas method spellings. Player action suppression, hostile
+cast stops, and resistance-aura prediction now share that probe. Profile startup
+failures use an exponential retry delay capped at 30 seconds, preventing a bad
+or temporarily unavailable runtime from logging and rewriting status four times
+per second while still recovering automatically when the host becomes ready.
 
 The Retail/Midnight side preserves every specialization's existing artwork and theme while
 expanding customer navigation. Holy gains dedicated Cooldowns and Support tabs,

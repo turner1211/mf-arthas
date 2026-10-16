@@ -8,6 +8,14 @@ local function call(owner,name,...)
     ok,v=pcall(fn,owner,...);return ok and v or nil
 end
 
+local function casting(unit)
+    return call(unit,"is_casting_spell")==true
+        or call(unit,"is_channelling_spell")==true
+        or call(unit,"is_channeling_spell")==true
+        or call(unit,"is_casting")==true
+        or call(unit,"is_channeling")==true
+end
+
 local function player() return call(core and core.object_manager,"get_local_player") end
 local function target() return call(core and core.object_manager,"get_current_target") or call(player(),"get_target") end
 local function level(unit)
@@ -59,7 +67,7 @@ local function any_aura(unit,keys)
 end
 local function cast(key,unit,instance,efficient)
     local me=player()
-    if call(me,"is_casting")==true or call(me,"is_channeling")==true then return false end
+    if casting(me) then return false end
     local id=efficient and resolve_efficient(key,type(efficient)=="number" and efficient or nil) or resolve(key)
     if not ready(id) or not valid(unit) then return false end
     local required=Data.levels[key]
@@ -305,14 +313,14 @@ end
 
 local function control_cast(instance,me,foe)
     if not value(instance.config.crowd_control,true) or not valid(foe) then return false end
-    local casting=call(foe,"is_casting")==true or call(foe,"is_channeling")==true
+    local enemy_casting=casting(foe)
     if call(foe,"is_stun_immune")==true or call(foe,"is_immune_to_stun")==true then return false end
-    return casting and distance(me,foe)<=10 and cast("HAMMER_JUSTICE",foe,instance) or false
+    return enemy_casting and distance(me,foe)<=10 and cast("HAMMER_JUSTICE",foe,instance) or false
 end
 
 local function cast_school_aura(instance,me,foe)
     if not value(instance.config.resistance_auras,true) or not valid(foe)
-        or (call(foe,"is_casting")~=true and call(foe,"is_channeling")~=true) then return false end
+        or not casting(foe) then return false end
     local school=call(foe,"get_cast_spell_school") or call(foe,"get_cast_school")
         or call(foe,"get_spell_school")
     local text=tostring(school or ""):lower()
