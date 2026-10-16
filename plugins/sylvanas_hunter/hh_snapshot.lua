@@ -141,6 +141,7 @@ function N.build(player,identity,mode,settings,engine)
   settings=settings,now=now,game_now=U.number(U.fn(core.game_time)),enemies={},nearby={},casts={},
   enemy_count=1,attackers=0,physical=false,magic=false,aoe_safe=true,aoe_known=false,party={},
   target=U.call(player,'get_target'),hp=U.hp(player)}
+ c.level=U.number(U.call(player,'get_level'))or U.number(U.call(player,'level'))or 1
  c.player_position=U.call(player,'get_position')
  c.target_position=U.call(c.target,'get_position')
  local aura_cache={}
@@ -163,6 +164,7 @@ function N.build(player,identity,mode,settings,engine)
  c.player_in_control=U.fn(core.spell_book.is_player_in_control)
  c.busy=U.call(player,'is_casting_spell')==true or U.call(player,'is_channelling_spell')==true
  c.pet=U.call(player,'get_pet');c.pet_hp=U.hp(c.pet)
+ c.pet_on_target=U.valid(c.pet)and U.same(U.call(c.pet,'get_target'),c.target)or false
  c.pet_controlled=c.pvp and U.valid(c.pet) and Pvp and U.call(Pvp,'is_crowd_controlled',c.pet)==true or false
  c.pet_buff=function(id) return cached_aura('pet',c.pet,id) end
  local group_seen,party_by_guid={},{}

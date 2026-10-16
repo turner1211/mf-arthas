@@ -1,4 +1,4 @@
-SYLVANAS HUNTER 1.6.5 — MIDNIGHT + WOW FOREVER
+SYLVANAS HUNTER 1.6.6 — MIDNIGHT + WOW FOREVER
 
 PLUGIN FOLDER RULE: Every file inside this plugin folder and every subfolder
 must end in `.lua` or `.md`. Release packaging fails if any other file type is
@@ -8,6 +8,17 @@ JPEG, ZIP, Python, JSON, layered-art, or other file types in the plugin folder.
 Built for Project Sylvanas's Midnight and WoW Forever client APIs. This is an offline-validated
 release candidate; live testing is still required. It is not a claim of flawless
 gameplay, maximum DPS, or verified behavior on every talent build.
+
+Version 1.6.6 adds automatic character-level detection to every snapshot and
+Forever status log. Forever priorities now unlock by the real trainer/talent
+levels: Serpent Sting at 4, Hunter's Mark and Arcane Shot at 6, Hawk and pet
+play from 10, Multi-Shot at 18, Aimed Shot at 20, Rapid Fire at 26, and the
+level-30 Survival melee package. Marksmanship's level-40 Sniper Shot cannot
+enter a level-30 rotation early. BM now follows the current simulator sequence
+of Multi-Shot then Arcane Shot and no longer spends time casting Aimed Shot.
+Rapid Fire is held for PvP burst, while PvE uses it after mana falls below 95%.
+The Pet-first option now provides a bounded 1.25-second threat hand-off instead
+of being a display-only setting; it can never stall the rotation indefinitely.
 
 Version 1.6.5 keeps the hard-separated WoW Forever runtime and adds Survival-only PvP Track Humanoids automation for Improved Tracking, a dedicated saved toggle/hotkey, unknown-aura repetition protection, and the current explicit Mongoose Bite/Strider Kick/Raptor Strike priority. It retains level-cap sting fallback, simulator-backed BM Multi-Shot, target-life-aware Lacerate, all-spec Rapid Fire, spec-aware Readiness, Hawk tracking, closing-speed checks, melee-only Deterrence, and pressure-safe pet recovery. `core.get_game_version()` and `core.get_exact_game_version()` select Midnight or Forever before spell data, settings, logs, utility, or rotations load. Midnight retains its original focus modules and storage keys. Forever uses its own mana-based, rank-aware spell table; separate BM, Marksmanship, and Survival rotations; `hh_forever_` settings and hotkeys; and `sylvanas_hunter_forever/logs`. Midnight encounter data and modern abilities never enter Forever combat decisions.
 

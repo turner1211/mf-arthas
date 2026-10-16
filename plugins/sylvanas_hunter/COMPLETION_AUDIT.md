@@ -137,3 +137,5 @@ Version 1.6.3 corrects Rapid Fire to a baseline all-spec Forever ability, adds B
 Version 1.6.4 adds learned-spell fallback from unavailable Viper Sting to Serpent Sting, broadens Scorpid selection from observed physical pressure, adopts the level-30 BM simulator's single-target Multi-Shot priority, and moves Survival's durable-target Lacerate and high-share Raptor Strike ahead of lower-value trap and Strider fillers.
 
 Version 1.6.5 adds Survival-only Track Humanoids upkeep for the Improved Tracking PvP damage bonus, a spec/mode-filtered default-on GUI option and hotkey, guarded unknown-aura handling, and the current explicit Mongoose Bite/Strider Kick/Raptor Strike priority.
+
+Version 1.6.6 adds native character-level detection and explicit Forever unlock boundaries, corrects BM to the current Multi-Shot/Arcane simulator priority, reserves Rapid Fire by context, and makes Pet-first engagement safety functional with a bounded hand-off.

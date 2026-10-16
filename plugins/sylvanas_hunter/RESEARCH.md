@@ -864,3 +864,29 @@ Sources:
 - https://foreverdb.net/class/Hunter/macros
 - https://foreverdb.net/guide/leveling-hunter
 - https://foreverdb.net/spell/23989
+# 1.6.6 WoW Forever level-aware rotation pass — 2026-10-15
+
+The Forever client currently caps characters at level 30, but its data also
+contains future ranks and level-40 talents. The runtime now reads the local
+character level directly and applies explicit unlock gates in addition to the
+spellbook checks. This prevents future abilities, especially Sniper Shot, from
+entering a lower-level priority when client data is partially available.
+
+Current level-30 BM simulation attributes 11.3% of damage to Multi-Shot and
+7.6% to Arcane Shot, uses Rapid Fire once per 60-second fight, and does not use
+Aimed Shot. The BM priority now follows that model. The current class guide
+states that Rapid Fire is used once mana falls below 95%; PvE follows that
+threshold, while PvP continues to hold the five-minute cooldown for a kill
+window. The build guide also recommends sending the pet after the tank has
+threat. The existing Pet-first option now creates a bounded 1.25-second handoff
+when a live pet has not reached the target, then releases automatically.
+
+Sources:
+- https://foreverdb.net/class/Hunter
+- https://foreverdb.net/class/Hunter/abilities
+- https://foreverdb.net/class/Hunter/builds
+- https://foreverdb.net/class/Hunter/pve
+- https://foreverdb.net/class/Hunter/pvp
+- https://foreverdb.net/sim/hunter/beast-mastery
+- https://foreverdb.net/sim/hunter/survival
+- https://foreverdb.net/spell/3045

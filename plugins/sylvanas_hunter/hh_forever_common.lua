@@ -1,4 +1,5 @@
 local U=require('hh_util');local S=require('hh_spells');local A=require('hh_aura');local F={}
+function F.level(c,n)return(U.number(c.level)or 60)>=n end
 local function has_any(c,ids,debuff)for _,id in ipairs(ids or{})do local active,left=(debuff and c.debuff or c.buff)(id);if active==true then return true,left end end;return false end
 function F.has(unit,ids)
  for _,id in ipairs(ids or{})do if A.read(unit,id)==true then return true end end
@@ -6,14 +7,15 @@ function F.has(unit,ids)
 end
 function F.mark_and_sting(c,e)
  local a
- if not has_any(c,S.aura.mark,true)then a=c.pick('hunters_mark','apply Hunter Mark before damage');if a then return a end end
+ if F.level(c,6)and not has_any(c,S.aura.mark,true)then a=c.pick('hunters_mark','apply Hunter Mark before damage');if a then return a end end
  if c.settings.forever_stings==false then return end
+ if not F.level(c,4)then return end
  local class=U.number(U.call(c.target,'get_class'))
  local physical_pvp=c.pvp and(class==1 or class==3 or class==4 or c.physical==true)
  if physical_pvp then
   if has_any(c,S.aura.scorpid,true)then return end
   a=c.pick('scorpid_sting','reduce physical PvP pressure with Forever Scorpid Sting');if a then return a end
- elseif c.pvp and c.target_mana_pct and c.target_mana_pct>25 then
+ elseif F.level(c,36)and c.pvp and c.target_mana_pct and c.target_mana_pct>25 then
   if has_any(c,S.aura.viper,true)then return end
   -- Viper starts at level 36, above the current cap. If it is not learned,
   -- keep evaluating so a mana target still receives Serpent Sting.
@@ -27,7 +29,8 @@ function F.aspect(c,key,aura,why)
  if not has_any(c,aura,false)then return c.pick(key,why)end
 end
 function F.open(c,e)
- local a=F.aspect(c,'aspect_hawk',S.aura.hawk,'maintain ranged Aspect of the Hawk');if a then return a end
+ local a
+ if F.level(c,10)then a=F.aspect(c,'aspect_hawk',S.aura.hawk,'maintain ranged Aspect of the Hawk');if a then return a end end
  return F.mark_and_sting(c,e)
 end
 function F.mana(c)return c.resource_pct or 0 end
@@ -48,6 +51,18 @@ function F.hawks(c,e)
  e.forever_hawks=active;return count
 end
 function F.multi_threshold(c)return c.pvp and 3 or 2 end
+function F.rapid_fire(c)
+ if not F.level(c,26)or not c.burst then return false end
+ return c.pvp or F.mana(c)<95
+end
+function F.pet_first(c,e)
+ if c.pvp or c.settings.forever_pet_first==false or not c.target_engaged or not U.valid(c.pet)or c.pet_on_target then
+  e.forever_pet_wait=nil;return false
+ end
+ local row=e.forever_pet_wait
+ if not row or row.guid~=c.target_guid then row={guid=c.target_guid,time=c.now};e.forever_pet_wait=row end
+ return c.now-row.time<1.25
+end
 function F.durable(c,seconds,hp)
  if c.ttd then return c.ttd>=seconds end
  return not c.target_hp or c.target_hp>hp

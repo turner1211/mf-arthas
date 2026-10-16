@@ -13,7 +13,7 @@ local function perf_sample(kind,milliseconds)
  p[maximum]=math.max(p[maximum] or 0,milliseconds)
 end
 C.init()
-L.enabled=C.logging:get_state();L.emit('session_start',nil,'Hunter v1.6.5; runtime='..Runtime.family..'; exact='..tostring(Runtime.exact)..'; isolated settings, spells and rotations')
+L.enabled=C.logging:get_state();L.emit('session_start',nil,'Hunter v1.6.6; runtime='..Runtime.family..'; exact='..tostring(Runtime.exact)..'; level-aware isolated settings, spells and rotations')
 local function stop(reason,now,hide)
  C.status=reason;engine:reset(nil,now);current=nil;Boss.active=nil;C.recommendation=nil
  if hide then C.identity=nil;C.mode=nil end
@@ -81,7 +81,7 @@ core.register_on_update_callback(function()
  local now=U.number(U.fn(core.time)) or 0
  if current and current.settings.performance_telemetry~=false and now-(L.last_heartbeat or -math.huge)>=5 then
   L.last_heartbeat=now
-  L.emit('heartbeat',current,'status='..C.status..'; target_name='..U.clean(current.target_name)..'; training_dummy='..tostring(current.training_dummy==true)..'; dummy_source='..tostring(current.dummy_source)..'; player_in_control='..tostring(current.player_in_control)..'; global_enabled='..tostring(C.enabled:get_state())..'; profile_enabled='..tostring(current.settings.enabled)..'; paused='..tostring(C.pause:get_state())..'; pending='..tostring(engine.pending and engine.pending.key)..'; last_action='..tostring(engine.last_action)..'; trap_block='..tostring(current.trap_block)..string.format('; perf_tick_avg_ms=%.3f; perf_tick_max_ms=%.3f; perf_snapshot_avg_ms=%.3f; perf_snapshot_max_ms=%.3f; perf_samples=%d',engine.perf.tick_avg,engine.perf.tick_max,engine.perf.snapshot_avg,engine.perf.snapshot_max,engine.perf.samples))
+  L.emit('heartbeat',current,'status='..C.status..'; level='..tostring(current.level)..'; target_name='..U.clean(current.target_name)..'; training_dummy='..tostring(current.training_dummy==true)..'; dummy_source='..tostring(current.dummy_source)..'; player_in_control='..tostring(current.player_in_control)..'; global_enabled='..tostring(C.enabled:get_state())..'; profile_enabled='..tostring(current.settings.enabled)..'; paused='..tostring(C.pause:get_state())..'; pending='..tostring(engine.pending and engine.pending.key)..'; last_action='..tostring(engine.last_action)..'; trap_block='..tostring(current.trap_block)..string.format('; perf_tick_avg_ms=%.3f; perf_tick_max_ms=%.3f; perf_snapshot_avg_ms=%.3f; perf_snapshot_max_ms=%.3f; perf_samples=%d',engine.perf.tick_avg,engine.perf.tick_max,engine.perf.snapshot_avg,engine.perf.snapshot_max,engine.perf.samples))
   if L.enabled and current.combat and current.target_valid then
    local probe_key=(Runtime.family=='forever'and{[253]='summon_hawk',[254]='sniper_shot',[255]='strider_kick'}or{[253]='bestial_wrath',[254]='trueshot',[255]='takedown'})[current.spec]
    local probe_ok,probe_error=pcall(engine.probe,engine,current,probe_key)
@@ -120,7 +120,7 @@ if core.register_on_game_event_callback then core.register_on_game_event_callbac
   engine:reset(nil,U.fn(core.time) or 0);current=nil;Boss.active=nil;C.recommendation=nil
  end
 end)end
-_G.SylvanasHunterStatus=function()return {version='1.6.5',runtime=Runtime.family,client=Runtime.version,exact=Runtime.exact,spec=C.identity and C.identity.id,mode=C.mode,status=C.status,enabled=C.enabled:get_state(),paused=C.pause:get_state()}end
+_G.SylvanasHunterStatus=function()return {version='1.6.6',runtime=Runtime.family,client=Runtime.version,exact=Runtime.exact,level=current and current.level,spec=C.identity and C.identity.id,mode=C.mode,status=C.status,enabled=C.enabled:get_state(),paused=C.pause:get_state()}end
 
 
 
