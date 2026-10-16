@@ -2,6 +2,7 @@
 local P={}
 local Rules=require("bg_rules")
 local Predictive=require("bg_predictive_logic")
+local DarkspearStrategy=require("bg_darkspear_strategy")
 local anchored={advance=true,regroup=true,retreat=true,guard=true,defend=true,recapture=true,hold_capture=true,occupy=true,capture=true,respond_callout=true,mine_resource=true,
  prepare_resource=true,escort=true,escort_cart=true,return_flag=true,take_flag=true,take_orb=true,take_crystal=true}
 local function distance(a,b)
@@ -30,6 +31,8 @@ function P.choose(s,previous)
  if not s or not s.valid or not s.player_position then return nil,"objective_state_unavailable" end
  local reason;s,reason=Rules.resolve(s)
  if not s then return nil,reason end
+ local darkspear=s.rule_profile=="darkspear_islands" and DarkspearStrategy.analyze(s) or nil
+ if darkspear then DarkspearStrategy.enrich_carrier(s,darkspear) end
  local best,score,best_priority,best_key
  local committed,committed_score,committed_priority
  local role_bias={
@@ -515,7 +518,7 @@ function P.choose(s,previous)
     if candidate then candidate.arrival_radius=8 end
    -- Locked Blitz nodes must never be treated as capturable.
    elseif n.owner==s.team and n.enemy_capture_in_progress==true then
-    offer("defend",n.position,175,nil,n.assaulting_enemy or n.enemy,n.id)
+    offer("defend",n.position,175+DarkspearStrategy.node_bonus(n,s.team,darkspear),nil,n.assaulting_enemy or n.enemy,n.id)
    elseif n.state=="enemy_contested" and n.previous_owner==s.team and n.capturable and not n.locked then
     offer("recapture",n.position,155,n.object,n.enemy,n.id)
    elseif n.state=="friendly_contested" then
@@ -530,7 +533,7 @@ function P.choose(s,previous)
     if attackers and defenders then
      danger=math.min(45,math.max(0,attackers-defenders)*15)-math.min(20,math.max(0,defenders-attackers)*5)
     end
-    offer("defend",n.position,140+danger,nil,n.enemy,n.id)
+    offer("defend",n.position,140+danger+DarkspearStrategy.node_bonus(n,s.team,darkspear),nil,n.enemy,n.id)
    elseif n.capturable and not n.locked and n.owner~=s.team then
     local nearby=n.proximity==true
     local clear=n.enemies==nil or n.enemies==0
@@ -564,12 +567,12 @@ function P.choose(s,previous)
     -- Existing captures and match-saving all-in pushes retain commitment.
     if not overmatched or continuing or s.endgame_mode=="all_in" then
      local candidate=offer(nearby and "occupy" or "capture",n.position,
-      (nearby and clear and 145 or defend_majority and 55 or 90)-(n.enemies or 0)*12-saturation_penalty+handoff_bonus,
+      (nearby and clear and 145 or defend_majority and 55 or 90)+DarkspearStrategy.node_bonus(n,s.team,darkspear)-(n.enemies or 0)*12-saturation_penalty+handoff_bonus,
       clear and n.object or nil,nil,n.id)
      if candidate and handoff_bonus>0 then candidate.objective_handoff=true;candidate.handoff_bonus=handoff_bonus end
     end
    elseif n.owner==s.team and (n.defenders or 0)==0 then
-    offer("guard",n.position,defend_majority and 135 or 60,nil,nil,n.id)
+    offer("guard",n.position,(defend_majority and 135 or 60)+DarkspearStrategy.node_bonus(n,s.team,darkspear),nil,nil,n.id)
    end
    end
   end
@@ -605,7 +608,8 @@ function P.choose(s,previous)
     -- guidance gives tower control priority when the team holds just one.
     -- Keep the flag legal in that state, but score an open tower above it.
     if s.has_owned_node and flag.available and flag.pickup_allowed~=false then
-     offer("take_flag",flag.position,owned_nodes<=1 and 55 or 100,flag.object,nil,flag.id)
+     local value=darkspear and DarkspearStrategy.flag_pickup_value(darkspear) or (owned_nodes<=1 and 55 or 100)
+     if value then offer("take_flag",flag.position,value,flag.object,nil,flag.id) end
    elseif flag.carrier_enemy then offer("intercept",Predictive.intercept_position(flag,s.player_position),120,nil,flag.carrier,flag.id)
     elseif flag.carrier then offer("escort",flag.position,95,nil,nil,flag.id) end
     end

@@ -1,4 +1,12 @@
-SYLVANAS BATTLEGROUND COMMAND - v1.96.0 - October 15, 2026
+SYLVANAS BATTLEGROUND COMMAND - v1.97.0 - October 16, 2026
+
+Version 1.97.0 completes the missing live Darkspear turn-in strategy. When a
+validated objective snapshot proves base ownership but does not preselect a
+carrier destination, the planner now derives the nearest reachable owned base,
+preferring an uncontested one. It establishes a foothold before taking the
+central flag, suppresses flag pickup while the team's sole turn-in is under
+attack, and gives emergency weight to preserving that last base. All decisions
+use existing snapshot data, so this adds no world scan and invents no ownership.
 
 Version 1.96.0 records the supplied Forever legacy mmap inventory without
 installing or trusting it. Diagnostics now show per-profile map ID, header, tile
