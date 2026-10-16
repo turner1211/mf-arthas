@@ -1,4 +1,4 @@
-# WoW Forever Shaman research — version 5.10.0
+# WoW Forever Shaman research — version 5.11.0
 
 Reviewed October 15, 2026 against public beta information for builds through 1.60.1.70374.
 

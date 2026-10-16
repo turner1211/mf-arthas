@@ -83,4 +83,4 @@ core.register_on_game_event_callback(function(event,args)
  RT.safe("aura_event",module("rs_auras").event,event,args);RT.safe("telemetry_event",module("rs_telemetry").event,event,args)
  RT.last_tick=-math.huge
 end)
-core.log("[Shaman Suite] 5.10.0 loaded: Retail priority refresh and isolated GUI rendering.")
+core.log("[Shaman Suite] 5.11.0 loaded: area-damage pull and crowd-control protection.")

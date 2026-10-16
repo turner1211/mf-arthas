@@ -1,3 +1,14 @@
+# Shaman Suite 5.11.0
+
+- Prevents Retail Elemental and Enhancement area rotations from counting or striking nearby unengaged enemies.
+- Holds Chain Lightning, Earthquake, Crash Lightning, Sundering, Surging Totem, Tempest, Primordial Storm, and Voltaic Blaze when their area effect could pull a nearby pack or break crowd control.
+- Rejects a selected target with confirmed crowd control or damage immunity in every mode.
+- Keeps PvP target selection conservative when the optional control/immunity helper cannot confirm safety.
+- Adds regression coverage for unengaged packs, controlled secondary targets, controlled primary targets, and Voltaic Blaze splash safety.
+- Adds a packaging guard for the shared loader, localization, game-ID, and Unicode-font runtime modules.
+
+## Previous release notes
+
 # Shaman Suite 5.10.0
 
 - Refreshes Retail Elemental and Enhancement priorities for Midnight 12.1.5.
@@ -7,8 +18,6 @@
 - Switches Enhancement spenders to Chain Lightning at two or more targets.
 - Isolates the main menu, full GUI, and boss-helper GUI so one drawing failure cannot break the other window or strand a shared object snapshot.
 - Adds focused regression coverage for the new Retail priority paths and renderer isolation.
-
-## Previous release notes
 
 # Shaman Suite 5.9.0
 

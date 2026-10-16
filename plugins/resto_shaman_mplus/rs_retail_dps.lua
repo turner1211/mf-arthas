@@ -9,17 +9,28 @@ local ID={
  DOOM_WINDS=384352,ENHANCEMENT_ASCENDANCE=114051,FERAL_SPIRIT=51533,SURGING_TOTEM=444995,
  PRIMORDIAL_STORM=1218125,MAELSTROM_WEAPON=344179,ANCESTRAL_SWIFTNESS=443454,
 }
-local function enemy_count(me,target,radius)
- local n=0
+local function enemy_scan(me,target,radius,context)
+ local n,unsafe=1,false;local seen={}
+ local target_guid=U.guid(target);if target_guid then seen[tostring(target_guid)]=true end
+ local P=require("rs_profiles")
  for _,u in pairs(U.objects()) do
-  if U.valid(u) and U.call(u,"is_enemy_with",me)==true and U.distance(target or me,u)<=radius then n=n+1 end
+   if U.valid(u) and U.call(u,"is_enemy_with",me)==true and U.distance(target or me,u)<=radius then
+    local guid=U.guid(u);local duplicate=u==target or (guid and seen[tostring(guid)])
+    local engaged=u==target or U.call(u,"is_in_combat")==true or require("rs_dummies").is_damage(U,me,u)
+    local controlled=P.pvp_call("is_crowd_controlled_weak",u,0)==true
+    if not engaged or controlled then unsafe=true end
+    if engaged and not controlled and not duplicate then n=n+1;if guid then seen[tostring(guid)]=true end end
+   end
  end
- return n
+ return n,unsafe
 end
-local function target(me)
+local function target(me,context)
  local u=U.call(me,"get_target")
  if not U.valid(u) or U.call(u,"is_enemy_with",me)~=true or not U.visible(me,u) then return nil end
  if U.call(u,"is_in_combat")~=true and not require("rs_dummies").is_damage(U,me,u) then return nil end
+ local P=require("rs_profiles");local controlled=P.pvp_call("is_crowd_controlled_weak",u,0)
+ local immune=P.pvp_call("is_damage_immune",u,0)
+ if controlled==true or immune==true or (context.pvp and (controlled~=false or immune~=false)) then return nil end
  return u
 end
 local function power(me)
@@ -45,39 +56,39 @@ local function utility(me,t,context)
  return false
 end
 local function elemental(me,t,context)
- local count=enemy_count(me,t,12);local aoe=C.get("dps_aoe") and count>=(C.get("dps_aoe_count") or 3)
+ local count,unsafe=enemy_scan(me,t,12,context);local aoe=C.get("dps_aoe") and not unsafe and count>=(C.get("dps_aoe_count") or 3)
  local maelstrom=power(me);local flame,remaining=A.own_debuff(t,S.FLAME,me)
  if C.get("dps_cooldowns") and S.cast(ID.STORMKEEPER,me,me) then C.status="Elemental: Stormkeeper";return true end
  if C.get("dps_cooldowns") and S.cast(ID.ANCESTRAL_SWIFTNESS,me,me) then C.status="Elemental: Ancestral Swiftness";return true end
  if C.get("dps_cooldowns") and S.cast(ID.ELEMENTAL_ASCENDANCE,me,me) then C.status="Elemental: Ascendance";return true end
  local flame_override=S.resolve(S.FLAME)~=S.FLAME
- if flame_override or not flame or (remaining or 0)<=5 then if S.cast(S.FLAME,t,me) then C.status=flame_override and "Elemental: Voltaic Blaze" or "Elemental: Flame Shock";return true end end
+ if (flame_override and not unsafe) or (not flame_override and (not flame or (remaining or 0)<=5)) then if S.cast(S.FLAME,t,me) then C.status=flame_override and "Elemental: Voltaic Blaze" or "Elemental: Flame Shock";return true end end
  if aoe and maelstrom>=60 and S.cast(ID.EARTHQUAKE,t,me,true) then C.status="Elemental: Earthquake";return true end
  if maelstrom>=75 and S.cast(ID.ELEMENTAL_BLAST,t,me,false,true) then C.status="Elemental: Elemental Blast";return true end
- if S.cast(ID.TEMPEST,t,me,false,true) then C.status="Elemental: Tempest";return true end
+ if not unsafe and S.cast(ID.TEMPEST,t,me,false,true) then C.status="Elemental: Tempest";return true end
  if S.cast(S.LAVA,t,me,false,true) then C.status="Elemental: Lava Burst";return true end
  if aoe and S.cast(S.LIGHTNING,t,me,false,true) then C.status="Elemental: Chain Lightning";return true end
  if S.cast(S.BOLT,t,me,false,true) then C.status="Elemental: Lightning Bolt";return true end
  return false
 end
 local function enhancement(me,t,context)
- local count=enemy_count(me,t,10);local cleave=C.get("dps_aoe") and count>=2
+ local count,unsafe=enemy_scan(me,t,10,context);local cleave=C.get("dps_aoe") and not unsafe and count>=2
  local aoe=C.get("dps_aoe") and count>=(C.get("dps_aoe_count") or 3)
  local stacks=A.stacks(me,ID.MAELSTROM_WEAPON) or 0
  local flame,remaining=A.own_debuff(t,S.FLAME,me);local flame_override=S.resolve(S.FLAME)~=S.FLAME
- if flame_override or not flame or (remaining or 0)<=5 then if S.cast(S.FLAME,t,me) then C.status=flame_override and "Enhancement: Voltaic Blaze" or "Enhancement: Flame Shock";return true end end
+ if (flame_override and not unsafe) or (not flame_override and (not flame or (remaining or 0)<=5)) then if S.cast(S.FLAME,t,me) then C.status=flame_override and "Enhancement: Voltaic Blaze" or "Enhancement: Flame Shock";return true end end
  if C.get("dps_cooldowns") and S.cast(ID.FERAL_SPIRIT,me,me) then C.status="Enhancement: Feral Spirit";return true end
- if C.get("dps_cooldowns") and S.cast(ID.SURGING_TOTEM,t,me,true) then C.status="Enhancement: Surging Totem";return true end
+ if C.get("dps_cooldowns") and not unsafe and S.cast(ID.SURGING_TOTEM,t,me,true) then C.status="Enhancement: Surging Totem";return true end
  if C.get("dps_cooldowns") and S.cast(ID.DOOM_WINDS,me,me) then C.status="Enhancement: Doom Winds";return true end
  if C.get("dps_cooldowns") and S.cast(ID.ENHANCEMENT_ASCENDANCE,me,me) then C.status="Enhancement: Ascendance";return true end
  if cleave and U.distance(me,t)<=8 and S.cast(ID.CRASH_LIGHTNING,t,me) then C.status="Enhancement: Crash Lightning";return true end
- if stacks>=10 and S.cast(ID.PRIMORDIAL_STORM,t,me) then C.status="Enhancement: Primordial Storm at 10 Maelstrom Weapon";return true end
- if stacks>=10 and S.cast(ID.TEMPEST,t,me,false,true) then C.status="Enhancement: Tempest at 10 Maelstrom Weapon";return true end
+ if stacks>=10 and not unsafe and S.cast(ID.PRIMORDIAL_STORM,t,me) then C.status="Enhancement: Primordial Storm at 10 Maelstrom Weapon";return true end
+ if stacks>=10 and not unsafe and S.cast(ID.TEMPEST,t,me,false,true) then C.status="Enhancement: Tempest at 10 Maelstrom Weapon";return true end
  if stacks>=10 and cleave and S.cast(S.LIGHTNING,t,me,false,true) then C.status="Enhancement: Chain Lightning at 10 Maelstrom Weapon";return true end
  if stacks>=10 and S.cast(S.BOLT,t,me,false,true) then C.status="Enhancement: Lightning Bolt at 10 Maelstrom Weapon";return true end
  if U.distance(me,t)<=6 and S.cast(ID.STORMSTRIKE,t,me) then C.status="Enhancement: Stormstrike";return true end
  if U.distance(me,t)<=6 and S.cast(ID.LAVA_LASH,t,me) then C.status="Enhancement: Lava Lash";return true end
- if U.distance(me,t)<=8 and S.cast(ID.SUNDERING,t,me) then C.status="Enhancement: Sundering";return true end
+ if not unsafe and U.distance(me,t)<=8 and S.cast(ID.SUNDERING,t,me) then C.status="Enhancement: Sundering";return true end
  if stacks>=5 and cleave and S.cast(S.LIGHTNING,t,me,false,true) then C.status="Enhancement: Chain Lightning";return true end
  if stacks>=5 and S.cast(S.BOLT,t,me,false,true) then C.status="Enhancement: Lightning Bolt";return true end
  if S.cast(S.FROST,t,me) then C.status="Enhancement: Frost Shock";return true end
@@ -85,7 +96,7 @@ local function enhancement(me,t,context)
 end
 function M.run(me,context,spec)
  if survival(me) then return true end
- local t=target(me);if not t then C.status=spec:gsub("^%l",string.upper)..": waiting for hostile target";return false end
+ local t=target(me,context);if not t then C.status=spec:gsub("^%l",string.upper)..": waiting for safe hostile target";return false end
  if utility(me,t,context) then return true end
  if spec=="enhancement" then return enhancement(me,t,context) end
  return elemental(me,t,context)
