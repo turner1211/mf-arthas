@@ -1,16 +1,18 @@
 local U,S,N,A,L=require('sm_util'),require('sm_spells'),require('sm_snapshot'),require('sm_aura'),require('sm_log')
 local E={};E.__index=E
+local ENEMY_INTERRUPTS={[6552]=15,[96231]=15,[1766]=15,[2139]=24,[57994]=12,[106839]=15,[47528]=15,[183752]=15,[147362]=24,[351338]=40}
 function E.new()
- return setmetatable({epoch=0,scope=nil,retry={},failures={},recent={},history={},defer={},pvp_trinket={},manual_until=0,last_major=-math.huge,temporal=nil},E)
+ return setmetatable({epoch=0,scope=nil,retry={},failures={},recent={},history={},defer={},pvp_trinket={},enemy_interrupts={},manual_until=0,last_major=-math.huge,temporal=nil},E)
 end
 function E:reset(scope,now,preserve_arena)
  local trinkets=preserve_arena and scope==self.scope and scope and scope:find(':arena:',1,true) and self.pvp_trinket or {}
+ local interrupts=preserve_arena and scope==self.scope and scope and scope:find(':arena:',1,true) and self.enemy_interrupts or {}
  self.epoch=self.epoch+1;self.scope=scope;self.retry={};self.failures={};self.pending=nil;self.owned_channel=nil
  self.recent={};self.history={};self.defer={};self.health=nil;self.target_health=nil
  self.temporal=nil
  self.last_major=-math.huge;self.manual_until=now+0.35;self.transition_until=now+0.35
- self.last_action=nil;self.previous_action=nil;self.last_confirm=nil;self.pvp_trinket=trinkets
- if not scope or not tostring(scope):find(':arena:',1,true) then self.pvp_trinket={} end
+ self.last_action=nil;self.previous_action=nil;self.last_confirm=nil;self.pvp_trinket=trinkets;self.enemy_interrupts=interrupts
+ if not scope or not tostring(scope):find(':arena:',1,true) then self.pvp_trinket={};self.enemy_interrupts={} end
 end
 function E:bind(identity,mode,now)
  local scope=table.concat({identity.player or '?',identity.id,mode,identity.assigned},':')
@@ -355,6 +357,8 @@ function E:record_cast(data,c)
   local kicks={[6552]=true,[96231]=true,[1766]=true,[2139]=true,[57994]=true,[106839]=true,[47528]=true,[183752]=true,[147362]=true,[351338]=true}
   if kicks[id] then self.defer[U.guid(data.target) or '?']=c.now+0.22 end
  elseif c.pvp and U.call(data.caster,'is_player')==true then
+  local cooldown=ENEMY_INTERRUPTS[id]
+  if cooldown then self.enemy_interrupts[U.guid(data.caster)or'?']={spell=id,ready=c.now+cooldown} end
   local trinkets={[42292]=true,[336126]=true,[208683]=true}
   if trinkets[id] then self.pvp_trinket[U.guid(data.caster) or '?']=c.now end
  end

@@ -63,7 +63,13 @@ local function healer_reachable(c,destination)
 end
 function P.blink_destination(c,pressure)
  local pp,ep=position(c.player),position(pressure and pressure.unit);if not pp or not ep then return nil end
- local base=math.atan((pp.y or 0)-(ep.y or 0),(pp.x or 0)-(ep.x or 0));local current=gap(pp,ep);local best,best_score
+ local dy,dx=(pp.y or 0)-(ep.y or 0),(pp.x or 0)-(ep.x or 0)
+ local base
+ if type(math.atan2)=='function'then base=math.atan2(dy,dx)
+ elseif dx>0 then base=math.atan(dy/dx)
+ elseif dx<0 then base=math.atan(dy/dx)+(dy>=0 and math.pi or-math.pi)
+ elseif dy>0 then base=math.pi/2 elseif dy<0 then base=-math.pi/2 else return nil end
+ local current=gap(pp,ep);local best,best_score
  for _,offset in ipairs({0,0.55,-0.55,1.05,-1.05})do
   local angle=base+offset;local candidate=terrain_safe(c,point(pp.x+math.cos(angle)*15,pp.y+math.sin(angle)*15,pp.z or 0))
   if candidate and gap(candidate,ep)>=current+8 and healer_reachable(c,candidate)then
@@ -129,6 +135,8 @@ local function disruptor_controlled(c,u,remaining)
 end
 function P.interrupt_threat(c,u,remaining,controlled)
  if not c.pvp or not U.enemy(c.player,u)then return false end
+ local known=c.enemy_interrupt_ready and c.enemy_interrupt_ready(u)
+ if known==false then return false end
  if controlled==nil then controlled=disruptor_controlled(c,u,remaining or 1500)end
  if controlled then return false end
  local H=require('sm_snapshot').Pvp
@@ -154,7 +162,7 @@ function P.channel_safe(c,control_ms)
  local target_stun=P.control(c,c.target,'STUN',control_ms)
  local target_controlled=target_stun or disruptor_controlled(c,c.target,control_ms)
  if not target_controlled and P.interrupt_threat(c,c.target,control_ms,false)then return false end
- if not target_stun and distance<20 then return false end
+ if not target_stun and distance<20 and not(c.enemy_interrupt_ready and c.enemy_interrupt_ready(c.target)==false)then return false end
  for _,r in ipairs(c.enemies)do
   if r.engaged then
    -- Re-read live positions/targets: cached spacing is insufficient at input time.
@@ -163,7 +171,8 @@ function P.channel_safe(c,control_ms)
    local is_target=U.same(r.unit,c.target)
    local controlled=is_target and target_controlled or disruptor_controlled(c,r.unit,control_ms)
    if not controlled and U.same(U.call(r.unit,'get_target'),c.player)then return false end
-   if not is_target and not controlled and (range<=20 or P.interrupt_threat(c,r.unit,control_ms,false))then return false end
+   local spent=c.enemy_interrupt_ready and c.enemy_interrupt_ready(r.unit)==false
+   if not is_target and not controlled and (range<=20 and not spent or P.interrupt_threat(c,r.unit,control_ms,false))then return false end
   end
  end
  c.channel_space=target_stun and'target_stun'or'live_spacing'

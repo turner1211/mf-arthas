@@ -6,6 +6,14 @@ local MELEE_SPECS={[71]=true,[72]=true,[70]=true,[255]=true,[259]=true,[260]=tru
 local BREAKABLE={6770,2094,1776,118,28271,28272,61305,61721,61780,126819,161354,161355,161372,51514,20066,8122,5782,3355,6358,33786,710,31661,105421}
 local IMMUNE={642,45438,186265,33786,710}
 local PRECOGNITION={377362,377360}
+local function offensive_active(u)
+ local f=Pvp and Pvp.has_offensive_cooldown_active
+ if type(f)~='function'then return false end
+ -- Project Sylvanas helpers have shipped as both colon-style module methods
+ -- and plain functions. Accept a positive answer from either convention.
+ if U.call(Pvp,'has_offensive_cooldown_active',u,500)==true then return true end
+ return U.fn(f,u,500)==true
+end
 function N.precognition(u)
  local active,left
  for _,id in ipairs(PRECOGNITION)do
@@ -168,7 +176,7 @@ function N.build(player,identity,mode,settings,engine)
    local helper_melee=Pvp and U.call(Pvp,'is_melee',u)==true
    local melee=MELEE_SPECS[enemy_spec]==true or helper_melee or not enemy_spec and d<=6 and U.call(u,'is_casting_spell')~=true
    r.melee=melee
-   r.burst=Pvp and U.call(Pvp,'has_offensive_cooldown_active',u,500)==true or false
+   r.burst=offensive_active(u)
    if engaged and focused then
     c.attackers=c.attackers+1
     if d<=8 and U.call(u,'is_casting_spell')~=true then c.physical=true end
@@ -261,6 +269,11 @@ function N.build(player,identity,mode,settings,engine)
  c.known=function(key)
   local row=S.rows[key]
   return row and S.allowed(key,c.spec) and engine:learned(row,row.id,c.spec) or false
+ end
+ c.enemy_interrupt_ready=function(u)
+  local record=engine.enemy_interrupts and engine.enemy_interrupts[U.guid(u)or'?']
+  if record and record.ready and record.ready>c.now then return false,record.ready-c.now,record.spell end
+  return nil
  end
  c.talent=function(key) return S.talent_allowed(key,c.spec) and S.talent[key] and U.fn(core.spell_book.is_spell_known,S.talent[key])==true or false end
  c.ready=function(key,target) return engine:ready(c,key,target) end
