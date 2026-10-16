@@ -1,4 +1,4 @@
-# Priest Trinity 1.1.0
+# Priest Trinity 1.2.0
 
 One self-contained Project Sylvanas priest plugin with Discipline, Holy and Shadow branches for Retail/Midnight and WoW Forever. F1 opens or hides the custom menu. Characters remain on the right, as requested.
 
@@ -26,6 +26,16 @@ The three spec buttons preview the artwork. Combat continues to follow the detec
 | Battlegrounds | PvP/BG instance | Group recovery, early survival, high healing reserve |
 
 ACTIVITY provides a manual override if a custom server reports an unusual instance type. World PvP detection identifies an active player conflict, rather than treating every War Mode zone as ongoing PvP combat. Delve detection does not depend on a localized map name. Unsupported activities on a client remain unavailable until the host actually reports them.
+
+## Automatic level profiles
+
+The plugin reads the live character level and automatically selects `STARTER` (1-9), `DEVELOPING` (10-29), `LEVELING` (30 to the client cap), or `ENDGAME`. Retail uses level 90 and WoW Forever uses level 60 as the current cap. This changes combat priorities without changing or sharing spec settings.
+
+- Starter priests fall back through learned spells and can operate before a specialization exists.
+- Retail world leveling favors quick Pain/Tentacle Slam tags, durable-target Vampiric Touch, safe executes, and saves major cooldowns for elites or larger pulls.
+- Retail Discipline/Holy leveling uses self-shields, efficient damage, and learned spec attacks while preserving healing priority.
+- Forever leveling opens with shields and Holy Fire, avoids expensive DoTs on short-lived targets, reserves mana for healing, and uses learned wand Shoot as filler when available.
+- Dungeon, raid, delve, and PvP activity policies still take priority over solo questing assumptions. The detected level and active profile appear on the Overview page.
 
 ## Rotations and support
 

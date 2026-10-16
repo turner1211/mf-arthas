@@ -1,11 +1,11 @@
 # mf-arthas-manifest 1
-build 06e0dc4c726e664c
+build 86faf4f07d8e7428
 project priest_trinity
-version 1.1.0
+version 1.2.0
 entry mf_entry.lua
 header header.lua
-file 102 b143ead64fb588473f56c196c8e2d7a2cb90342a666a0db629fb6a1fdd985ba8 header.lua
-file 4561994 43552a96679cbe913a0702594c5c5b7a21a85762f1f9f069b917e9c2f6b8bbcf main.lua
+file 102 642c3254ecbf402a22c11ee2c68a60917e1bc4379ed0a726180203fd991268b5 header.lua
+file 4566440 d40e179b51c8242d29c7bfc348b62e6fad464a9358a2391ffc588a4bb0df28d9 main.lua
 file 288 9b56fc1f55ade9e3db1238448a2a46d7f8c3eed7e99f816f9cbccdf196a57761 mf_entry.lua
 file 1841 306a065c5c36a200adf923a291bb1e1690ec186f831b684f65909648efcbb41c mf_game_ids.lua
 file 13937 b12d28bf926e2ebc5193de543890c90a91be6e2bb67e007691a239a664e6fd76 mf_i18n.lua

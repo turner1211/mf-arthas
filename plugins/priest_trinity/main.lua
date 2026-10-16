@@ -1134,7 +1134,7 @@ ART["shadow_heal"] = table.concat({
 })
 
 -- Priest Trinity. All mutable state is private to this loader.
-local VERSION="1.1.0"
+local VERSION="1.2.0"
 local C=core
 local function static(o,n,...) local f=o and o[n];if type(f)~="function" then return nil end;local ok,v=pcall(f,...);if ok then return v end end
 local function unit(o,n,...) if not o then return nil end;local f=o[n];if type(f)~="function" then return nil end;local ok,v=pcall(f,o,...);if ok then return v end end
@@ -1153,7 +1153,7 @@ local function casting(u) return unit(u,"is_casting_spell")==true or unit(u,"is_
 local function known(id) return static(C.spell_book,"is_spell_learned",id)==true or static(C.spell_book,"is_spell_known",id)==true end
 local helper_ok,helper=pcall(require,"common/utility/spell_helper")
 if not helper_ok then helper=nil end
-local State={spec=nil,client=nil,mode="unknown",reason="Waiting for priest identity",last_action="None",last_error="",started=now(),next_tick=0,next_identity=0,visible=true,view="discipline",page=1,f1=false,history={},prediction={},backoff={},last_cast=-100,cd_lock=-100,accepted=0}
+local State={spec=nil,client=nil,mode="unknown",level=0,level_band="detecting",leveling=false,reason="Waiting for priest identity",last_action="None",last_error="",started=now(),next_tick=0,next_identity=0,visible=true,view="discipline",page=1,f1=false,history={},prediction={},backoff={},last_cast=-100,cd_lock=-100,accepted=0}
 local modes={"auto","world_pve","world_pvp","delve","dungeon","mythic_plus","raid","arena","battleground"}
 local specs={"discipline","holy","shadow"}
 -- Ordered high ranks first; English spellbook discovery supplements custom Forever IDs.
@@ -1172,7 +1172,7 @@ local Spells={
  chastise={88625},serenity={2050},sanctify={34861},circle={204883,34861},prayer_healing={596,10961,10960,996},
  guardian_spirit={47788},apotheosis={200183},hymn={64843},symbol={64901},
  halo={120517},divine_star={110744},holy_nova={132157,15237},ultimate_penitence={421453},archangel={197862},
- shadow_mend={},inner_focus={14751},divine_spirit={27841,14819,14818},shadow_protection={27683,10958,976},fear_ward={6346},
+ shadow_mend={},inner_focus={14751},divine_spirit={27841,14819,14818},shadow_protection={27683,10958,976},fear_ward={6346},shoot={},
  fiend={34433},mindbender={123040,200174},power_infusion={10060},shadowform={232698,15473},
  void_eruption={228260},void_bolt={205448},void_torrent={263165},dark_ascension={391109},
  shadow_crash={205385,457042},void_blast={450983},mind_flay_insanity={391403},
@@ -1180,7 +1180,7 @@ local Spells={
  void_shield={},shadow_word_madness={},tentacle_slam={},void_volley={},voidform={},binding_heal={32546},death={32379},
 }
 local Names={shield="Power Word: Shield",fortitude="Power Word: Fortitude",renew="Renew",flash_heal="Flash Heal",heal="Greater Heal",lesser_heal="Lesser Heal",smite="Smite",holy_fire="Holy Fire",pain="Shadow Word: Pain",mind_blast="Mind Blast",mind_flay="Mind Flay",vampiric_touch="Vampiric Touch",plague="Devouring Plague",penance="Penance",mending="Prayer of Mending",radiance="Power Word: Radiance",rapture="Rapture",evangelism="Evangelism",pain_suppression="Pain Suppression",barrier="Power Word: Barrier",purify="Purify",dispel_magic="Dispel Magic",cure_disease="Cure Disease",desperate_prayer="Desperate Prayer",fade="Fade",dispersion="Dispersion",vampiric_embrace="Vampiric Embrace",silence="Silence",horror="Psychic Horror",scream="Psychic Scream",chastise="Holy Word: Chastise",serenity="Holy Word: Serenity",sanctify="Holy Word: Sanctify",circle="Circle of Healing",prayer_healing="Prayer of Healing",guardian_spirit="Guardian Spirit",apotheosis="Apotheosis",hymn="Divine Hymn",symbol="Symbol of Hope",fiend="Shadowfiend",mindbender="Mindbender",power_infusion="Power Infusion",shadowform="Shadowform",void_eruption="Void Eruption",void_bolt="Void Bolt",void_torrent="Void Torrent",dark_ascension="Dark Ascension",shadow_crash="Shadow Crash",void_blast="Void Blast",mind_flay_insanity="Mind Flay: Insanity",inner_fire="Inner Fire",abolish_disease="Abolish Disease",void_shield="Void Shield",shadow_word_madness="Shadow Word: Madness",tentacle_slam="Tentacle Slam",void_volley="Void Volley",voidform="Voidform"}
-Names.binding_heal="Binding Heal";Names.death="Shadow Word: Death";Names.halo="Halo";Names.divine_star="Divine Star";Names.holy_nova="Holy Nova";Names.ultimate_penitence="Ultimate Penitence";Names.archangel="Archangel";Names.shadow_mend="Shadow Mend";Names.inner_focus="Inner Focus";Names.divine_spirit="Divine Spirit";Names.shadow_protection="Shadow Protection";Names.fear_ward="Fear Ward"
+Names.binding_heal="Binding Heal";Names.death="Shadow Word: Death";Names.halo="Halo";Names.divine_star="Divine Star";Names.holy_nova="Holy Nova";Names.ultimate_penitence="Ultimate Penitence";Names.archangel="Archangel";Names.shadow_mend="Shadow Mend";Names.inner_focus="Inner Focus";Names.divine_spirit="Divine Spirit";Names.shadow_protection="Shadow Protection";Names.fear_ward="Fear Ward";Names.shoot="Shoot"
 local hard={flash_heal=true,heal=true,lesser_heal=true,binding_heal=true,shadow_mend=true,smite=true,holy_fire=true,mind_blast=true,vampiric_touch=true,mind_flay=true,penance=true,radiance=true,prayer_healing=true,hymn=true,symbol=true,void_eruption=true,void_torrent=true,mind_flay_insanity=true,dark_ascension=true,void_blast=true}
 local healing_spell={shield=true,void_shield=true,renew=true,flash_heal=true,heal=true,lesser_heal=true,binding_heal=true,shadow_mend=true,penance=true,mending=true,radiance=true,serenity=true,sanctify=true,circle=true,prayer_healing=true}
 local learned_names={}
@@ -1235,6 +1235,7 @@ function Settings.get(k) local x=Identity[k] or settings()[k];return x and x:get
 function Settings.set(k,v) local x=Identity[k] or settings()[k];if x then x:set(v) end end
 local function detect_identity()
  local me=static(C.object_manager,"get_local_player");if not alive(me) or unit(me,"get_class")~=5 then return nil,nil,"Waiting for a living priest" end
+ local level=tonumber(unit(me,"get_level")) or tonumber(unit(me,"get_character_level")) or 0
  local v=tostring(static(C,"get_game_version") or ""):lower()
  local client=v:find("forever",1,true) or v:find("1.60",1,true);client=client and "forever" or ((v=="retail" or v=="midnight" or v:find("11.",1,true) or v:find("12.",1,true)) and "retail" or nil)
  -- Client overrides are private to the active profile; they never patch shared APIs.
@@ -1249,8 +1250,15 @@ local function detect_identity()
   spec=#matches==1 and matches[1] or nil
  end
  local forced=Settings.get("spec");if forced and forced>1 then spec=specs[forced-1] end
+ if not spec and level>0 and level<10 then spec="shadow" end
  if not spec then return nil,client,"Talent identity ambiguous: select your spec override" end
- return spec,client,"Automatic client / learned talent identity"
+ return spec,client,level<10 and "Automatic low-level priest rotation" or "Automatic client / learned talent identity"
+end
+local function update_level(me)
+ local level=tonumber(unit(me,"get_level")) or tonumber(unit(me,"get_character_level")) or 0
+ local cap=State.client=="forever" and 60 or 90
+ State.level=level;State.leveling=level>0 and level<cap
+ State.level_band=level<=0 and "unknown" or level<10 and "starter" or level<30 and "developing" or level<cap and "leveling" or "endgame"
 end
 local function detect_mode(me,target)
  local selected=modes[Settings.get("mode") or 1];if selected~="auto" then return selected,"Manual activity override" end
@@ -1525,6 +1533,42 @@ local function damage(ctx)
  if attempt("tentacle_slam",target,"Learned Midnight generator") or attempt("void_blast",target,"Learned Voidweaver generator") or attempt("mind_blast",target,"Shadow generator") or attempt("void_volley",target,"Learned Midnight charge") or attempt("mind_flay_insanity",target,"Empowered filler") or attempt("mind_flay",target,"Shadow filler") then return true end
  return false
 end
+local function leveling_damage(ctx)
+ local target=ctx.target;if not State.leveling or not enemy(ctx.me,target) or protected(target) or unit(target,"is_in_combat")~=true then return false end
+ local solo=State.mode=="world_pve" or State.mode=="world_pvp" or State.mode=="delve"
+ if not solo then return damage(ctx) end
+ -- Every leveling priest protects itself before committing to casts. Forever also
+ -- conserves mana with wand filler because its five-second-rule economy matters.
+ if hp(ctx.me)<82 and has(ctx.me,"shield")==0 and aura(ctx.me,6788,true)==0 and attempt("shield",ctx.me,"Leveling pull protection") then return true end
+ if State.client=="forever" then
+  if has(target,"holy_fire",true,true)<2 and attempt("holy_fire",target,"Forever leveling opener") then return true end
+  if State.spec=="shadow" then
+   if ttd(target)>6 and has(target,"pain",true,true)<3 and attempt("pain",target,"Leveling Shadow DoT") then return true end
+   if ttd(target)>9 and has(target,"plague",true,true)<3 and attempt("plague",target,"Leveling Plague") then return true end
+   if hp(target)<20 and hp(ctx.me)>60 and attempt("death",target,"Safe leveling execute") then return true end
+   if mana(ctx.me)>=Settings.get("mana_reserve")+10 and (attempt("mind_blast",target,"Leveling Shadow burst") or attempt("mind_flay",target,"Leveling Shadow filler")) then return true end
+  else
+   if ttd(target)>6 and has(target,"pain",true,true)<3 and attempt("pain",target,"Leveling damage over time") then return true end
+   if mana(ctx.me)>=Settings.get("mana_reserve")+15 and attempt("mind_blast",target,"Leveling burst") then return true end
+   if mana(ctx.me)>=Settings.get("mana_reserve")+10 and attempt("smite",target,"Leveling Holy filler") then return true end
+  end
+  return attempt("shoot",target,"Mana-conserving wand filler")
+ end
+ if State.spec=="shadow" then
+  if ttd(target)>5 and has(target,"pain",true,true)<3 and attempt("pain",target,"Quick leveling tag") then return true end
+  if #ctx.enemies>=2 and attempt("tentacle_slam",target,"Leveling multi-target DoT") then return true end
+  if ttd(target)>10 and has(target,"vampiric_touch",true,true)<4 and attempt("vampiric_touch",target,"Durable leveling target") then return true end
+  if hp(target)<20 and hp(ctx.me)>55 and attempt("death",target,"Leveling execute") then return true end
+  local hard_target=ttd(target)>15 or #ctx.enemies>=3
+  if hard_target and Settings.get("cooldowns") and (attempt("voidform",ctx.me,"Hard leveling pull",false,true) or attempt("power_infusion",ctx.me,"Hard leveling pull",false,true)) then return true end
+  if attempt("shadow_word_madness",target,"Leveling Insanity spender") or attempt("mind_blast",target,"Leveling generator") or attempt("mind_flay_insanity",target,"Empowered leveling filler") or attempt("mind_flay",target,"Leveling filler") then return true end
+  return attempt("smite",target,"Starter priest filler")
+ end
+ if Settings.get("cooldowns") and ttd(target)>12 and attempt("power_infusion",ctx.me,"Leveling elite or durable target",false,true) then return true end
+ if ttd(target)>6 and has(target,"pain",true,true)<3 and attempt("pain",target,"Leveling damage over time") then return true end
+ if attempt("chastise",target,"Leveling Holy Word damage") or attempt("holy_fire",target,"Leveling Holy opener") or attempt("penance",target,"Leveling offensive Penance") or attempt("mind_blast",target,"Leveling burst") then return true end
+ return attempt("smite",target,"Leveling filler")
+end
 local function maintenance(ctx)
  if not Settings.get("buffs") or unit(ctx.me,"is_in_combat")==true then return false end
  if State.spec=="shadow" and has(ctx.me,"shadowform")==0 and attempt("shadowform",ctx.me,"Maintain Shadowform") then return true end
@@ -1542,13 +1586,14 @@ local function tick()
   State.spec,State.client=s,c;if s then State.view=s end;State.reason=why
  end
  if not State.spec or not alive(State.me) or unit(State.me,"get_class")~=5 then return end
+ update_level(State.me)
  if not Settings.get("enabled") then State.reason="Paused";return end
  if static(C,"is_textbox_focused")==true or unit(State.me,"is_mounted")==true then State.reason="Manual input / mounted";return end
  local target=static(C.object_manager,"get_object_from_guid","target") or unit(State.me,"get_target")
  local m,why=detect_mode(State.me,target);if m~=State.mode then State.mode=m;State.prediction={};event("mode",m..": "..why) end
  State.mode_reason=why
  if casting(State.me) then State.reason="Preserving current cast / channel";return end
- local ctx=snapshot(State.me,target);State.allies=#ctx.allies;State.enemies=#ctx.enemies;State.lowhp=ctx.lowhp;State.atoned=ctx.atoned;State.reason="Evaluating "..State.spec.." / "..State.mode
+ local ctx=snapshot(State.me,target);State.allies=#ctx.allies;State.enemies=#ctx.enemies;State.lowhp=ctx.lowhp;State.atoned=ctx.atoned;State.reason="Evaluating "..State.spec.." / "..State.mode.." / "..State.level_band
  for _,u in ipairs(ctx.enemies) do forecast(u) end
  if defense(ctx) or utility(ctx) then return end
  if Settings.get("healing") then
@@ -1558,7 +1603,10 @@ local function tick()
   elseif ctx.urgent and (attempt("shield",ctx.low,"Shadow emergency support") or attempt("flash_heal",ctx.low,"Shadow emergency support")) then return end
  end
  if dispel(ctx) then return end
- if Settings.get("damage") and damage(ctx) then return end
+ if Settings.get("damage") then
+  if State.leveling then if leveling_damage(ctx) then return end
+  elseif damage(ctx) then return end
+ end
  maintenance(ctx)
 end
 
@@ -1618,11 +1666,12 @@ do
     button(Settings.get("enabled") and "RUNNING - CLICK TO PAUSE" or "PAUSED - CLICK TO ENABLE",250,195,545,52,Settings.get("enabled"),function()Settings.set("enabled",not Settings.get("enabled"))end,"shield")
     text("Detected activity: "..State.mode,254,275)
     text(State.mode_reason or State.reason,254,307)
-    text("Allies: "..(State.allies or 0).."    Engaged enemies: "..(State.enemies or 0),254,350)
-    text("Lowest health: "..math.floor(State.lowhp or 100).."%    Atonements: "..(State.atoned or 0),254,384)
-    text("Last accepted action",254,432,col(170,184,208))
-    local a=State.last_action;for i=1,math.ceil(#a/64) do text(a:sub((i-1)*64+1,i*64),254,460+(i-1)*25) end
-    text("Status: "..State.reason:sub(1,65),254,560)
+    text("Level: "..tostring(State.level or 0).."    Profile: "..string.upper(State.level_band or "unknown"),254,350)
+    text("Allies: "..(State.allies or 0).."    Engaged enemies: "..(State.enemies or 0),254,382)
+    text("Lowest health: "..math.floor(State.lowhp or 100).."%    Atonements: "..(State.atoned or 0),254,414)
+    text("Last accepted action",254,452,col(170,184,208))
+    local a=State.last_action;for i=1,math.ceil(#a/64) do text(a:sub((i-1)*64+1,i*64),254,480+(i-1)*25) end
+    text("Status: "..State.reason:sub(1,65),254,575)
     text("Each client and spec uses separate saved settings.",254,640,col(185,198,215))
    elseif State.page==2 then
     text("COMBAT CONTROLS",254,148,nil,true)

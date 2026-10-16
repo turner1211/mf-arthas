@@ -13,6 +13,12 @@ Reviewed October 16, 2026. Sources inform bounded priorities; the plugin does no
 - [Wowhead Discipline rotation](https://www.wowhead.com/guide/classes/priest/discipline/rotation-cooldowns-pve-healer): informed small Radiance ramps in groups, larger prepared raid coverage, Penance use and separation of Ultimate Penitence from Evangelism.
 - [Wowhead Holy rotation](https://www.wowhead.com/guide/classes/priest/holy/rotation-cooldowns-pve-healer): informed frequent Holy Words and Prayer of Mending, Flash Heal spot recovery, mode/build caution around Prayer of Healing, and proactive Halo use.
 - [Icy Veins Holy rotation](https://www.icy-veins.com/wow/holy-priest-pve-healing-rotation-cooldowns-abilities): cross-checked reactive triage and cooldown use for the current patch.
+- [Icy Veins Retail Priest leveling](https://www.icy-veins.com/wow/priest-leveling-guide): supports Shadow for efficient solo leveling and Discipline/Holy for dungeon or group leveling.
+- [Icy Veins Retail Shadow leveling](https://www.icy-veins.com/wow/shadow-priest-leveling-guide): informed fast Pain and Tentacle Slam tagging, durable-target Vampiric Touch, learned-spell fallbacks, and saving major cooldowns for harder pulls.
+- [Icy Veins Retail Discipline leveling](https://www.icy-veins.com/wow/discipline-priest-leveling-guide/): informed self-shielding, short-lived-target DoT checks, execute safety, and Penance/Mind Blast/Smite priority.
+- [Icy Veins Forever Holy leveling](https://www.icy-veins.com/wow-forever/holy-priest-leveling): informed shield/Holy Fire openers, emergency-only Flash Heal, efficient Heal/Renew usage, and wand filler for mana conservation.
+- [Icy Veins Forever Discipline guide](https://www.icy-veins.com/wow-forever/discipline-priest-healer-pve-guide): informed five-second-rule-aware mana reserves, shields, and group-first leveling behavior.
+- [Icy Veins Forever Shadow guide](https://www.icy-veins.com/wow-forever/shadow-priest-ranged-dps-pve-guide/): informed the early-level hybrid fallback, Spirit Tap-conscious pacing, instant movement DoTs, and later Shadowform identity.
 - [Blizzard: Guardians of the Dream update](https://news.blizzard.com/en-us/article/24020034/updated-nov-7-dragonflight-guardians-of-the-dream-content-update-notesnow-live): supports keeping dispel backlash in mind; the plugin conservatively holds unsafe debuffs for manual handling.
 
 ## Additional research and access limits
