@@ -1,4 +1,4 @@
-# WoW Forever Shaman research — version 5.5.0
+# WoW Forever Shaman research — version 5.6.0
 
 Reviewed October 15, 2026 against public beta information for builds through 1.60.1.70374.
 
@@ -23,3 +23,10 @@ Reviewed October 15, 2026 against public beta information for builds through 1.6
 - [Tavern Forever — Shaman class changes](https://tavernforever.com/en/classes/shaman/)
 
 The beta remains subject to tuning changes. Runtime spellbook checks remain authoritative, so a level-based policy never assumes an unavailable spell or talent.
+
+## Version 5.6 findings
+
+- Current build 1.60.1.70374 data places Chain Heal and the Riptide capstone at level 40 or later. Levels 20–39 therefore use proactive Healing Stream plus ranked direct heals instead of waiting for an unavailable area-healing plan.
+- Before Stormstrike becomes available, Enhancement uses low-rank Lightning Bolt to pull at range, Earth Shock on single targets, and Flame Shock/Earth Shock alternation on packs.
+- Enhancement avoids Earth Shock when host threat data says a grouped non-tank is close to taking aggro, using Frost Shock for damage and control instead.
+- In PvP, a confirmed Elemental Focus proc can fund expensive Frost Shock, but the shared Shock cooldown remains reserved when an interruptible enemy cast is present.

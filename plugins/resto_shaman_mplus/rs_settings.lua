@@ -527,7 +527,7 @@ function M.render_native_page(index,window)
     end
 end
 function M.render_native()
-    core.menu.text("SHAMAN SUITE  •  ALL THREE SPECIALIZATIONS  •  v5.5.0")
+    core.menu.text("SHAMAN SUITE  •  ALL THREE SPECIALIZATIONS  •  v5.6.0")
     core.menu.text("F1 closes or opens this window. Drag the title bar to move; drag the corner to resize.")
     core.menu.text("State: "..M.status.."  |  Content: "..(M.content or "Detecting").."  |  "..require("rs_branch").label())
     core.menu.text("Last: "..M.last.."  |  BigWigs: "..M.timer)
@@ -589,7 +589,7 @@ function M.render_overlay()
         local function px(n)return x+n*scale end
         local function py(n)return y+n*scale end
         text("SHAMAN SUITE",px(24),py(18),21,water)
-        text("ELEMENTS IN BALANCE  •  v5.5.0  •  DRAG THIS HEADER TO MOVE",px(24),py(48),12,teal)
+        text("ELEMENTS IN BALANCE  •  v5.6.0  •  DRAG THIS HEADER TO MOVE",px(24),py(48),12,teal)
         if type(core.graphics.rect_2d_filled)=="function" then
             for i,c in ipairs({water,earth,air,fire}) do
                 core.graphics.rect_2d_filled(vec2.new(px(570+(i-1)*24),py(25)),14*scale,14*scale,c,7)

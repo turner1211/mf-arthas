@@ -4,7 +4,7 @@ local F,U,C=require("rs_forever_spells"),require("rs_units"),require("rs_setting
 local M={next_cast=0,pending={},confirmed={},totems={},latches={},last_recall=-math.huge,
  elements={},last_totem=-math.huge,last_call=-math.huge,last_weapon=-math.huge,
  last_projection=-math.huge,last_mana_spell=-math.huge,stormstrike_until=-math.huge,
- last_cancel=-math.huge,last_shock=-math.huge,move_since=nil,totem_positions={}}
+ last_cancel=-math.huge,last_shock=-math.huge,last_shock_kind=nil,move_since=nil,totem_positions={}}
 local FEARS={[5782]=true,[6213]=true,[6215]=true,[8122]=true,[5246]=true,[5484]=true,[6358]=true}
 local BREAKABLE={[118]=true,[12824]=true,[12825]=true,[12826]=true,[6770]=true,[2070]=true,[11297]=true,
  [1776]=true,[1777]=true,[8629]=true,[11285]=true,[11286]=true,[3355]=true,[14308]=true,[14309]=true,
@@ -65,7 +65,7 @@ local function level_policy(me)
  -- Small leveling mana pools cannot sustain the max-level filler cadence.
  return {level=level,damage_floor=level<20 and 35 or level<40 and 25 or 15,
   heal_reserve=level<20 and 30 or level<40 and 22 or 15,
-  chain_count=level<40 and 3 or 2,totem_mana=level<20 and 70 or 82}
+  chain_count=level<50 and 3 or 2,early_healer=level<40,totem_mana=level<20 and 70 or 82}
 end
 local function gcd_busy()
  local cd=book("get_spell_cooldown",61304)
@@ -148,6 +148,12 @@ local function important_target(me,t,count,context)
  if classification:find("boss",1,true) or classification:find("elite",1,true) then return true end
  local maximum,own=U.call(t,"get_max_health"),U.call(me,"get_max_health")
  return type(maximum)=="number" and type(own)=="number" and own>0 and maximum>=own*3
+end
+local function holding_threat(me,t)
+ if not t or U.call(me,"get_group_role")==0 then return false end
+ local value=U.call(me,"get_threat_situation",t)
+ if type(value)~="table" then return false end
+ return value.is_tanking==true or (tonumber(value.status) or 0)>=2 or (tonumber(value.threat_percent) or 0)>=90
 end
 local function target(me)
  local unit=U.call(me,"get_target")
@@ -341,6 +347,8 @@ local function restoration(me,context)
  if worst.hp<=82 and not hot and cast(F.RIPTIDE,worst.unit,me) then C.status="Forever Restoration: Riptide";return true end
  if maintenance(me,context,"restoration",rows) then return true end
  local injured=0;for _,r in ipairs(rows)do if r.hp<88 then injured=injured+1 end end
+ if policy.early_healer and #rows>1 and U.call(me,"is_in_combat")==true and mp>=policy.heal_reserve
+  and not active_element("water") and cast(F.HEALING_STREAM,me,me) then C.status="Forever Restoration: level 20-39 proactive Healing Stream";return true end
  if injured>=2 and mp>=25 and not active_element("water") and cast(F.HEALING_STREAM,me,me) then C.status="Forever Restoration: efficient Healing Stream Totem";return true end
  if mp>=70 then
   for _,row in ipairs(rows) do
@@ -357,7 +365,7 @@ local function restoration(me,context)
    if nearby>=3 then chain_target=row.unit;break end
   end
  end
- if injured>=policy.chain_count and mp>=policy.heal_reserve and cast(F.CHAIN_HEAL,chain_target,me,true,math.min(1,downrank)) then C.status="Forever Restoration: level-aware clustered Riptide-boosted Chain Heal";return true end
+ if not policy.early_healer and injured>=policy.chain_count and mp>=policy.heal_reserve and cast(F.CHAIN_HEAL,chain_target,me,true,math.min(1,downrank)) then C.status="Forever Restoration: level-aware clustered Riptide-boosted Chain Heal";return true end
  if C.get("forever_five_second") and mp<60 and worst.hp>82 and core.time()-M.last_mana_spell<5 then C.status="Forever Restoration: five-second-rule mana recovery";return false end
  if worst.hp<=90 and (mp>=policy.heal_reserve or worst.hp<=65) and cast(F.HEALING_WAVE,worst.unit,me,true,worst.hp<=60 and 0 or downrank) then C.status="Forever Restoration: level-aware rank Healing Wave";return true end
  local t=hostile
@@ -378,6 +386,7 @@ local function elemental(me,context)
  if context.pvp and mp>=30 and magic_buff(t) and cast(F.PURGE,t,me) then C.status="Forever Elemental: Purge";return true end
  if U.distance(me,t)<=7 and ((U.health(me) or 100)<70 or U.call(me,"is_moving")==true) and not reserve_shock(me)
   and cast(F.FROST_SHOCK,t,me) then C.status="Forever Elemental: Frost Shock kite";return true end
+ if context.pvp and clear and not reserve_shock(me) and cast(F.FROST_SHOCK,t,me,false,nil,true) then C.status="Forever Elemental PvP: free Clearcasting Frost Shock";return true end
  if not active_totem(F.SEARING) and not active_totem(F.MAGMA) and mp>=25 and cast(count>=3 and F.MAGMA or F.SEARING,me,me) then C.status="Forever Elemental: Fire totem setup";return true end
  if (not flame or remaining and remaining<=3) and mp>=20 and (U.health(t) or 100)>30 and not reserve_shock(me) and cast(F.FLAME_SHOCK,t,me) then C.status="Forever Elemental: full-duration Flame Shock";return true end
  if flame and mp>=20 and cast(F.LAVA_BURST,t,me,true) then C.status="Forever Elemental: empowered Lava Burst";return true end
@@ -402,6 +411,7 @@ local function enhancement(me,context)
  local floor=math.max(tonumber(C.get("forever_enhance_mana_floor")) or 30,policy.level<20 and 40 or 0)
  local fire_position=M.totem_positions.fire;local fire_count=fire_position and #enemies_at(me,fire_position,10) or 0
  if context.pvp and mp>=30 and magic_buff(t) and cast(F.PURGE,t,me) then C.status="Forever Enhancement: Purge";return true end
+ if policy.level<25 and U.distance(me,t)>10 and mp>=floor and cast(F.LIGHTNING_BOLT,t,me,true,"lowest") then C.status="Forever Enhancement: low-rank ranged pull";return true end
  if U.distance(me,t)<=7 and ((U.health(me) or 100)<70 or U.call(me,"is_moving")==true) and not reserve_shock(me)
   and cast(F.FROST_SHOCK,t,me) then C.status="Forever Enhancement: Frost Shock peel";return true end
  if U.distance(me,t)<=8 and C.get("dps_cooldowns") and (not C.get("forever_rage_burst_only") or important_target(me,t,count,context))
@@ -410,8 +420,12 @@ local function enhancement(me,context)
  if U.distance(me,t)<=6 and mp>=floor and cast(F.STORMSTRIKE,t,me) then C.status="Forever Enhancement: mana-budgeted Stormstrike";return true end
  if mp>=floor and not reserve_shock(me) and core.time()<M.stormstrike_until
   and cast(F.EARTH_SHOCK,t,me) then C.status="Forever Enhancement: consuming Stormstrike before a reset";return true end
- if not active_totem(F.SEARING) and not active_totem(F.MAGMA) and mp>=25 and cast(count>=3 and F.MAGMA or F.SEARING,me,me) then C.status="Forever Enhancement: Fire totem setup";return true end
  local flame,_,remaining=aura(t,F.FLAME_SHOCK)
+ if not F.known(F.STORMSTRIKE) and mp>=floor and not reserve_shock(me) then
+  if holding_threat(me,t) and cast(F.FROST_SHOCK,t,me) then C.status="Forever Enhancement: threat-safe Frost Shock";return true end
+  if (count<2 or flame or M.last_shock_kind=="flame") and cast(F.EARTH_SHOCK,t,me) then C.status="Forever Enhancement: pre-Stormstrike Earth Shock";return true end
+ end
+ if not active_totem(F.SEARING) and not active_totem(F.MAGMA) and mp>=25 and cast(count>=3 and F.MAGMA or F.SEARING,me,me) then C.status="Forever Enhancement: Fire totem setup";return true end
  if (not flame or remaining and remaining<=3) and mp>=20 and (U.health(t) or 100)>30 and not reserve_shock(me) and cast(F.FLAME_SHOCK,t,me) then C.status="Forever Enhancement: full-duration Flame Shock";return true end
  if fire_count>=3 and mp>=math.max(25,floor) and active_element("fire") and aoe_safe(me,fire_position,10) and cast(F.FIRE_NOVA,me,me) then C.status="Forever Enhancement: three-target positioned Fire Nova";return true end
  if mp>=floor and not reserve_shock(me) and (core.time()<M.stormstrike_until or (U.health(t) or 100)<=20)
@@ -441,7 +455,9 @@ function M.event(event,args)
  local pending=M.pending[id];M.confirmed[id]=core.time();M.pending[id]=nil
  if not (pending and pending.free) and not contains(F.TOTEMIC_RECALL,id) and not contains(F.RAGE,id) then M.last_mana_spell=core.time() end
  if contains(F.STORMSTRIKE,id) then M.stormstrike_until=core.time()+12 end
- if contains(F.EARTH_SHOCK,id) or contains(F.FLAME_SHOCK,id) or contains(F.FROST_SHOCK,id) then M.last_shock=core.time() end
+ if contains(F.EARTH_SHOCK,id) or contains(F.FLAME_SHOCK,id) or contains(F.FROST_SHOCK,id) then
+  M.last_shock=core.time();M.last_shock_kind=contains(F.FLAME_SHOCK,id) and "flame" or contains(F.EARTH_SHOCK,id) and "earth" or "frost"
+ end
  if (contains(F.LIGHTNING_BOLT,id) or contains(F.CHAIN_LIGHTNING,id) or contains(F.EARTH_SHOCK,id))
   and not contains(F.STORMSTRIKE,id) then M.stormstrike_until=-math.huge end
  if TOTEM_LIFE[id] then

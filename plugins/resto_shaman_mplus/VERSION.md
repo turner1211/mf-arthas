@@ -1,4 +1,11 @@
-# Shaman Suite 5.5.0
+# Shaman Suite 5.6.0
+
+- Separates Restoration's level 20-39 toolkit from the level-40 Chain Heal and Riptide plan.
+- Proactively places Healing Stream during group combat before level 40.
+- Adds a pre-Stormstrike Enhancement rotation with a low-rank ranged pull, Earth Shock priority, and Flame/Earth Shock alternation for packs.
+- Uses Frost Shock instead of high-threat Earth Shock when a grouped non-tank is close to pulling threat.
+- Spends Elemental Focus on Frost Shock in PvP while preserving Earth Shock for confirmed interrupts.
+- Retains automatic level-based mana floors, healing reserves, rank selection, and spellbook availability checks.
 
 - Automatically detects character level and adjusts mana floors, healing reserves, Chain Heal group thresholds, and leveling behavior.
 - Adds Elemental Focus Clearcasting spending on free Chain Lightning or Lightning Bolt casts.
