@@ -368,6 +368,10 @@ function C:tick()
  end
  if a.player_role then snapshot.player_role=a.player_role(player) end
  if a.player_damage_style then snapshot.damage_style=a.player_damage_style(player) end
+ if a.player_level_policy then
+  local policy=a.player_level_policy(player,snapshot.player_role,snapshot.damage_style)
+  if type(policy)=="table" then snapshot.player_level=policy.level;snapshot.level_policy=policy end
+ end
  self.current_profile=snapshot.rule_profile
  local recovered=type(self.last_death_at)=="number" and math.floor(math.max(0,now-self.last_death_at)/120) or 0
  snapshot.aggression_modifier=-math.min(30,math.max(0,(self.match_deaths or 0)-recovered)*8)

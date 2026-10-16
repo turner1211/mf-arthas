@@ -49,6 +49,7 @@ local PathRender=require("bg_path_render")
 local Routes=require("bg_routes")
 local Darkspear=require("bg_darkspear")
 local ForeverRecovery=require("bg_forever_recovery")
+local LevelPolicy=require("bg_level_policy")
 local MountSelection=require("bg_mount_selection")
 local Navigation=require("bg_navigation")
 local MountRecovery=require("bg_mount_recovery")
@@ -360,6 +361,11 @@ local function detected_damage_style(player)
  local detected=Theme.detect(player).damage_style
  return (detected=="melee" or detected=="ranged") and detected or "unknown","automatic"
 end
+local function detected_level_policy(player,role_name,style)
+ role_name=role_name or detected_role(player)
+ style=style or detected_damage_style(player)
+ return LevelPolicy.detect(player,Client:is_forever(),role_name,style)
+end
 local function detected_profile()
  Client:refresh_if_due(core.time(),30)
  return Detect.resolve(core.get_instance_id(),core.get_map_id(),core.get_instance_name and core.get_instance_name(),Client.family)
@@ -607,6 +613,7 @@ local api={
  end,
  player_role=function(player) return detected_role(player) end,
  player_damage_style=function(player) return detected_damage_style(player) end,
+ player_level_policy=function(player,role_name,style) return detected_level_policy(player,role_name,style) end,
  transport_transition=function(player,snapshot,now)
   local position=Snapshot.position(player and player:get_position())
   local seething=snapshot and snapshot.rule_profile=="seething"
@@ -1225,6 +1232,7 @@ local function debug_rows()
  local player=inspect(api.player);local cap=render_capabilities(now)
  local detected,detected_flags=detected_role(player)
  local detected_style,style_source=detected_damage_style(player)
+ local level_policy=detected_level_policy(player,detected,detected_style)
  local profile=inspect(detected_profile);if type(profile)~="string" then profile=nil end
  local active_callout=profile and callouts:active(profile,detected,now)
  local last=controller.observations or {};local queues=last.queues or {}
@@ -1267,6 +1275,8 @@ local function debug_rows()
    tostring(certificate.preparation),tostring(certificate.mounted_navigation),tostring(certificate.vehicle),tostring(certificate.siege),tostring(certificate.repair),certificate.consecutive_clean,tostring(certificate.overnight))},
   {"Player callout",active_callout and (tostring(active_callout.id).." from "..tostring(active_callout.sender or "unknown")) or "None"},
   {"Detected role / policy",tostring(detected).." / "..tostring(role_guidelines[detected] or "general objective support")},
+  {"Character level policy",tostring(level_policy.level or "Unknown").." / "..tostring(level_policy.band).." / "..tostring(level_policy.rotation_profile)},
+  {"Rotation directive",tostring(level_policy.rotation_directive or "Live spellbook checks required")},
   {"Battleground faction",(function() local f=faction:report();return (f.team==0 and "Horde" or f.team==1 and "Alliance" or "Unknown").." / "..f.source..(f.conflict and " / API conflict corrected" or "") end)()},
   {"Damage style",tostring(detected_style).." / "..tostring(style_source)},
   {"Runtime recovery",recovery.failures.." errors / retry in "..string.format("%.1fs",recovery.retry_in)},
@@ -1311,6 +1321,12 @@ _G.SylvanasBattlegroundBot={
   controller:reset_match();context=nil;Compat.set_adapter(adapter)
  end,
  get_capabilities=function() return Compat.capabilities(selected_mode().key) end,
+ get_character_level_policy=function()
+  local player=api.player();local role_name=detected_role(player);local style=detected_damage_style(player)
+  local policy=detected_level_policy(player,role_name,style)
+  local copy={};for key,value in pairs(policy) do copy[key]=value end
+  return copy
+ end,
  get_forever_readiness=function()
   return {detected=Client:is_forever(),queue_modes={configured_battleground=true,random_matchmaking=false,brawl=false,epic=false},
    profiles={"warsong","arathi","alterac","darkspear_islands"},darkspear_rules=Darkspear.rules,
@@ -1518,13 +1534,14 @@ core.register_on_render_window_callback(function()
  local theme=Renderer:read("class and specialization",now,function() return Theme.detect(player) end,Theme.resolve(nil,nil))
  local detected_name,detected_flags=detected_role(player)
  local detected_style,style_source=detected_damage_style(player)
+ local level_policy=detected_level_policy(player,detected_name,detected_style)
  local route_total=controller.plan and type(controller.plan.route)=="table" and #controller.plan.route or 0
  local player_position=Renderer:read("player position",now,function() return player and Snapshot.position(player:get_position()) end,nil)
  local destination=Snapshot.position(controller.destination)
  local route_distance=player_position and destination and Planner.distance(player_position,destination) or nil
  local s={debug_rows=debug_rows,debug_report=function() return debugger:export(debug_rows()) end,recovery=Health:report(now),theme=theme,status=controller.state,enabled=enabled:get_state(),show_hud=show_hud:get_state(),show_path=show_path:get_state(),
   queue_mode=selected_mode().index,queue_label=selected_mode().label,queue_options=queue_labels(),
-  queue_id=selected_queue():get(),resolved_queue_id=display_queue_id(now),role_flags=detected_flags,role_policy=role_guidelines[detected_name],damage_style=detected_style,damage_style_source=style_source,damage_style_choice=damage_style:get(),combat_range=range:get(),capabilities=render_capabilities(now),
+  queue_id=selected_queue():get(),resolved_queue_id=display_queue_id(now),role_flags=detected_flags,role_policy=role_guidelines[detected_name],damage_style=detected_style,damage_style_source=style_source,damage_style_choice=damage_style:get(),combat_range=range:get(),level_policy=level_policy,capabilities=render_capabilities(now),
   context=context,provider_ready=Renderer:read("objectives",now,api.objective_provider_ready,false),navigation_ready=Renderer:read("navigation",now,api.navigation_ready,false),
   sentinel_provider=type(rawget(_G,"ArthasNavEnhancements"))=="table" or type(rawget(_G,"ArthasNav"))=="table",sentinel_client=nav()~=nil,sentinel_provider_kind=sentinel_provider_kind,sentinel_state=nav_health_state,
   readiness=readiness_report(now),route_index=controller.route_index or 0,route_total=route_total,route_distance=route_distance,

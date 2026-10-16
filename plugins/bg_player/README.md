@@ -1,4 +1,13 @@
-SYLVANAS BATTLEGROUND COMMAND - v1.91.0 - October 15, 2026
+SYLVANAS BATTLEGROUND COMMAND - v1.92.0 - October 15, 2026
+
+Version 1.92.0 automatically detects the character level and selects a starter,
+developing, established, veteran, or maximum-level battleground policy. Lower
+levels stay closer to friendly groups, avoid unsupported assaults and uneven
+optional fights, and disengage earlier while their spellbooks are incomplete.
+The policy keeps urgent flag returns and verified defense authoritative. The
+public `get_character_level_policy()` API exposes a role-aware rotation profile
+and directive to class combat plugins; those plugins must still verify every
+spell, talent, and cooldown against the live learned spellbook before casting.
 
 Version 1.91.0 adds safe Darkspear Islands First Aid recovery. The live bag
 scanner recognizes Silk, Mageweave, and Runecloth battleground bandages and

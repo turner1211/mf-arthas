@@ -88,6 +88,10 @@ function V.normalize(s)
  if s.damage_style~=nil and s.damage_style~="melee" and s.damage_style~="ranged" and s.damage_style~="unknown" then
   return nil,"invalid_damage_style"
  end
+ if s.player_level~=nil and (not V.finite(s.player_level) or s.player_level<1 or s.player_level>200 or s.player_level~=math.floor(s.player_level)) then
+  return nil,"invalid_player_level"
+ end
+ if s.level_policy~=nil and type(s.level_policy)~="table" then return nil,"invalid_level_policy" end
  local out={};for key,value in pairs(s) do out[key]=value end
  out.player_position=V.position(s.player_position)
  if not out.player_position then return nil,"player_position_invalid" end

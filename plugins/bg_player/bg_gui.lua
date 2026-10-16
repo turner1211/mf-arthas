@@ -348,7 +348,8 @@ function M.render(s,action)
    connection("Client APIs",cap.ready,24,388);connection("Objectives",s.provider_ready,270,388);connection("ArthasNav",s.navigation_ready,512,388)
    local sentinel_detail=not s.sentinel_provider and "Provider not loaded" or not s.sentinel_client and "Provider loaded / creating client" or
     s.navigation_ready and ((s.sentinel_provider_kind or "ArthasNav").." / ready") or ((s.sentinel_provider_kind or "ArthasNav").." / "..tostring(s.sentinel_state or "checking provider"))
-   text(main,"ArthasNav: "..compact(sentinel_detail,54).."  |  Combat: external plugin",24,417,muted)
+   local lp=s.level_policy or {}
+   text(main,"ArthasNav: "..compact(sentinel_detail,43).."  |  Level "..tostring(lp.level or "?").." / "..string.upper(tostring(lp.band or "detecting")),24,417,muted)
    button(main,s.enabled and "RUNNING" or "START",24,450,224,function() action("start") end,s.enabled,"battle")
    button(main,"STOP",266,450,224,function() action("stop") end,false,"skull",true)
    button(main,"COPY STATUS",508,450,228,function() main:copy_to_clipboard(s.report());M.notice="Status copied." end,false,"shield")

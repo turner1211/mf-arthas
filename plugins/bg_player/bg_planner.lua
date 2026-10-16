@@ -61,6 +61,17 @@ function P.choose(s,previous)
   if aggressive and type(s.aggression_modifier)=="number" then
    weight=weight+math.max(-30,math.min(20,s.aggression_modifier))
   end
+  local level_policy=type(s.level_policy)=="table" and s.level_policy or nil
+  if aggressive and level_policy then
+   weight=weight+(tonumber(level_policy.aggression_adjustment) or 0)
+   if kind=="capture" or kind=="occupy" or kind=="take_flag" or kind=="take_orb" or kind=="take_crystal" then
+    local nearby=0
+    for _,friend in ipairs(s.friendly_positions or {}) do
+     local p=friend.position or friend;if p and distance(p,pos)<=30 then nearby=nearby+1 end
+    end
+    if nearby==0 and route_distance>25 then weight=weight+(tonumber(level_policy.solo_assault_penalty) or 0) end
+   end
+  end
   -- Only validated provider wave data can alter graveyard approach behavior.
   -- A wave that is about to spawn penalizes routine aggression near that enemy
   -- graveyard; defense and carrier return remain untouched.
@@ -101,6 +112,8 @@ function P.choose(s,previous)
    local support=math.min(4,allies)*7
    local deficit=math.max(0,enemies-allies-1)
    local continuing=previous and previous.kind==kind and id~=nil and previous.id==id
+   if kind=="fight" and level_policy and not continuing and
+    enemies>allies+(tonumber(level_policy.outnumber_tolerance) or 1)+1 then return end
    -- Do not begin an optional suicide chase while already hurt. Ongoing fights
    -- are retained to avoid target thrashing; carrier interception, confirmed
    -- defense and deathmatch remain governed by their dedicated policies.
@@ -416,8 +429,9 @@ function P.choose(s,previous)
   end
   local recovering=previous and previous.kind=="regroup" and previous.id=="tactical_disengage" and
    type(s.player_health_ratio)=="number" and s.player_health_ratio<0.60 and enemies>=allies+2
+  local retreat_health=type(s.level_policy)=="table" and tonumber(s.level_policy.retreat_health) or .35
   local collapsing=previous and previous.kind=="fight" and type(s.player_health_ratio)=="number" and
-   s.player_health_ratio<=0.35 and enemies>=allies+3
+   s.player_health_ratio<=retreat_health and enemies>=allies+3
   if recovering or collapsing then
    local safe,best_distance
    for _,node in ipairs(s.nodes or {}) do
@@ -433,6 +447,11 @@ function P.choose(s,previous)
     if candidate then candidate.arrival_radius=10;candidate.engagement_radius=15;candidate.tactical_disengage=true end
    end
   end
+ end
+ if type(s.level_policy)=="table" and (tonumber(s.level_policy.group_priority) or 0)>0 and
+  s.friendly_group_position and (s.player_role=="damage" or s.player_role=="tank") then
+  local candidate=offer("regroup",s.friendly_group_position,55+s.level_policy.group_priority,nil,nil,"level_group_anchor")
+  if candidate then candidate.arrival_radius=15;candidate.engagement_radius=25;candidate.level_aware=true end
  end
  if s.kind=="ctf" or s.kind=="legacy_cart_bases" then
   if s.kind=="ctf" and s.player_role=="damage" then
