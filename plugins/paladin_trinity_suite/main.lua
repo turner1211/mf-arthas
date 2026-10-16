@@ -3,7 +3,7 @@ local Edition=require("paladin_edition")
 Gate.install()
 
 local Suite={version="1.2.5",active=nil,loaded={},next_probe=-math.huge,ready_at=nil,
-    components={holy="4.70.0",ret="1.62.0",prot="6.14.0",forever="1.7.0"}}
+    components={holy="4.70.0",ret="1.62.0",prot="6.14.0",forever="1.8.0"}}
 
 local function call(owner,method,...)
     local fn=owner and owner[method]

@@ -274,8 +274,16 @@ local function maintain_profile(instance,me)
     if instance.spec~="prot" and aura(me,"RIGHTEOUS_FURY") then cancel_aura("RIGHTEOUS_FURY") end
     if instance.spec=="prot" and aura(me,"SALVATION") then cancel_aura("SALVATION") end
     if combat(me) or not value(instance.config.auto_buffs,true) then return false end
-    local desired_aura=instance.spec=="prot" and "DEVOTION_AURA"
-        or (instance.spec=="holy" and "CONCENTRATION_AURA" or "RETRIBUTION_AURA")
+    local desired_aura
+    if instance.spec=="prot" then
+        -- During early levelling, Retribution Aura contributes meaningful pack
+        -- threat. Fall back to Devotion whenever recovery or later tanking calls
+        -- for the safer profile.
+        desired_aura=((instance.level or 60)<40 and hp(me)>=70 and resolve("RETRIBUTION_AURA"))
+            and "RETRIBUTION_AURA" or "DEVOTION_AURA"
+    else
+        desired_aura=instance.spec=="holy" and "CONCENTRATION_AURA" or "RETRIBUTION_AURA"
+    end
     if not resolve(desired_aura) then desired_aura="DEVOTION_AURA" end
     -- Restore the profile aura after a temporary combat resistance aura.
     if not aura(me,desired_aura) and cast(desired_aura,me,instance) then return true end
@@ -289,7 +297,7 @@ local function maintain_profile(instance,me)
     end
     -- As of the October 15 build, Salvation is independent of Blessings.  Keep
     -- it on non-tanks, but remove it immediately when Protection becomes active.
-    if instance.spec~="prot" and value(instance.config.auto_salvation,true)
+    if instance.spec~="prot" and #members()>1 and value(instance.config.auto_salvation,true)
         and resolve("SALVATION") and not aura(me,"SALVATION")
         and cast("SALVATION",me,instance) then return true end
     return false
@@ -328,6 +336,10 @@ local function common(instance,me)
     end
     if value(cfg.auto_def,true) then
         local health=value(cfg.predictive_health,true) and projected_hp(instance,me) or hp(me)
+        -- Holy can continue saving the party through Divine Shield. Prefer the
+        -- immunity at critical self health before Lay on Hands consumes all Mana.
+        if instance.spec=="holy" and health<=12 and not aura(me,"FORBEARANCE")
+            and cast("DIVINE_SHIELD",me,instance) then return true end
         if health<=18 and cast("LAY_HANDS",me,instance) then return true end
         if not aura(me,"FORBEARANCE") then
             if instance.spec=="prot" and health<=35 and cast("TEMPLAR_BULWARK",me,instance) then return true end
@@ -389,9 +401,9 @@ local function holy(instance,me)
     local foe=target()
     if value(instance.config.damage,true) and valid(foe) and enemy(foe) and combat(me) then
         return (hp(foe)<=20 and cast("HAMMER_WRATH",foe,instance))
-            or cast("HOLY_SHOCK",foe,instance) or cast("JUDGEMENT",foe,instance)
-            or cast("HOLY_STRIKE",foe,instance)
+            or cast("JUDGEMENT",foe,instance) or cast("HOLY_STRIKE",foe,instance)
             or (holy_target(foe) and cast("EXORCISM",foe,instance))
+            or cast("HOLY_SHOCK",foe,instance)
             or (mana(me)>=55 and nearby_enemies(instance,me,8)>=3 and cast("CONSECRATION",me,instance))
     end
     return false
@@ -422,13 +434,24 @@ local function prot(instance,me)
     if instance.taunt_follow and valid(instance.taunt_follow)
         and (tonumber(call(core,"time")) or 0)<(instance.taunt_follow_until or 0) then foe=instance.taunt_follow
     else instance.taunt_follow=nil end
-    -- Improved Seal of Fury makes Holy Strike a six-second mitigation window;
-    -- keep it ahead of throughput buttons whenever it is learned and ready.
-    return cast("HOLY_STRIKE",foe,instance) or cast("HAMMER_RIGHTEOUS",foe,instance)
-        or ((not instance.level or instance.level>=20) and nearby_enemies(instance,me,8)>=2
-            and cast("CONSECRATION",me,instance))
-        or (nearby_enemies(instance,me,20,true)>=2 and mana(me)>=45 and cast("HOLY_WRATH",me,instance))
+    local count=nearby_enemies(instance,me,8)
+    local holy_kind=holy_target(foe)
+    -- Before Iron Creed becomes reachable, use the documented levelling
+    -- priorities: Consecration first on packs, then Judgement and Exorcism.
+    if instance.level and instance.level<35 then
+        return (count>=2 and mana(me)>=45 and cast("CONSECRATION",me,instance))
+            or cast("JUDGEMENT",foe,instance)
+            or (holy_kind and cast("EXORCISM",foe,instance))
+            or cast("HOLY_STRIKE",foe,instance) or cast("HAMMER_RIGHTEOUS",foe,instance)
+    end
+    -- Iron Creed makes Holy Strike a six-second mitigation window at later
+    -- levels, so it moves ahead of pure throughput buttons once available.
+    return cast("HOLY_STRIKE",foe,instance)
+        or (count>=2 and cast("CONSECRATION",me,instance))
         or cast("JUDGEMENT",foe,instance)
+        or (holy_kind and cast("EXORCISM",foe,instance))
+        or cast("HAMMER_RIGHTEOUS",foe,instance)
+        or (nearby_enemies(instance,me,20,true)>=2 and mana(me)>=45 and cast("HOLY_WRATH",me,instance))
 end
 
 local function ret(instance,me)
@@ -486,12 +509,12 @@ local function ret(instance,me)
         and not aura(me,"FORBEARANCE") and cast("AVENGING_WRATH",me,instance) then return true end
     -- Establish Judgement first; Sacred Arbiter then lets Holy Strike refresh it.
     return cast("JUDGEMENT",foe,instance) or cast("HOLY_STRIKE",foe,instance)
+        or (holy_target(foe) and cast("EXORCISM",foe,instance))
         or cast("HOLY_SHOCK",foe,instance)
         or (mana(me)>=((instance.level or 60)<40 and 60 or 45)
             and nearby_enemies(instance,me,8)>=((instance.level or 60)<40 and 4 or 3)
             and cast("CONSECRATION",me,instance))
         or (nearby_enemies(instance,me,20,true)>=2 and mana(me)>=55 and cast("HOLY_WRATH",me,instance))
-        or (holy_target(foe) and cast("EXORCISM",foe,instance))
 end
 
 local function tick(instance)

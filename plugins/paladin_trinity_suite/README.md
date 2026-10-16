@@ -69,6 +69,15 @@ starts or resumes the selected GUI and runtime.
   and Mana requirements now scale with character level. Holy consumes confirmed
   Infusion of Light before another Holy Shock and can down-rank Holy Light when a
   leveling character is low on Mana.
+- Forever 1.8.0 adds distinct pre-35 and Iron Creed Protection priorities.
+  Leveling tanks now lead pack rotations with Consecration, then Judgement and
+  creature-gated Exorcism; later builds retain Holy Strike first for mitigation.
+  Holy and Retribution damage priorities move Undead/Demon Exorcism ahead of
+  lower-value fillers. Holy prefers Divine Shield over self Lay on Hands at
+  critical health to preserve healing Mana, and automatic Salvation no longer
+  spends Mana when the character is solo. Healthy Protection characters below
+  level 40 use Retribution Aura for pack threat, while injured or higher-level
+  tanks retain Devotion Aura.
 - The selector writes only to `paladin_trinity_suite/status.md`.
 - No combat, utility, route, overlay, hotkey, log, or render callback can run when
   it belongs to an inactive specialization.
