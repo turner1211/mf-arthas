@@ -50,7 +50,7 @@ local function load_pack(tag)
  if not L.packs[tag]then L.packs[tag]={}end
  return L.packs[tag]or{}
 end
-local folded={}
+local folded=setmetatable({},{__mode='k'})
 local function lookup(pack,key)
  if pack[key]then return pack[key]end
  local index=folded[pack]
@@ -73,7 +73,7 @@ end
 function L.set_locale(tag,persist)
  tag=L.normalize(tag);if not tag then return false,'invalid_locale'end
  L.requested=tag;L.locale=tag=='auto'and L.detect()or tag;load_pack(L.locale)
- shared.requested=tag
+ shared.requested=tag;shared.initialized=true;L.last_index=nil
  if persist~=false and core and type(core.create_data_file)=='function'and type(core.write_data_file)=='function'then
   pcall(function()if core.create_data_file(file)~=false then core.write_data_file(file,tag)end end)
  end
@@ -98,7 +98,11 @@ function L.text(value)
  local name,num=key:match('^(MAXIMUM REPLANS)%s+(%d+)$');if name then return (pack[name]or name)..' '..num end
  local action=key:match('^Navigation (%a+) requested%.$')
  if action then return (pack['Navigation command sent.']or'Navigation command sent.')end
- L.missing[key]=true
+ if not L.missing[key]then
+  L.missing_count=(L.missing_count or 0)+1
+  if L.missing_count>512 then L.missing={};L.missing_count=1 end
+  L.missing[key]=true
+ end
  return value -- Technical logs and missing translations retain the original bytes.
 end
 -- UTF-8 codepoint boundaries, including on LuaJIT 5.1 without utf8 library.
@@ -219,13 +223,14 @@ function L.render_menu()
  local desired=1;for i,row in ipairs(L.languages)do if row[1]==L.requested then desired=i+1 end end
  if L.last_index==nil and L.control.set then L.control:set(desired)end
  local index=tonumber(L.control:get())or desired
+ if index~=index or index<1 or index>#names or index%1~=0 then index=desired;if L.control.set then L.control:set(index)end end
  if L.last_index~=nil and index~=L.last_index then L.set_locale(index==1 and'auto'or L.languages[math.max(1,math.min(#L.languages,index-1))][1])end
  L.last_index=index
  L.control:render(L.text('Interface language'),names,L.text('Automatic detection when available; English fallback for missing translations.'))
 end
 function L.setup()
  local tag=shared.requested or'auto'
- if core and type(core.read_data_file)=='function'then local ok,value=pcall(core.read_data_file,file);if ok and L.normalize(value)then tag=value end end
+ if not shared.initialized and core and type(core.read_data_file)=='function'then local ok,value=pcall(core.read_data_file,file);if ok and L.normalize(value)then tag=value end end
  L.set_locale(tag,false)
 end
 L.setup()

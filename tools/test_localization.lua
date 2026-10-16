@@ -88,4 +88,46 @@ core.graphics.load_font=function(data,size)check(data:sub(1,4)=='OTTO'and #data=
 local fallback=require('mf_unicode_font');check(fallback.get(16)==nil,'font HTTP is asynchronous')
 fallback.get(16);check(requests==1,'font requests coalesced across frames')
 reply(200,'font/otf',bytes);check(fallback.get(16)==999,'Unicode font loads after response')
+
+-- Late plugin startup must not restore a stale disk preference.
+stored['master_arthas_nav.locale']='deDE'
+core.read_data_file=function(p)return stored[p]end
+L.set_locale('itIT',false)
+local late=assert(loadfile(root..'/plugins/bg_player/mf_i18n.lua'))()
+check(late.locale=='itIT','late startup preserves current shared selection')
+L.set_locale('zhCN',false)
+for i=1,1500 do L.text('dynamic missing phrase '..i)end
+local missing_count=0;for _ in pairs(L.missing)do missing_count=missing_count+1 end
+check(missing_count<=512,'dynamic missing diagnostics bounded')
+local menu_index=0/0
+core.menu.combobox=function()return{get=function()return menu_index end,set=function(_,v)menu_index=v end,render=function()end}end
+L.control=nil;L.last_index=nil
+check(pcall(L.render_menu)and menu_index==10,'invalid native language index repaired')
+L.set_locale('itIT',false);L.render_menu()
+check(menu_index==6,'programmatic language selection updates dropdown')
+-- A dropped HTTP response must recover, and stale replies must be inert.
+rawset(_G,'__mf_arthas_unicode_font_180001',nil)
+local clock=0;local callbacks={};local loads=0
+core.time=function()return clock end
+core.read_data_file=function()return nil end
+core.http_get=function(_,cb)callbacks[#callbacks+1]=cb end
+core.graphics.load_font=function()loads=loads+1;return nil end
+local retry_font=assert(loadfile(root..'/shared/mf_unicode_font.lua'))()
+retry_font.get(16);clock=61;retry_font.get(16)
+check(#callbacks==2,'lost font response retries after timeout')
+callbacks[1](200,'font/otf',bytes);retry_font.get(16)
+check(loads==0,'expired font response ignored')
+callbacks[2](200,'font/otf',bytes);retry_font.get(16);retry_font.get(16)
+check(loads==1,'failed native font loads throttled')
+clock=122;retry_font.get(16)
+check(loads==2,'native font load retried after cooldown')
+check(pcall(retry_font.get,0/0),'invalid font size handled')
+
+local arrival=require('anav/contracts')
+local pos={x=0,y=0,z=0};local distant={x=100,y=100,z=0}
+for _,bad in ipairs({0/0,math.huge,-1,'5'})do
+ check(not arrival.arrived(pos,distant,{arrival_radius=bad}),'invalid arrival radius fails closed')
+ check(not arrival.arrived(pos,pos,{arrival_height=bad}),'invalid arrival height fails closed')
+end
+check(arrival.arrived(pos,pos,{arrival_radius=0,arrival_height=0}),'exact arrival supports zero tolerance')
 io.write(string.format('%d localization checks passed; %d keys across %d catalogs.\n',checks,count,#L.languages))

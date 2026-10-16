@@ -9,6 +9,9 @@ function C.arrived(p,goal,opts,read)
  end
  local dx,dy,dz=p.x-goal.x,p.y-goal.y,p.z-goal.z
  local radius=opts.arrival_radius or 5;local height=opts.arrival_height or 3
+ for _,limit in ipairs({radius,height})do
+  if type(limit)~="number"or limit~=limit or limit<0 or limit==math.huge then return false,"arrival_invalid_tolerance"end
+ end
  if dx*dx+dy*dy>radius*radius or math.abs(dz)>height then return false,"arrival_out_of_range" end
  for _,rule in ipairs({{"expected_ui_map","ui_map"},{"expected_instance","instance"}}) do
   if opts[rule[1]]~=nil then

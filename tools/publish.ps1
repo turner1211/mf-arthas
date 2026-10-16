@@ -48,7 +48,8 @@ try {
     Invoke-Checked (Get-Command git -ErrorAction Stop).Source @('diff', '--check')
     & git status --short
     if (-not (git status --porcelain)) {
-        Write-Host 'Nothing changed; no commit or push was needed.'
+        if (-not $NoPush) { Invoke-Checked (Get-Command git).Source @('push', 'origin', 'HEAD') }
+        Write-Host 'No new changes; existing commits published unless NoPush was selected.'
         return
     }
     Invoke-Checked (Get-Command git).Source @('add', '--all')
