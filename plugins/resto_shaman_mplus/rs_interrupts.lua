@@ -31,26 +31,13 @@ local function pvp_cast_priority(id,name)
     return 0
 end
 
-local function normalized_time(value)
-    value=tonumber(value)
-    if not value then return nil end
-    if value>100000 then value=value/1000 end
-    return value
-end
-
 local function cast_progress(unit)
-    local channel=U.call(unit,"is_channelling_spell")==true
-    local prefix=channel and "get_active_channel_" or "get_active_spell_cast_"
-    local started=normalized_time(U.call(unit,prefix.."start_time"))
-    local finishes=normalized_time(U.call(unit,prefix.."end_time"))
-    if not started or not finishes or finishes<=started then return 100,nil end
-    local now=core.time()
-    local progress=math.max(0,math.min(100,((now-started)/(finishes-started))*100))
-    return progress,finishes-now
+    local progress,remaining=U.cast_timing(unit)
+    return progress or 100,remaining
 end
 
 local function active_spell(unit)
-    local id=tonumber(U.call(unit,"get_active_spell_id"))
+    local id=U.active_spell_id(unit)
     local name=U.call(unit,"get_active_spell_name")
     if type(name)~="string" and id and core.spell_book and type(core.spell_book.get_spell_name)=="function" then
         local ok,value=pcall(core.spell_book.get_spell_name,id)

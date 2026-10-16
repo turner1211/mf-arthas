@@ -15,6 +15,13 @@ local function fail(reason)
     M.stop(reason)
     return false
 end
+local function navigation_busy()
+    local root=type(_G)=="table" and rawget(_G,"ArthasNav") or nil
+    local client=type(root)=="table" and root.client or nil
+    if type(client)~="table" or type(client.is_busy)~="function" then return false end
+    local ok,busy=pcall(client.is_busy,client)
+    return ok and busy==true
+end
 local function load_dependencies()
     if ev then return true end
     local ok,result=pcall(function()
@@ -111,6 +118,7 @@ local function tick(me)
     if not U.valid(me)
         or U.call(me,"is_mounted") or U.call(me,"is_flying") or U.call(me,"is_in_combat")~=true then M.stop("Waiting for M+ combat");return end
     if core.character and core.character.is_swimming and core.character.is_swimming() then M.stop("Swimming; manual movement needed");return end
+    if navigation_busy() then M.stop("MasterArthasNav owns movement");return end
     local origin=U.call(me,"get_position")
     if not origin then M.stop("Position unavailable");return end
     local safe,safe_err=api(ev,"is_point_safe",origin)

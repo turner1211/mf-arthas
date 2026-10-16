@@ -17,9 +17,8 @@ local HIGH_VALUE_CC={
 local function active_cast(enemy)
  local channel=U.call(enemy,"is_channelling_spell")==true
  if not channel and U.call(enemy,"is_casting_spell")~=true then return false end
- local ending=tonumber(U.call(enemy,channel and "get_active_channel_end_time" or "get_active_spell_cast_end_time"))
- if ending and ending>100000 then ending=ending/1000 end
- return not ending or ending>core.time(),ending and ending-core.time() or nil
+ local _,remaining=U.cast_timing(enemy)
+ return remaining==nil or remaining>0,remaining
 end
 local function team_target(me,target,rows)
  local guid=U.guid(target)
@@ -148,7 +147,7 @@ function M.grounding(me,rows)
         local casting,remaining=active_cast(enemy)
         local target=U.call(enemy,"get_target")
         if casting and (not remaining or remaining<=2.5 or U.call(enemy,"is_channelling_spell")==true) and friendly[tostring(U.guid(target))] and U.distance(me,target)<=30 then
-            local id=tonumber(U.call(enemy,"get_active_spell_id"))
+            local id=U.active_spell_id(enemy)
             local shearable=U.call(enemy,"is_active_spell_interruptable")==true
                 and U.distance(me,enemy)<=30 and S.ready(S.WIND_SHEAR)
             local preserve_shear=C.get("pvp_ground_cc_first") and HIGH_VALUE_CC[id]==true
@@ -180,7 +179,7 @@ function M.tremor(me,rows)
         end
     end
     for _,enemy in ipairs(enemies(me)) do
-        local id=tonumber(U.call(enemy,"get_active_spell_id"))
+        local id=U.active_spell_id(enemy)
         local casting,remaining=active_cast(enemy)
         local victim=U.call(enemy,"get_target")
         local in_team=team_target(me,victim,rows)

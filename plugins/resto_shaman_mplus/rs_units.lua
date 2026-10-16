@@ -19,20 +19,45 @@ function M.objects()
     if object_snapshot==nil then object_snapshot=core.object_manager.get_all_objects() or {} end
     return object_snapshot
 end
-local function cast_remaining(u)
-    local channel=M.call(u,"is_channelling_spell")==true
-    local key=channel and "get_active_channel_end_time" or "get_active_spell_cast_end_time"
-    local finish=tonumber(M.call(u,key))
-    if not finish then return nil end
-    if finish>100000 then finish=finish/1000 end
-    return finish-core.time()
-end
 function M.call(o, key, ...)
     if not o then return nil end
     local ok, f = pcall(function() return o[key] end)
     if not ok or type(f) ~= "function" then return nil end
     local success, value = pcall(f, o, ...)
     if success then return value end
+end
+-- Sylvanas exposes cast timestamps on the game-time clock (milliseconds).
+-- core.time() is a different, session-relative seconds clock, so mixing them
+-- makes late interrupts and predictive totems drift or fire immediately.
+function M.cast_timing(u)
+    local channel=M.call(u,"is_channelling_spell")==true
+    local prefix=channel and "get_active_channel_cast_" or "get_active_spell_cast_"
+    local started=tonumber(M.call(u,prefix.."start_time"))
+    local finish=tonumber(M.call(u,prefix.."end_time"))
+    if not finish then return nil,nil,channel end
+    local game_now
+    if type(core.game_time)=="function" then
+        local ok,value=pcall(core.game_time)
+        if ok then game_now=tonumber(value) end
+    end
+    if game_now then
+        if not started or finish<=started then return nil,(finish-game_now)/1000,channel end
+        local progress=math.max(0,math.min(100,100*(game_now-started)/(finish-started)))
+        return progress,(finish-game_now)/1000,channel
+    end
+    -- Test/older-host fallback: accept seconds, or normalize millisecond values.
+    if finish>100000 then finish=finish/1000;if started then started=started/1000 end end
+    local now=core.time()
+    if not started or finish<=started then return nil,finish-now,channel end
+    return math.max(0,math.min(100,100*(now-started)/(finish-started))),finish-now,channel
+end
+function M.active_spell_id(u)
+    local channel=M.call(u,"is_channelling_spell")==true
+    return tonumber(M.call(u,channel and "get_active_channel_spell_id" or "get_active_spell_id"))
+end
+local function cast_remaining(u)
+    local _,remaining=M.cast_timing(u)
+    return remaining
 end
 function M.valid(u)
     return u and M.call(u, "is_valid") == true and M.call(u, "is_dead") == false

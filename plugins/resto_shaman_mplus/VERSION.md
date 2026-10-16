@@ -1,3 +1,13 @@
+# Shaman Suite 5.9.0
+
+- Uses the documented millisecond game clock for enemy cast progress and remaining time.
+- Uses the correct channel cast start/end API names and channel spell IDs.
+- Corrects Wind Shear, Capacitor, Grounding, Tremor, and targeted-cast prediction timing.
+- Yields hazard movement while MasterArthasNav owns movement.
+- Hardens the stable asynchronous loader when `os.time` is unavailable.
+
+## Previous release notes
+
 # Shaman Suite 5.8.0
 
 - Tracks Call of Flame talent ranks and extends Flame Shock refresh timing from 12 to as much as 21 seconds.
