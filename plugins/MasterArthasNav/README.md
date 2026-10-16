@@ -22,3 +22,9 @@ client 2.0.4 (installer 1.0.14) with these changes:
 
 Every other module is unchanged. API: `docs/API.md`. Contract tests:
 `tests/lua` in the MasterArthasNav repository (`luajit tests/lua/run.lua`).
+
+## Command Center v3
+
+The redesigned command center opens from the MasterArthasNav menu and provides seven translucent, artwork-backed tabs: Command, Combat, Route, Safety, Logs, Metrics, and Setup.
+
+The Combat tab checks the local character continuously. It converts the host specialization index to the full specialization ID when needed, selects the installed Warrior, Paladin, Hunter, Rogue, Shaman, Mage, or Druid suite, and rebuilds its controls after a class or specialization change. Every displayed switch reads and writes the matched plugin's persistent control. Supported hotkeys show their current binding and can be changed from the Combat page or the native MasterArthasNav menu. Classes without an installed suite receive an explicit unsupported message.
