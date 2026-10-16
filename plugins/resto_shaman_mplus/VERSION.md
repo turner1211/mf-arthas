@@ -1,3 +1,15 @@
+# Shaman Suite 5.10.0
+
+- Refreshes Retail Elemental and Enhancement priorities for Midnight 12.1.5.
+- Uses Voltaic Blaze whenever the live spell override replaces Flame Shock.
+- Adds Elemental Tempest and Enhancement Tempest/Primordial Storm spending.
+- Adds Surging Totem setup before Enhancement burst and allows Sundering on single targets.
+- Switches Enhancement spenders to Chain Lightning at two or more targets.
+- Isolates the main menu, full GUI, and boss-helper GUI so one drawing failure cannot break the other window or strand a shared object snapshot.
+- Adds focused regression coverage for the new Retail priority paths and renderer isolation.
+
+## Previous release notes
+
 # Shaman Suite 5.9.0
 
 - Uses the documented millisecond game clock for enemy cast progress and remaining time.
@@ -5,8 +17,6 @@
 - Corrects Wind Shear, Capacitor, Grounding, Tremor, and targeted-cast prediction timing.
 - Yields hazard movement while MasterArthasNav owns movement.
 - Hardens the stable asynchronous loader when `os.time` is unavailable.
-
-## Previous release notes
 
 # Shaman Suite 5.8.0
 

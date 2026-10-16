@@ -50,26 +50,35 @@ local function elemental(me,t,context)
  if C.get("dps_cooldowns") and S.cast(ID.STORMKEEPER,me,me) then C.status="Elemental: Stormkeeper";return true end
  if C.get("dps_cooldowns") and S.cast(ID.ANCESTRAL_SWIFTNESS,me,me) then C.status="Elemental: Ancestral Swiftness";return true end
  if C.get("dps_cooldowns") and S.cast(ID.ELEMENTAL_ASCENDANCE,me,me) then C.status="Elemental: Ascendance";return true end
- if not flame or (remaining or 0)<=5 then if S.cast(S.FLAME,t,me) then C.status="Elemental: Flame Shock";return true end end
+ local flame_override=S.resolve(S.FLAME)~=S.FLAME
+ if flame_override or not flame or (remaining or 0)<=5 then if S.cast(S.FLAME,t,me) then C.status=flame_override and "Elemental: Voltaic Blaze" or "Elemental: Flame Shock";return true end end
  if aoe and maelstrom>=60 and S.cast(ID.EARTHQUAKE,t,me,true) then C.status="Elemental: Earthquake";return true end
  if maelstrom>=75 and S.cast(ID.ELEMENTAL_BLAST,t,me,false,true) then C.status="Elemental: Elemental Blast";return true end
+ if S.cast(ID.TEMPEST,t,me,false,true) then C.status="Elemental: Tempest";return true end
  if S.cast(S.LAVA,t,me,false,true) then C.status="Elemental: Lava Burst";return true end
  if aoe and S.cast(S.LIGHTNING,t,me,false,true) then C.status="Elemental: Chain Lightning";return true end
  if S.cast(S.BOLT,t,me,false,true) then C.status="Elemental: Lightning Bolt";return true end
  return false
 end
 local function enhancement(me,t,context)
- local count=enemy_count(me,t,10);local aoe=C.get("dps_aoe") and count>=(C.get("dps_aoe_count") or 3)
+ local count=enemy_count(me,t,10);local cleave=C.get("dps_aoe") and count>=2
+ local aoe=C.get("dps_aoe") and count>=(C.get("dps_aoe_count") or 3)
  local stacks=A.stacks(me,ID.MAELSTROM_WEAPON) or 0
+ local flame,remaining=A.own_debuff(t,S.FLAME,me);local flame_override=S.resolve(S.FLAME)~=S.FLAME
+ if flame_override or not flame or (remaining or 0)<=5 then if S.cast(S.FLAME,t,me) then C.status=flame_override and "Enhancement: Voltaic Blaze" or "Enhancement: Flame Shock";return true end end
  if C.get("dps_cooldowns") and S.cast(ID.FERAL_SPIRIT,me,me) then C.status="Enhancement: Feral Spirit";return true end
+ if C.get("dps_cooldowns") and S.cast(ID.SURGING_TOTEM,t,me,true) then C.status="Enhancement: Surging Totem";return true end
  if C.get("dps_cooldowns") and S.cast(ID.DOOM_WINDS,me,me) then C.status="Enhancement: Doom Winds";return true end
  if C.get("dps_cooldowns") and S.cast(ID.ENHANCEMENT_ASCENDANCE,me,me) then C.status="Enhancement: Ascendance";return true end
- if aoe and U.distance(me,t)<=8 and S.cast(ID.CRASH_LIGHTNING,t,me) then C.status="Enhancement: Crash Lightning";return true end
- if stacks>=10 and aoe and S.cast(S.LIGHTNING,t,me,false,true) then C.status="Enhancement: Chain Lightning at 10 Maelstrom Weapon";return true end
+ if cleave and U.distance(me,t)<=8 and S.cast(ID.CRASH_LIGHTNING,t,me) then C.status="Enhancement: Crash Lightning";return true end
+ if stacks>=10 and S.cast(ID.PRIMORDIAL_STORM,t,me) then C.status="Enhancement: Primordial Storm at 10 Maelstrom Weapon";return true end
+ if stacks>=10 and S.cast(ID.TEMPEST,t,me,false,true) then C.status="Enhancement: Tempest at 10 Maelstrom Weapon";return true end
+ if stacks>=10 and cleave and S.cast(S.LIGHTNING,t,me,false,true) then C.status="Enhancement: Chain Lightning at 10 Maelstrom Weapon";return true end
  if stacks>=10 and S.cast(S.BOLT,t,me,false,true) then C.status="Enhancement: Lightning Bolt at 10 Maelstrom Weapon";return true end
  if U.distance(me,t)<=6 and S.cast(ID.STORMSTRIKE,t,me) then C.status="Enhancement: Stormstrike";return true end
  if U.distance(me,t)<=6 and S.cast(ID.LAVA_LASH,t,me) then C.status="Enhancement: Lava Lash";return true end
- if aoe and U.distance(me,t)<=8 and S.cast(ID.SUNDERING,t,me) then C.status="Enhancement: Sundering / Primordial Storm";return true end
+ if U.distance(me,t)<=8 and S.cast(ID.SUNDERING,t,me) then C.status="Enhancement: Sundering";return true end
+ if stacks>=5 and cleave and S.cast(S.LIGHTNING,t,me,false,true) then C.status="Enhancement: Chain Lightning";return true end
  if stacks>=5 and S.cast(S.BOLT,t,me,false,true) then C.status="Enhancement: Lightning Bolt";return true end
  if S.cast(S.FROST,t,me) then C.status="Enhancement: Frost Shock";return true end
  return false

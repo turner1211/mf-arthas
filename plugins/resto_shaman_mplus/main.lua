@@ -53,7 +53,7 @@ core.register_on_update_callback(function()
  RT.last_tick=now;RT.U.begin_object_snapshot();local ok,err=pcall(tick);RT.U.end_object_snapshot()
  if not ok then RT.C.status="API error; see debugger";pcall(require("rs_telemetry").error,"update",err);if core.time()-RT.last_error>=10 then pcall(core.log_warning,"[Shaman Suite] "..tostring(err));RT.last_error=core.time() end end
 end)
-core.register_on_render_menu_callback(function() if player() then RT.C.render() end end)
+core.register_on_render_menu_callback(function() if player() then RT.safe("menu_render",RT.C.render) end end)
 core.register_on_render_callback(function()
  if not player() then return end
  local identity=RT.Branch.last or RT.Branch.detect()
@@ -64,7 +64,11 @@ core.register_on_render_callback(function()
  end
 end)
 if type(core.register_on_render_window_callback)=="function" then
- core.register_on_render_window_callback(function() if player() then RT.U.begin_object_snapshot();RT.Gui.render();RT.BossHud.render();RT.U.end_object_snapshot() else RT.Gui.hide();RT.BossHud.hide() end end)
+ core.register_on_render_window_callback(function()
+  if player() then
+   RT.U.begin_object_snapshot();RT.safe("main_gui_render",RT.Gui.render);RT.safe("boss_hud_window_render",RT.BossHud.render);RT.U.end_object_snapshot()
+  else RT.safe("main_gui_hide",RT.Gui.hide);RT.safe("boss_hud_hide",RT.BossHud.hide) end
+ end)
 end
 core.register_on_game_event_callback(function(event,args)
  if not player() then return end
@@ -79,4 +83,4 @@ core.register_on_game_event_callback(function(event,args)
  RT.safe("aura_event",module("rs_auras").event,event,args);RT.safe("telemetry_event",module("rs_telemetry").event,event,args)
  RT.last_tick=-math.huge
 end)
-core.log("[Shaman Suite] 5.9.0 loaded: cast timing, navigation ownership, and loader hardening.")
+core.log("[Shaman Suite] 5.10.0 loaded: Retail priority refresh and isolated GUI rendering.")
