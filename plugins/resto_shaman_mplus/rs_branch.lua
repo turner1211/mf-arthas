@@ -63,7 +63,9 @@ function M.detect()
     else
         spec=({[1]="elemental",[262]="elemental",[2]="enhancement",[263]="enhancement",[3]="restoration",[264]="restoration"})[raw]
     end
-    M.last={family=forever and "forever" or "retail",spec=spec or "unknown",raw_spec=raw,
+    local player=call(core.object_manager,"get_local_player")
+    local level=tonumber(player and call(player,"get_level"))
+    M.last={family=forever and "forever" or "retail",spec=spec or "unknown",raw_spec=raw,level=level,
         version=text~="" and text or "version API unavailable",evidence=forever and (text~="" and text or "Forever spell fingerprint") or "Retail specialization/API"}
     return M.last
 end

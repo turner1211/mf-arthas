@@ -1,4 +1,11 @@
-# Shaman Suite 5.4.0
+# Shaman Suite 5.5.0
+
+- Automatically detects character level and adjusts mana floors, healing reserves, Chain Heal group thresholds, and leveling behavior.
+- Adds Elemental Focus Clearcasting spending on free Chain Lightning or Lightning Bolt casts.
+- Requires three useful targets before spending mana on Fire Nova.
+- Moves Enhancement's Stormstrike-empowered Earth Shock ahead of routine setup so Improved Stormstrike resets do not waste the debuff.
+- Maintains Mana Spring for grouped Elemental and Enhancement characters and avoids wasteful Lightning Shield refreshes during combat.
+- Raises the Enhancement mana reserve on low-level characters while retaining emergency healing and interrupts.
 
 - Retail/Midnight: Restoration, Elemental, and Enhancement.
 - WoW Forever 1.60.x: Restoration, Elemental, and Enhancement talent-tree routing.

@@ -30,6 +30,7 @@ local function tick()
  local identity=RT.Branch.detect();local context=RT.X.get()
  RT.C.client_family=identity.family;RT.C.active_spec=identity.spec;RT.C.content=context.label
  RT.C.profile=(identity.family=="forever" and "WoW Forever " or "Retail / Midnight ")..identity.spec:gsub("^%l",string.upper)
+  ..(identity.level and (" • Level "..tostring(identity.level)) or "")
  RT.C.poll_window()
  if not RT.C.get("enabled") then if identity.family=="retail" then module("rs_evade").stop("Routine paused") end RT.C.status="Paused";return end
  if not RT.C.mode_enabled(context.mode) then if identity.family=="retail" then module("rs_evade").stop("Content profile disabled") end RT.C.status=context.label.." profile disabled";return end
@@ -78,4 +79,4 @@ core.register_on_game_event_callback(function(event,args)
  RT.safe("aura_event",module("rs_auras").event,event,args);RT.safe("telemetry_event",module("rs_telemetry").event,event,args)
  RT.last_tick=-math.huge
 end)
-core.log("[Shaman Suite] 5.4.0 loaded: expanded WoW Forever logic; Retail/Midnight remains isolated.")
+core.log("[Shaman Suite] 5.5.0 loaded: level-aware WoW Forever logic; Retail/Midnight remains isolated.")
