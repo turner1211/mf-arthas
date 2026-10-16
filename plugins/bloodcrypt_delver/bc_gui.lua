@@ -62,7 +62,7 @@ function M.render(s,action)
   if texture then core.graphics.draw_texture(texture,Vec.new(origin.x,origin.y),W,H,c(255,255,255),true) else rect(0,0,W,H,c(10,8,12),0);skull(30,260,180) end
   rect(0,0,W,H,c(3,10,11,158),0);outline(1,1,W-2,H-2,ac(240),11)
   panel(18,15,1204,105,238);icon("skull",35,31,70)
-  text("BLOODCRYPT DELVER",122,29,bone,large);text(theme.title,122,62,ac(255));text("ARTHASNAV EXPEDITION SUITE  •  v0.6.31",122,88,muted)
+  text("BLOODCRYPT DELVER",122,29,bone,large);text(theme.title,122,62,ac(255));text("ARTHASNAV EXPEDITION SUITE  •  v0.6.32",122,88,muted)
   panel(850,31,170,34,235);text("THEME: "..compact(theme.motif,17),865,42,ac(255));panel(1034,31,169,34,235);text(s.bot.enabled and "●  ACTIVE" or "○  STOPPED",1050,42,s.bot.enabled and c(116,223,102) or muted)
   button("START",850,73,168,function() action("start") end,s.bot.enabled,"lantern",34);button("STOP",1034,73,169,function() action("stop") end,false,"skull",34)
   panel(18,132,246,610,235);for i,item in ipairs(nav) do local page=i;button(item[1],30,145+(i-1)*58,222,function() M.page=page end,M.page==i,item[2],48) end

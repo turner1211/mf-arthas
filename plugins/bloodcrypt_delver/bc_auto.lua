@@ -19,6 +19,12 @@ local function contact_name(name)
  name=tostring(name or ""):lower()
  return name:find("focus crystal",1,true) or name:find("ley line focuser",1,true) or name:find("focuser socket",1,true)
 end
+local OPTIONAL_OBJECTS={"campfire","refulgent copper","copper vein","ore deposit","mining deposit","herb","fishing","skinning","leave delve","the darkway","sturdy chest","explorers' league supplies","explorer's league supplies","delver's supplies","delvers' supplies","valeera sanguinar","corner piece","doodad_","bountiful coffer","delve trunk","gilded stash","nemesis supplies"}
+local function optional_object(name)
+ name=tostring(name or ""):lower()
+ for _,word in ipairs(OPTIONAL_OBJECTS) do if name:find(word,1,true) then return true end end
+ return false
+end
 local function remember(self,kind,guid)
  if self.options.objective_memory~=false then return RunMemory.mark(kind,guid) end
  return true
@@ -128,7 +134,8 @@ function M:tick()
  if self.options.auto_level==false then profile.max_pull=self.options.max_pull or 5;profile.approach_range=4.5;profile.mount=true;profile.flying=true end
  self.level_profile=profile
  _G.BloodcryptCombatContext={level=profile.level,bracket=profile.name,role=profile.role,spec_id=profile.spec_id,rotation=profile.rotation,approach_range=profile.approach_range,max_pull=profile.max_pull,delve=self.selected,story=self.variant,state=self.state,updated_at=now}
- local detected,label=self.options.auto_story~=false and a.detect_story and a.detect_story(delve)
+ local detected,label
+ if self.options.auto_story~=false and a.detect_story then detected,label=a.detect_story(delve) end
  if detected and detected~=self.variant then self.variant=detected;self:note("Detected story: "..tostring(label)) end
  if not snap.ready then self.loading_since=self.loading_since or now;if now-self.loading_since>90 then self:stop("Character/loading timeout") else self.state="Loading: preserving verified run state" end;return else self.loading_since=nil end
  if snap.dead then
@@ -244,12 +251,12 @@ function M:tick()
   end
   local plan=Plans.get(self.selected,self.variant);local strict=plan and plan.requires_live_evidence==true
   local nearby=a.nearby_objectives(strict and 18 or 70)
-  local reject={"campfire","refulgent copper","copper vein","ore deposit","mining deposit","herb","fishing","skinning","leave delve","the darkway","sturdy chest","explorers' league supplies","delver's supplies","delvers' supplies","valeera sanguinar","corner piece","doodad_"}
+  local reject={}
   if self.selected==15 then for _,name in ipairs({"ancient chest","mislaid treasure","hexmask","loa-sealed","loa sealed","keeper of the key","spiritual conduit"}) do reject[#reject+1]=name end end
   local favor={"interface","conduit","lever","switch","portal","door","gate","barrier","crystal","shrine","cage","prisoner","cocoon","egg","web","chest","cache","coffer","key","totem","barrel","bomb","explosive","mushroom","fungus","idol","rune","console","mechanism"}
   local filtered={}
   for _,row in ipairs(nearby) do
-   local name=(row.name or ""):lower();local denied=self.completed_guids[row.guid]==true or self.quarantined_families[family(name)]==true;for _,word in ipairs(reject) do if name:find(word,1,true) then denied=true;break end end
+   local name=(row.name or ""):lower();local denied=self.completed_guids[row.guid]==true or self.quarantined_families[family(name)]==true or optional_object(name);for _,word in ipairs(reject) do if name:find(word,1,true) then denied=true;break end end
    if name:find("door",1,true) and row.distance>25 then denied=true end
    if (row.vertical or 0)>12 and not name:find("portal",1,true) and not name:find("teleport",1,true) and not name:find("elevator",1,true) then denied=true end
    local strong=false;for _,word in ipairs(favor) do if name:find(word,1,true) then strong=true;break end end
@@ -322,12 +329,14 @@ function M:tick()
  local objects=a.nearby_objectives(70)
  local objective=(live.title or ""):lower();for _,c in pairs(live.criteria or {}) do objective=objective.." "..tostring(c.description or ""):lower() end
  local tokens={};for w in objective:gmatch("[%a]+") do if #w>=4 then tokens[w]=true end end
+ local candidates={}
  for _,row in ipairs(objects) do
   local score=(row.usable and 120 or 0)-row.distance;local lname=(row.name or ""):lower();for w in pairs(tokens) do if lname:find(w,1,true) then score=score+35 end end
   local learn=Learning.key(snap.instance,self.variant,live.step_id,row.usable and "use" or "kill",row.id);score=score+(self.options.learning and Learning.score(learn) or 0);row.score=score;row.learn_key=learn
+  if not optional_object(lname) then candidates[#candidates+1]=row elseif self.logger and now>=(self.optional_log_at or 0) then self.optional_log_at=now+10;self.logger.record(now,"optional_object_skipped",{name=row.name or "",id=row.id or 0,guid=row.guid or "",step=live.step_id or 0}) end
  end
- table.sort(objects,function(x,y) return x.score>y.score end)
- for _,row in ipairs(objects) do
+ table.sort(candidates,function(x,y) if x.score==y.score then return tostring(x.guid)<tostring(y.guid) end;return x.score>y.score end)
+ for _,row in ipairs(candidates) do
   if (self.blocked[row.guid] or 0)<=now then
     local oversized=row.enemy and (row.pack or 1)>profile.max_pull
    if oversized then self.blocked[row.guid]=now+20

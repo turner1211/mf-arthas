@@ -1,4 +1,6 @@
-# Bloodcrypt Delver — development build 0.6.31
+# Bloodcrypt Delver — development build 0.6.32
+
+Build 0.6.32 keeps live scenario routing focused on required progress. Optional gathering nodes, supplies, side chests, reward coffers, Delve trunks, Gilded Stashes, and Nemesis Supplies are excluded from objective acquisition until the dedicated completion/reward phase. Story auto-detection now preserves both the detected variant and its display label, and equal-score candidates receive a deterministic GUID tie-break so object-manager iteration order cannot make routes oscillate between candidates.
 
 Build 0.6.31 hardens delve entry for current Retail clients. Tier discovery and selection now prefer Blizzard's public `C_DelvesUI.GetDelveEntranceTiers`, `GetTieredEntranceType`, and `SelectDelveEntranceTier` APIs, while retaining the older picker-frame path for compatible clients. Picker widget refreshes are isolated so a missing or changed internal frame cannot abort an otherwise valid tier selection.
 
