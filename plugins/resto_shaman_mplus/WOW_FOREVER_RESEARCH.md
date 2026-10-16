@@ -1,4 +1,4 @@
-# WoW Forever Shaman research — version 5.7.0
+# WoW Forever Shaman research — version 5.8.0
 
 Reviewed October 15, 2026 against public beta information for builds through 1.60.1.70374.
 
@@ -38,3 +38,11 @@ The beta remains subject to tuning changes. Runtime spellbook checks remain auth
 - Stoneclaw is available from level 8 and should absorb pressure when multiple leveling enemies connect, before health reaches an emergency threshold.
 - Level-30 Elemental builds can add the Earthbound root to Earthbind, creating a short casting window when enemies reach melee range.
 - Enhancement guidance recommends skipping totems on quick kills. Fire totems are therefore limited to durable targets and real packs instead of every ordinary enemy.
+
+## Version 5.8 findings
+
+- Blizzard moved Lava Burst to the 21-point Elemental milestone, making it reachable at level 30, and moved Earthbound to the 16-point milestone.
+- Call of Flame now extends Flame Shock by 3/6/9 seconds. The fallback aura latch therefore reads the live talent rank instead of assuming every Flame Shock lasts 12 seconds.
+- Chain Lightning costs about 35% less mana on every rank and begins at level 32. Its automatic cleave floor is reduced only after that acquisition level.
+- Stormstrike now costs 8% of base mana rather than a fixed 125 mana, so its own reserve can be lower than the reserve used for shocks, Fire Nova, and totems.
+- Mana Tide receives another progression rank at level 38. The spell family now resolves all known Classic rank IDs and still relies on the live spellbook before casting.

@@ -1,4 +1,10 @@
-# Shaman Suite 5.7.0
+# Shaman Suite 5.8.0
+
+- Tracks Call of Flame talent ranks and extends Flame Shock refresh timing from 12 to as much as 21 seconds.
+- Recognizes the complete Mana Tide rank family, including the new level-38 rank path.
+- Uses Lava Burst from level 30 when the newly moved 21-point talent is learned and Flame Shock is active.
+- Lowers Chain Lightning's mana floor after level 32 and uses its newly reduced cost for two-target cleave.
+- Lowers Stormstrike's reserve threshold to reflect its new 8% base-mana cost while keeping expensive follow-up spells behind the configured Enhancement floor.
 
 - Adds level-aware between-pull Healing Wave recovery for Elemental and Enhancement.
 - Uses the level-30 Call of the Ancestors preset for grouped pre-pull setup when learned.

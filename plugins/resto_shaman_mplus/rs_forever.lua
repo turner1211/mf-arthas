@@ -67,6 +67,17 @@ local function level_policy(me)
   heal_reserve=level<20 and 30 or level<40 and 22 or 15,
   chain_count=level<50 and 3 or 2,early_healer=level<40,totem_mana=level<20 and 70 or 82}
 end
+function M.talent_rank(needle)
+ local list=core.game_ui and type(core.game_ui.get_active_talents)=="function" and U.call(core.game_ui,"get_active_talents")
+ if type(list)~="table" then return 0 end
+ needle=tostring(needle):lower()
+ for _,talent in pairs(list) do
+  local name=tostring(field(talent,"name") or ""):lower()
+  if name:find(needle,1,true) then return tonumber(field(talent,"rank") or field(talent,"current_rank")) or 0 end
+ end
+ return 0
+end
+function M.flame_duration() return 12+3*math.min(3,M.talent_rank("call of flame")) end
 local function gcd_busy()
  local cd=book("get_spell_cooldown",61304)
  return type(cd)=="number" and cd>0.05
@@ -398,12 +409,13 @@ local function elemental(me,context)
  if context.pvp and clear and not reserve_shock(me) and cast(F.FROST_SHOCK,t,me,false,nil,true) then C.status="Forever Elemental PvP: free Clearcasting Frost Shock";return true end
  if not active_totem(F.SEARING) and not active_totem(F.MAGMA) and mp>=25 and cast(count>=3 and F.MAGMA or F.SEARING,me,me) then C.status="Forever Elemental: Fire totem setup";return true end
  if (not flame or remaining and remaining<=3) and mp>=20 and (U.health(t) or 100)>30 and not reserve_shock(me) and cast(F.FLAME_SHOCK,t,me) then C.status="Forever Elemental: full-duration Flame Shock";return true end
- if flame and mp>=20 and cast(F.LAVA_BURST,t,me,true) then C.status="Forever Elemental: empowered Lava Burst";return true end
+ if policy.level>=30 and flame and mp>=20 and cast(F.LAVA_BURST,t,me,true) then C.status="Forever Elemental: level-30 empowered Lava Burst";return true end
  if clear and count>=2 and aoe_safe(me,t,12) and cast(F.CHAIN_LIGHTNING,t,me,true,nil,true) then C.status="Forever Elemental: free Clearcasting Chain Lightning";return true end
  if fire_count>=3 and active_element("fire") and aoe_safe(me,fire_position,10) then
   if mp>=25 and cast(F.FIRE_NOVA,me,me) then C.status="Forever Elemental: positioned Fire Nova";return true end
  end
- if count>=3 and mp>=40 and aoe_safe(me,t,12) and cast(F.CHAIN_LIGHTNING,t,me,true) then C.status="Forever Elemental: crowd-control-safe Chain Lightning";return true end
+ local chain_floor=policy.level>=32 and 25 or 40
+ if count>=2 and mp>=chain_floor and aoe_safe(me,t,12) and cast(F.CHAIN_LIGHTNING,t,me,true) then C.status="Forever Elemental: reduced-cost crowd-control-safe Chain Lightning";return true end
  if (U.health(t) or 100)<=15 and not reserve_shock(me) and cast(F.EARTH_SHOCK,t,me) then C.status="Forever Elemental: Earth Shock finisher";return true end
  local damage_rank=C.get("forever_damage_downrank") and mp<40 and 1 or 0
  if (clear or mp>=policy.damage_floor) and cast(F.LIGHTNING_BOLT,t,me,true,damage_rank,clear) then C.status=clear and "Forever Elemental: free Clearcasting Lightning Bolt" or damage_rank>0 and "Forever Elemental: mana-efficient downranked Lightning Bolt" or "Forever Elemental: Lightning Bolt";return true end
@@ -426,7 +438,8 @@ local function enhancement(me,context)
  if U.distance(me,t)<=8 and C.get("dps_cooldowns") and (not C.get("forever_rage_burst_only") or important_target(me,t,count,context))
   and cast(F.RAGE,me,me) then C.status="Forever Enhancement: Rage of the Farseer burst window";return true end
  if stacks>=5 and cast(F.LIGHTNING_BOLT,t,me,false,nil,true) then C.status="Forever Enhancement: five-stack Maelstrom Lightning Bolt";return true end
- if U.distance(me,t)<=6 and mp>=floor and cast(F.STORMSTRIKE,t,me) then C.status="Forever Enhancement: mana-budgeted Stormstrike";return true end
+ local storm_floor=math.max(12,floor-15)
+ if U.distance(me,t)<=6 and mp>=storm_floor and cast(F.STORMSTRIKE,t,me) then C.status="Forever Enhancement: percentage-cost mana-budgeted Stormstrike";return true end
  if mp>=floor and not reserve_shock(me) and core.time()<M.stormstrike_until
   and cast(F.EARTH_SHOCK,t,me) then C.status="Forever Enhancement: consuming Stormstrike before a reset";return true end
  local flame,_,remaining=aura(t,F.FLAME_SHOCK)
@@ -479,7 +492,7 @@ function M.event(event,args)
   end
   M.totems[id]=core.time()+TOTEM_LIFE[id];M.last_totem=core.time()
  end
- local duration=contains(F.FLAME_SHOCK,id) and 12 or contains(F.RIPTIDE,id) and 15
+ local duration=contains(F.FLAME_SHOCK,id) and M.flame_duration() or contains(F.RIPTIDE,id) and 15
   or contains(F.WATER_SHIELD,id) and 600 or contains(F.LIGHTNING_SHIELD,id) and 600
   or contains(F.NATURE_SWIFTNESS,id) and 10 or nil
  if duration and pending and pending.target then M.latches[tostring(pending.target)..":"..id]=core.time()+duration end
