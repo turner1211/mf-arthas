@@ -99,6 +99,16 @@ function R.decide(c,engine)
   a=c.pick('thunder_clap','prime AoE Shield Slam with Phalanx');if a then return a end
  end
  a=c.pick('shield_slam','Protection rage generation');if a then return a end
+ -- Ravager now amplifies bleed damage for twelve seconds. Execute applies the
+ -- Protection Deep Wounds bleed, so establish it inside that confirmed window
+ -- before routine Thunder Clap/Revenge fillers when mitigation is covered.
+ local ravager_window=c.now-(engine.history.ravager or -math.huge)<=12
+ if not c.pvp and ravager_window and c.execute then
+  local block=c.buff(S.aura.shield_block)==true
+  if c.sudden==true or block or not c.physical then
+   a=c.pick('execute','apply Deep Wounds inside Ravager bleed amplification');if a then return a end
+  end
+ end
  local block=c.buff(S.aura.shield_block)==true
  local revenge_safe=free or c.rage and (c.rage>=90-rage_discount
   or block and c.rage>=70-rage_discount or not c.physical and c.rage>=80-rage_discount)

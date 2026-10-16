@@ -1034,3 +1034,24 @@ VERSION 1.8.1 — LONG-SESSION STATE AND IDLE-COST AUDIT
   but no longer resets and rebinds the engine every update.
 - Blizzard's October 15/16 notes were rechecked. They contain no newer Warrior
   rotation change than the mechanics already recorded in the 1.8.0 audit.
+
+VERSION 1.9.0 — RETAIL PROC AND BLEED-WINDOW AUDIT
+
+- Fury now reads Hack and Slash (spell 383873), an eight-second one-use bonus,
+  and consumes it with Raging Blow or Crushing Blow before routine Rampage
+  spending. Mountain Thane retains Bloodbath's documented lead during active
+  cooldown windows, while Arena uses its own isolated priority.
+- Protection now recognizes Ravager's twelve-second 50% bleed amplification.
+  When mitigation is covered, PvE Execute applies Deep Wounds before routine
+  Thunder Clap and Revenge fillers. The rule expires with the Ravager window
+  and cannot run in Protection PvP.
+- Arms priorities were compared with the current 12.1.5 PvE and Arena guides:
+  Rend/Mortal Wounds upkeep, Hamstring, control, armor-break setup, Mortal
+  Strike, Execute, and Overpower ordering were already represented, so no
+  unsupported rewrite was made.
+- Blizzard's October 15/16 Forever development notes were checked again. They
+  add no newer Warrior mechanic beyond the existing level-aware Forever rules,
+  so Retail aura and bleed-window logic remains excluded from that runtime.
+- Sources checked October 16, 2026: Blizzard's official WoW Forever beta
+  development notes; Wowhead's 12.1.5 Fury, Arms, Protection, and Mythic+
+  guides and Hack and Slash spell data; Icy Veins' 12.1.5 Arms Arena guide.

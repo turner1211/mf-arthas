@@ -108,7 +108,7 @@ local function paint(spec)
  box(8,8,BW-8,91,c(7,13,16,238),6);edge(8,8,BW-8,91,METAL,6,2);edge(13,13,BW-13,86,A,4,1)
  box(24,17,88,81,c(t.a[1],t.a[2],t.a[3],210),32);edge(24,17,88,81,METAL,32,3)
  if spec==71 then box(51,26,61,68,TEXT,2);box(38,62,74,70,METAL,2)elseif spec==72 then box(39,28,48,68,TEXT,2);box(64,28,73,68,TEXT,2);box(34,23,52,34,METAL,3);box(60,23,78,34,METAL,3)else box(36,29,77,61,METAL,7);box(43,35,70,69,c(t.d[1],t.d[2],t.d[3]),6);box(54,38,61,64,GLOW,2)end
- text(t.title,112,18,f.FONT_BIG or 0,TEXT);text('SYLVANAS WARRIOR SUITE  •  '..t.name..'  •  '..tostring(C.identity and C.identity.version or'WAITING')..'  •  v1.8.1',113,51,f.FONT_SMALL or 0,METAL);text(t.sub,492,51,f.FONT_SMALL or 0,GLOW)
+ text(t.title,112,18,f.FONT_BIG or 0,TEXT);text('SYLVANAS WARRIOR SUITE  •  '..t.name..'  •  '..tostring(C.identity and C.identity.version or'WAITING')..'  •  v1.9.0',113,51,f.FONT_SMALL or 0,METAL);text(t.sub,492,51,f.FONT_SMALL or 0,GLOW)
  text('F1 SHOW / HIDE',875,51,f.FONT_SMALL or 0,MUTED);button('X',1065,25,1101,59,false,function()G.open=false end)
  local tabw=135
  for i,name in ipairs(pages)do local x=20+(i-1)*tabw;local active=G.page==i;box(x,96,x+124,130,active and c(t.a[1],t.a[2],t.a[3],80)or c(15,17,22),2);text(name,x+10,105,f.FONT_SMALL or 0,active and GLOW or MUTED);if active then box(x,128,x+124,131,GLOW,0)end;if hit(x,96,x+124,130)then G.page=i;G.scroll=0 end end
@@ -135,7 +135,7 @@ local function paint(spec)
  if max>0 then button('UP',930,226,996,258,false,function()G.scroll=math.max(0,G.scroll-1)end);button('DOWN',1005,226,1085,258,false,function()G.scroll=math.min(max,G.scroll+1)end)end
  if page=='DUNGEONS'and spec==73 then local R=require('ww_routes');text(compact(R.status,62),302,658,f.FONT_SMALL or 0,MUTED);button('PREVIOUS PULL',700,643,818,674,false,R.actions.previous);button('NEXT PULL',827,643,927,674,false,R.actions.next);button('RESET ROUTE',936,643,1085,674,false,R.actions.reset)
  elseif page=='DIAGNOSTICS'then button('COPY SAVED LOG',302,643,475,674,false,function()if type(window.copy_to_clipboard)=='function'then local ok=pcall(window.copy_to_clipboard,window,Log.copy_text());G.notice=ok and'LOG COPIED — PASTE IT INTO CHAT'or'COPY FAILED'end end);button('COPY LOG PATHS',486,643,655,674,false,function()local a,b=Log.paths();if type(window.copy_to_clipboard)=='function'then local ok=pcall(window.copy_to_clipboard,window,a..'\n'..b);G.notice=ok and'LOG PATHS COPIED'or'COPY FAILED'end end);text(compact(G.notice or'Crash-safe log checkpoints remain after a disconnect.',48),674,651,f.FONT_SMALL or 0,MUTED)end
- box(0,698,BW,720,c(16,17,22),0);text('SYLVANAS WARRIOR  v1.8.1',20,702,f.FONT_SMALL or 0,MUTED);text(G.listening and'RELEASE THE MOUSE, THEN PRESS THE DESIRED KEY  •  ESC CANCELS'or'F1 MAIN GUI  •  F7 BOSS HELPER  •  F1/F7 RESERVED',653,702,f.FONT_SMALL or 0,G.listening and GLOW or MUTED)
+ box(0,698,BW,720,c(16,17,22),0);text('SYLVANAS WARRIOR  v1.9.0',20,702,f.FONT_SMALL or 0,MUTED);text(G.listening and'RELEASE THE MOUSE, THEN PRESS THE DESIRED KEY  •  ESC CANCELS'or'F1 MAIN GUI  •  F7 BOSS HELPER  •  F1/F7 RESERVED',653,702,f.FONT_SMALL or 0,G.listening and GLOW or MUTED)
  -- Double metal frame and reinforced Warrior corners.
  edge(1,1,BW-2,BH-2,METAL,7,3);edge(7,7,BW-8,BH-8,A,5,1)
  box(0,0,34,7,METAL,0);box(0,0,7,34,METAL,0);box(BW-34,0,BW,7,METAL,0);box(BW-7,0,BW,34,METAL,0);box(0,BH-7,34,BH,METAL,0);box(0,BH-34,7,BH,METAL,0);box(BW-34,BH-7,BW,BH,METAL,0);box(BW-7,BH-34,BW,BH,METAL,0)

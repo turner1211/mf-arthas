@@ -2,4 +2,4 @@
 -- tables. Do not touch the player, class, specialization, spell book, or game
 -- UI here: native DB2 assertions happen below Lua and cannot be caught by pcall.
 -- main.lua performs guarded identity detection after the client is ready.
-return {name='Sylvanas Warrior — Arms / Fury / Protection',version='1.8.1',author='Local',load=true}
+return {name='Sylvanas Warrior — Arms / Fury / Protection',version='1.9.0',author='Local',load=true}

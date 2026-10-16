@@ -268,6 +268,7 @@ function N.build(player,identity,mode,settings,engine)
  c.whirlwind,c.whirlwind_left,c.whirlwind_stacks=c.buff(S.aura.whirlwind)
  c.sudden,c.sudden_left,c.sudden_stacks=c.buff(S.aura.sudden_death)
  c.precision,c.precision_left,c.precision_stacks=c.buff(S.aura.precision)
+ c.hack,c.hack_left=c.buff(S.aura.hack_and_slash)
  c.predicted_hp=engine:predict(c)
  local incoming=U.number(U.call(player,'get_incoming_damage',1.5))
  if not incoming and Prediction then incoming=U.number(U.call(Prediction,'get_incoming_damage',player,1.5)) end

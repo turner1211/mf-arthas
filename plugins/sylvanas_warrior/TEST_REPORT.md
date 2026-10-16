@@ -1,13 +1,17 @@
-SYLVANAS WARRIOR 1.8.1 — OFFLINE VALIDATION
+SYLVANAS WARRIOR 1.9.0 — OFFLINE VALIDATION
 Date: October 16, 2026
 Runtime: lupa 2.8, Lua 5.4, bundled Python 3.12
 
 PASS: 47 runtime Lua files compile under Lua 5.4.
-PASS: 7,796 behavioral assertions.
+PASS: 7,804 behavioral assertions.
 Coverage: 24 spec/activity profiles, 62 registered spells,
 400 deterministic randomized combat contexts.
 
 Checks include:
+- Hack and Slash proc consumption before routine Fury spending in Retail PvE
+  and PvP, with Arms and Forever isolation.
+- Protection Execute/Deep Wounds use inside a confirmed Ravager amplification
+  window, with expiry and PvP isolation.
 - Warrior-only class/client guards and local/global specialization normalization.
 - Conflicting or unavailable identity readings and unknown instance states.
 - Automatic World PvE/Delve/Dungeon/Mythic+/Raid/Arena/BG/World PvP detection.

@@ -1,5 +1,12 @@
 SYLVANAS WARRIOR — ARMS / FURY / PROTECTION
-Version 1.8.1 — Midnight and WoW Forever dual-runtime Warrior suite
+Version 1.9.0 — Midnight and WoW Forever dual-runtime Warrior suite
+
+Version 1.9.0 adds Retail Fury handling for the eight-second Hack and Slash
+proc and lets Protection apply Execute's Deep Wounds during Ravager's
+twelve-second bleed-amplification window when mitigation is covered. These
+rules are talent-, specialization-, client-, and mode-gated. The October 15/16
+Forever notes contain no newer supported Warrior rotation change, so its
+separate level-aware priorities remain unchanged.
 
 Version 1.8.1 bounds per-target retry, debuff-history, interrupt-deferral, and
 arena-trinket state during long dungeon and battleground sessions. Cleanup now

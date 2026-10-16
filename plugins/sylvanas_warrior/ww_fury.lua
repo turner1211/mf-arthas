@@ -42,6 +42,11 @@ local function core(c,engine,pvp)
   a=c.pick('fury_bladestorm','Arena Slayer opener after available Rampage');if a then return a end
  end
  if pvp and thane then
+  if c.hack==true then
+   a=c.pick('crushing_blow','Arena Thane consume Hack and Slash proc')
+    or c.pick('raging_blow','Arena Thane consume Hack and Slash proc')
+   if a then return a end
+  end
   a=c.pick('rampage','Arena Thane primary rage spender');if a then return a end
   if c.thunder==true then a=c.pick('thunder_blast','Arena Thane Stormblast proc');if a then return a end end
   if c.sudden==true or c.execute then a=c.pick('fury_execute','Arena Thane Execute opportunity');if a then return a end end
@@ -56,10 +61,24 @@ local function core(c,engine,pvp)
   a=c.pick('fury_execute','avoid wasting capped Sudden Death');if a then return a end
  end
  if thane then
+  local cooldown_active=c.avatar==true or c.recklessness==true
+  -- Patch 12.1 Hack and Slash is an eight-second, one-use Raging Blow bonus.
+  -- Outside cooldowns it precedes ordinary Thunder Blast/Rampage spending;
+  -- during the tier-set burst list, Bloodbath retains its documented lead.
+  if c.hack==true and not cooldown_active then
+   a=c.pick('crushing_blow','consume Hack and Slash before ordinary spenders')
+    or c.pick('raging_blow','consume Hack and Slash before ordinary spenders')
+   if a then return a end
+  end
   if c.thunder==true and (aoe or c.thunder_stacks and c.thunder_stacks>=2 or c.thunder_left and c.thunder_left<2) then
    a=c.pick('thunder_blast','use confirmed Thunder Blast proc');if a then return a end
   end
   a=c.pick('bloodbath','empowered Bloodthirst');if a then return a end
+  if c.hack==true then
+   a=c.pick('crushing_blow','consume Hack and Slash during Fury cooldowns')
+    or c.pick('raging_blow','consume Hack and Slash during Fury cooldowns')
+   if a then return a end
+  end
   -- In single target, one Thunder Blast charge follows Bloodbath during
   -- Avatar. Two charges, expiring procs, and AoE were handled above.
   if c.avatar==true and c.thunder==true then
@@ -81,16 +100,21 @@ local function core(c,engine,pvp)
  if slayer_storm then
   a=c.pick('fury_bladestorm','Slayer Recklessness and Enrage');if a then return a end
  end
- a=c.pick('rampage','Slayer primary rage spender');if a then return a end
+ if c.hack==true then
+  a=c.pick('crushing_blow','Slayer consumes Hack and Slash before normal Rampage')
+   or c.pick('raging_blow','Slayer consumes Hack and Slash before normal Rampage')
+  if a then return a end
+ end
+ if c.burst and c.enrage==true then a=c.pick('odyns_fury','Enraged Slayer damage');if a then return a end end
  if c.execute and (c.sudden==true or c.recklessness==true) then
   a=c.pick('fury_execute','Slayer execute opportunity');if a then return a end
  end
  a=c.pick('crushing_blow','Slayer empowered strike');if a then return a end
- if c.burst and c.enrage==true then a=c.pick('odyns_fury','Enraged Slayer damage');if a then return a end end
- a=c.pick('bloodbath','Slayer empowered Bloodthirst');if a then return a end
  if c.execute then a=c.pick('fury_execute','Slayer execute phase');if a then return a end end
  if aoe then a=c.pick('rampage','Enraged cleave spender');if a then return a end end
  a=c.pick('raging_blow','Slayer rage builder');if a then return a end
+ a=c.pick('rampage','Slayer rage spender after higher-value builders');if a then return a end
+ a=c.pick('bloodbath','Slayer empowered Bloodthirst');if a then return a end
  a=c.pick('bloodthirst','Fury builder and healing');if a then return a end
  -- Current Slayer and Mountain Thane PvE priorities both use Wrecking Throw
  -- after their rotational attacks. Keep this damage-only fallback out of PvP;

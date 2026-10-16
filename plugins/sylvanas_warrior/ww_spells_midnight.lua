@@ -75,6 +75,7 @@ S.aura={enrage=184362,recklessness=1719,avatar=107574,sudden_death=52437,
  shield_block=132404,ignore_pain=190456,phalanx=1278009,bladestorm=446035,
  regeneration=184364,die_by_sword=118038,shield_wall=871,last_stand=12975,
  reflection=23920,sweeping=260708,master_warfare=1269391,
+ hack_and_slash=383873,
  defensive_stance=386208,battle_stance=386164,berserker_stance=386196}
 S.talent={arms_massacre=281001,fury_massacre=206315,prot_massacre=281001,
  improved_whirlwind=12950,demolish=436358,lightning_strikes=434969,

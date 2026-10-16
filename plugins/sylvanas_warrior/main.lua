@@ -142,9 +142,9 @@ if core.register_on_game_event_callback then
  end)
 end
 C.init()
-L.initialize('1.8.1')
+L.initialize('1.9.0')
 -- Read-only coordination surface: no foreign rotation or setting is imported.
-_G.SylvanasWarrior={version='1.8.1',status=function()
+_G.SylvanasWarrior={version='1.9.0',status=function()
  return {status=C.status,spec=C.identity and C.identity.spec,role=C.identity and C.identity.role,
   assigned_role=C.identity and C.identity.assigned,mode=C.mode,epoch=engine.epoch}
 end,diagnostics=function()
@@ -161,4 +161,4 @@ end,log_paths=function()return L.paths()end,copy_log=function()return L.copy_tex
   healer_trinket_down=current.healer_trinket_down,upcoming=current.upcoming and
    {text=current.upcoming.text,remaining=current.upcoming.remaining,source=current.upcoming.source} or nil,casts=casts}
 end}
-L.emit('startup',nil,'Warrior-only 1.8.1; idle-cost and bounded-state audit active')
+L.emit('startup',nil,'Warrior-only 1.9.0; idle-cost and bounded-state audit active')
