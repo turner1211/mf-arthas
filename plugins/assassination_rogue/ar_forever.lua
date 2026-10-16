@@ -9,6 +9,7 @@ local function spell(c,family)
  if not level_allows(c,family) then return nil end
  for _,id in ipairs(F[family] or {}) do if c.known(id) then return id end end
 end
+function M.spell(c,family)return spell(c,family)end
 function M.is_spell(family,id)
  for _,candidate in ipairs(F[family] or {}) do if candidate==id then return true end end
  return false
@@ -31,6 +32,10 @@ local function stacks(c,family)
  return highest
 end
 local function dying(c,seconds)return c.target_hp<=25 or type(c.ttd)=='number' and c.ttd<=seconds end
+local function leveling_finisher(c,durable)
+ return not c.pvp and type(c.level)=='number' and c.level<=30 and not durable
+  and c.cp>=3 and c.target_hp<=55
+end
 local function pve_durable(c,seconds)
  if c.boss or c.training or c.target_tanked or (c.nearby or 0)>=2 then return true end
  if type(c.ttd)=='number' then return c.ttd>=seconds end
@@ -102,10 +107,11 @@ local function assassination(c,durable)
  if coup and c.cooldowns and (not c.pvp or c.target_stunned) then
   local a=use(c,'COLD_BLOOD',c.player,c.pvp and 'Cold Blood during Kidney damage window' or 'Cold Blood before Coup de Grace');if a then return a end
  end
- if coup then
+ if coup or leveling_finisher(c,durable) then
   local poison_known=spell(c,'DEADLY_COAT')~=nil
   local why=deadly>=5 and 'Coup de Grace at five Deadly stacks'
    or poison_known and ('Eviscerate with '..tostring(deadly)..' Deadly stacks; avoid combo-point waste')
+   or leveling_finisher(c,durable) and 'leveling Eviscerate at three or more points'
    or 'Eviscerate finisher before Deadly Poison is learned'
   return use(c,'EVISCERATE',nil,why)
  end
@@ -137,7 +143,9 @@ local function combat(c,durable)
    a=use(c,'ADRENALINE_RUSH',c.player,'Adrenaline Rush below half Energy');if a then return a end
   end
  end
- if finisher(c) or c.cp>=3 and dying(c,4) then return use(c,'EVISCERATE',nil,c.cp<5 and 'execute before target death loses combo points' or 'Combat Eviscerate finisher') end
+ if finisher(c) or leveling_finisher(c,durable) or c.cp>=3 and dying(c,4) then
+  return use(c,'EVISCERATE',nil,c.cp<5 and 'leveling or dying-target Eviscerate at three or more points' or 'Combat Eviscerate finisher')
+ end
  return use(c,'GHOSTLY',nil,'Ghostly Strike') or use(c,'BACKSTAB',nil,'dagger Backstab') or use(c,'SINISTER',nil,'Sinister Strike')
 end
 local function subtlety(c,durable)
@@ -156,7 +164,7 @@ local function subtlety(c,durable)
  if not c.pvp and finisher(c) and hemo_known and aura(c,'HEMORRHAGE')>0 and dot(c,'RUPTURE')<4 and not dying(c,16) then
   local a=use(c,'RUPTURE',nil,'Serrated Blades and Hemorrhage long-target Rupture');if a then return a end
  end
- if finisher(c) then return use(c,'EVISCERATE',nil,'Subtlety Eviscerate finisher') end
+ if finisher(c) or leveling_finisher(c,durable) then return use(c,'EVISCERATE',nil,c.cp<5 and 'leveling Eviscerate at three or more points' or 'Subtlety Eviscerate finisher') end
  if c.cp>=3 and dying(c,3) then return use(c,'EVISCERATE',nil,'execute before target death loses combo points') end
  if hemo_known and aura(c,'HEMORRHAGE')<3 and c.cp<c.cp_max-1 then
   local a=use(c,'HEMORRHAGE',nil,'establish Hemorrhage before the next Rupture');if a then return a end

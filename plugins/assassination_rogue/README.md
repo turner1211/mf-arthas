@@ -1,8 +1,8 @@
 # Assassination Rogue — Valeera Activity Profiles
 
-Version 1.2.9 makes Forever leveling priorities character-level aware as well as spellbook aware. Ordinary level-30-and-below solo mobs no longer receive low-value maintenance finishers when time-to-die is unavailable; bosses, training targets, tanked targets and packs remain durable. Combat pools Energy before Blade Flurry and carries dying-target combo points into Slice and Dice when another enemy is already present. Preparation and Blind also have explicit level gates. Retail/Midnight dispatch remains separate and unchanged.
+Version 1.2.10 extends character-level awareness into shared control, mobility and defensive logic. Forever now selects the highest learned, level-eligible ranks of Gouge, Kidney Shot, Blind, Sap, Kick, Sprint, Vanish and Evasion instead of allowing shared Retail IDs to choose a missing or obsolete rank. Level-30-and-below solo rotations can spend three or more points on Eviscerate as a short target enters finishing range instead of wasting another builder. Retail/Midnight dispatch remains separate and unchanged.
 
-Project Sylvanas / IZI plugin, version 1.2.9. Built from the Holy Paladin GUI and aura compatibility layer, with Rogue damage, control, survival, gathering and logging modules.
+Project Sylvanas / IZI plugin, version 1.2.10. Built from the Holy Paladin GUI and aura compatibility layer, with Rogue damage, control, survival, gathering and logging modules.
 
 ## Controls
 
