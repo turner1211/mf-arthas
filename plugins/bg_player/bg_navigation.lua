@@ -5,8 +5,7 @@ function N.new(get_nav,report,direct_start,direct_stop,skip_height_probe)
 end
 function N:stop()
  self.generation=self.generation+1
- if self.direct_active and self.direct_stop then pcall(self.direct_stop) end
- self.direct_active=false
+ self:stop_direct()
  for reason,n in pairs(self.paused) do
   local found,resume=pcall(function() return n and n.resume end)
   if found and type(resume)=="function" then pcall(resume,n,reason) end
@@ -16,6 +15,10 @@ function N:stop()
   local found,stop=pcall(function() return n.stop end)
   if found and type(stop)=="function" then pcall(stop,n) end
  end
+end
+function N:stop_direct()
+ if self.direct_active and self.direct_stop then pcall(self.direct_stop) end
+ self.direct_active=false
 end
 function N:pause(reason)
  reason=tostring(reason or "movement_hold")
@@ -39,6 +42,10 @@ function N:resume(reason)
 end
 function N:move(point,cb,direct,skip_height)
  self.generation=self.generation+1;local generation=self.generation
+ -- A route change must hand movement ownership to exactly one driver. Without
+ -- this handoff, local corridor steering can keep a movement key held while
+ -- ArthasNav starts a path (or the reverse), producing wall runs and oscillation.
+ self:stop_direct()
  local goal={x=point.x,y=point.y,z=point.z}
  local callback_done=false
  local function done(ok,err)
@@ -51,6 +58,11 @@ function N:move(point,cb,direct,skip_height)
  -- rooms, ships and other off-mesh exits remain usable during a Sentinel
  -- outage. Try that adapter before requiring a navigation client.
  if direct and type(self.direct_start)=="function" then
+  local current=self.get_nav()
+  if current then
+   local found,stop=pcall(function() return current.stop end)
+   if found and type(stop)=="function" then pcall(stop,current) end
+  end
   local ok,result=pcall(self.direct_start,goal)
   if ok and result~=false then self.direct_active=true;return end
   done(false,ok and "direct_movement_unavailable" or tostring(result));return

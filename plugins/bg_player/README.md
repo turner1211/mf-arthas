@@ -1,4 +1,13 @@
-SYLVANAS BATTLEGROUND COMMAND - v1.99.0 - October 16, 2026
+SYLVANAS BATTLEGROUND COMMAND - v1.100.0 - October 16, 2026
+
+Version 1.100.0 fixes the three BG Player movement defects confirmed by the
+October 16 external audit. ArthasNav paths and authored local corridors now
+perform an explicit two-way ownership handoff, so they cannot hold movement
+keys at the same time. Combat approach leaves heading control with ArthasNav
+until the player stops in attack range. Directional stuck recovery now uses
+ArthasNav SimpleMovement when available and falls back to Project Sylvanas core
+strafe input otherwise; recovery timers start only after a driver accepts the
+command.
 
 Version 1.99.0 fixes automatic match completion across Retail's documented
 Engaged -> PostRound -> Complete sequence. The controller now retains durable

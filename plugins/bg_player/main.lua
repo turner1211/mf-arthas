@@ -721,7 +721,22 @@ local api={
  replan=function(reason) local n=nav();if n and n.replan then n:replan(reason) end end,
  escape_direction=function(direction)
   local n=nav();local movement=n and n.movement
-  if movement and type(movement.strafe)=="function" then movement:strafe(direction) end
+  if movement and type(movement.strafe)=="function" then
+   local ok,result=pcall(movement.strafe,movement,direction)
+   if ok and result~=false then return true end
+  end
+  -- ArthasNav builds do not all expose SimpleMovement on the navigator. Use
+  -- the stable core input strafe controls as the bounded recovery fallback.
+  local input=core.input or {}
+  if type(input.strafe_left_stop)=="function" then pcall(input.strafe_left_stop) end
+  if type(input.strafe_right_stop)=="function" then pcall(input.strafe_right_stop) end
+  if direction==nil then return true end
+  local start=direction=="left" and input.strafe_left_start or
+   direction=="right" and input.strafe_right_start or nil
+  if type(start)~="function" then return false end
+  navigation:stop()
+  local ok,result=pcall(start)
+  return ok and result~=false
  end,
  obstacle_escape_side=function(position,goal)
   local graphics=core.graphics

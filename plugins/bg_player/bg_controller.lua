@@ -663,7 +663,9 @@ function C:tick()
  -- attack causes running past targets, repeated turning and target loss.
  if target then goal=target_position end
  if not goal then self:stop_motion();self:status("movement_destination_invalid");return end
- if target and a.face then a.face(target_position) end
+ -- ArthasNav owns facing while closing distance. Repeated look-at commands here
+ -- fought its steering and could pin the player against nearby geometry. Facing
+ -- resumes after movement stops in the in-range combat hold below.
  if self.mounted_escape then
   local escape=self.mounted_escape
   if now<escape.start_at then self:status("mounted_recovery_dismounting");return end
@@ -853,8 +855,10 @@ function C:tick()
    self:stop_motion(true);self.destination=nil;self.next_move=0;self.progress:reset()
    if self.activity_recoveries>=2 and a.escape_direction then
     local direction=(self.escape_side or 1)>0 and "right" or "left"
-    self.escape_side=-(self.escape_side or 1);a.escape_direction(direction);self.escape_until=now+0.6
-    self:status("navigation_activity_escape_"..direction);return
+    self.escape_side=-(self.escape_side or 1)
+    if a.escape_direction(direction)~=false then
+     self.escape_until=now+0.6;self:status("navigation_activity_escape_"..direction);return
+    end
    end
    if a.replan then a.replan("battleground_activity_watchdog") end
    self:status("navigation_activity_recovery");return
@@ -1034,8 +1038,11 @@ function C:tick()
     self:stop_motion(true)
     if a.escape_direction then
      local direction=(self.escape_side or 1)>0 and "right" or "left"
-     self.escape_side=-(self.escape_side or 1);a.escape_direction(direction);self.escape_until=now+0.45
-     self.navigation_retry_at=now;self:status("combat_path_escape_"..direction);return
+     self.escape_side=-(self.escape_side or 1)
+     if a.escape_direction(direction)~=false then
+      self.escape_until=now+0.45;self.navigation_retry_at=now
+      self:status("combat_path_escape_"..direction);return
+     end
     end
     self.navigation_retry_at=now+0.2;self:status("combat_path_replanning");return
    end
@@ -1074,8 +1081,9 @@ function C:tick()
      local direction=probed or ((self.escape_side or 1)>0 and "right" or "left")
      self.escape_side=-(self.escape_side or 1)
      local duration=direct_route and 0.55 or 0.9
-     a.escape_direction(direction);self.escape_until=now+duration
-     self:status("navigation_rebound_"..direction);return
+     if a.escape_direction(direction)~=false then
+      self.escape_until=now+duration;self:status("navigation_rebound_"..direction);return
+     end
     end
     if direct_route then
      a.replan("battleground_direct_stall");self:status("navigation_replanning");return
