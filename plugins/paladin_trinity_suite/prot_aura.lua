@@ -1,0 +1,95 @@
+-- Adapted from the supplied Tactix secret-aura template's positive-evidence
+-- approach. Uses the installed PS API: manager durations are milliseconds.
+local M = {}
+local casts, targets = {}, {}
+function M.guid(unit)
+    if not unit then return nil end
+    local ok, value = pcall(function() return unit:get_guid() end)
+    if ok and value then return tostring(value) end
+end
+function M.confirm(data, player)
+    if type(data) ~= "table" or not player then return end
+    local caster, owner = M.guid(data.caster), M.guid(player)
+    -- Unknown or other casters must never seed local-player confidence.
+    if not caster or not owner or caster ~= owner then return end
+    local id = tonumber(data.spell_id)
+    if not id then return end
+    casts[id] = core.time()
+    local guid = M.guid(data.target)
+    if guid then
+        targets[id] = targets[id] or {}
+        targets[id][guid] = core.time()
+    end
+    for spell, entries in pairs(targets) do
+        for key, stamp in pairs(entries) do
+            if core.time() - stamp > 60 then entries[key] = nil end
+        end
+        if next(entries) == nil then targets[spell] = nil end
+    end
+end
+function M.since(id, unit)
+    local stamp
+    if unit then
+        local guid = M.guid(unit)
+        stamp = guid and targets[id] and targets[id][guid]
+    else stamp = casts[id] end
+    return stamp and math.max(0, core.time() - stamp) or math.huge
+end
+local function remaining(data, manager)
+    local value = manager and tonumber(data.remaining) or nil
+    if value and value > 0 and value < 3600000 then return value / 1000 end
+    local expiry = tonumber(data.expire_time)
+    if expiry and expiry > 0 then
+        local seconds = (expiry - core.game_time()) / 1000
+        if seconds > 0 and seconds < 3600 then return seconds end
+    end
+    return nil -- zero/hidden/absurd values do not prove expiration
+end
+function M.read(unit, id, debuff, owner)
+    if not unit then return false, nil end
+    local ok, active, duration = pcall(function()
+        local method = debuff and "get_debuff_data" or "get_buff_data"
+        local data = unit[method](unit, { id })
+        if data and data.is_active == true and (not owner or M.guid(data.caster) == M.guid(owner)) then
+            return true, remaining(data, true)
+        end
+        return false, nil
+    end)
+    if ok and active then return active, duration end
+    for _, method in ipairs({ "get_auras", debuff and "get_debuffs" or "get_buffs" }) do
+        local success, found, seconds = pcall(function()
+            for _, aura in pairs(unit[method](unit) or {}) do
+                if tonumber(aura.buff_id) == id and (not owner or M.guid(aura.caster) == M.guid(owner)) then
+                    return true, remaining(aura, false)
+                end
+            end
+            return false, nil
+        end)
+        if success and found then return true, seconds end
+    end
+    return false, nil -- means unconfirmed, not proven absent
+end
+function M.stacks(unit, id, debuff, owner)
+    if not unit then return nil end
+    local ok, count = pcall(function()
+        local method = debuff and "get_debuff_data" or "get_buff_data"
+        local data = unit[method](unit, { id })
+        if data and data.is_active == true and (not owner or M.guid(data.caster) == M.guid(owner)) then
+            return tonumber(data.stacks) or tonumber(data.count) or 1
+        end
+    end)
+    if ok and count then return math.max(1, count) end
+    for _, method in ipairs({ "get_auras", debuff and "get_debuffs" or "get_buffs" }) do
+        local success, raw_count = pcall(function()
+            for _, aura in pairs(unit[method](unit) or {}) do
+                if tonumber(aura.buff_id) == id and (not owner or M.guid(aura.caster) == M.guid(owner)) then
+                    return tonumber(aura.count) or tonumber(aura.stacks) or 1
+                end
+            end
+        end)
+        if success and raw_count then return math.max(1, raw_count) end
+    end
+    return nil -- hidden or absent; callers must not treat this as a confirmed zero
+end
+function M.reset() casts, targets = {}, {} end
+return M

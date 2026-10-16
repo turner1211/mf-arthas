@@ -48,6 +48,7 @@ $Projects = @(
     @{ Id = 'guardian_druid_mplus';   Source = 'guardian_druid_mplus_v*';     Name = 'Arthas Druid Suite 12.1.5'; ClassIds = @(11) }
     @{ Id = 'holy_paladin_mplus';     Source = 'holy_paladin_mplus_v*';       Name = 'Holy Paladin Healing Profiles'; ClassIds = @(2) }
     @{ Id = 'prot_paladin_mplus';     Source = 'prot_paladin_mplus_v*';       Name = 'Protection Paladin Mythic+'; ClassIds = @(2) }
+    @{ Id = 'paladin_trinity_suite';  Source = 'work/paladin_trinity_suite_v*'; Name = 'Paladin Trinity Suite'; ClassIds = @(2) }
     @{ Id = 'resto_shaman_mplus';     Source = 'resto_shaman_mplus_v*';       Name = 'Resto Shaman M+'; ClassIds = @(7) }
     @{ Id = 'ret_paladin_plugin';     Source = 'ret_paladin_plugin_v*';       Name = 'Ret Paladin 12.1'; ClassIds = @(2) }
     @{ Id = 'sylvanas_auto_leveler';  Source = 'sylvanas_auto_leveler';       Name = 'Sylvanas Auto Leveler (development)' }
@@ -65,10 +66,15 @@ function Get-Hex([byte[]]$Bytes) { -join ($Sha.ComputeHash($Bytes) | ForEach-Obj
 
 function Resolve-Source($Pattern) {
     $patterns = @($Pattern)
-    $dirs = @(Get-ChildItem -LiteralPath $SourceRoot -Directory | Where-Object {
-        $name = $_.Name
-        @($patterns | Where-Object { $name -like $_ }).Count -gt 0
-    } | Sort-Object -Property FullName -Unique)
+    $dirs = @(foreach ($candidate in $patterns) {
+        $relativeParent = Split-Path -Parent $candidate
+        $leafPattern = Split-Path -Leaf $candidate
+        $searchRoot = if ($relativeParent) { Join-Path $SourceRoot $relativeParent } else { $SourceRoot }
+        if (Test-Path -LiteralPath $searchRoot -PathType Container) {
+            Get-ChildItem -LiteralPath $searchRoot -Directory | Where-Object { $_.Name -like $leafPattern }
+        }
+    })
+    $dirs = @($dirs | Sort-Object -Property FullName -Unique)
     if ($dirs.Count -le 1) { return $dirs | Select-Object -First 1 }
     $dirs | Sort-Object -Descending -Property @{ Expression = {
         $v = $null
@@ -81,6 +87,7 @@ function Test-Runtime([string]$Rel) {
     if ($Rel -match '\.md$') { return $false }
     if ($Rel -match '(^|/)tests/') { return $false }
     if ($Rel -match '(^|/)tests[^/]*\.lua$') { return $false }
+    if ($Rel -match '(^|/)[^/]*_regression\.lua$') { return $false }
     return $true
 }
 

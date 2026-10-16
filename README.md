@@ -75,6 +75,10 @@ commit or push if synchronization or loader tests fail:
 pwsh tools/publish.ps1 -Only sylvanas_mage -Message "Update sylvanas_mage"
 ```
 
+For the unified Paladin package, use `-Only paladin_trinity_suite`. Its stable
+loader remains in `loaders/paladin_trinity_suite_loader/`; only the manifest
+and versioned code under `plugins/paladin_trinity_suite/` change on updates.
+
 The script finds the newest `_v<version>` folder for versioned projects, so a
 renamed release folder needs no edits. To add a project, add a line to the
 `$Projects` table at the top of the script; its loader folder is created on the
