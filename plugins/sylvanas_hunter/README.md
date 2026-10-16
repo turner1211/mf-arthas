@@ -1,4 +1,4 @@
-SYLVANAS HUNTER 1.6.7 — MIDNIGHT + WOW FOREVER
+SYLVANAS HUNTER 1.6.8 — MIDNIGHT + WOW FOREVER
 
 PLUGIN FOLDER RULE: Every file inside this plugin folder and every subfolder
 must end in `.lua` or `.md`. Release packaging fails if any other file type is
@@ -8,6 +8,12 @@ JPEG, ZIP, Python, JSON, layered-art, or other file types in the plugin folder.
 Built for Project Sylvanas's Midnight and WoW Forever client APIs. This is an offline-validated
 release candidate; live testing is still required. It is not a claim of flawless
 gameplay, maximum DPS, or verified behavior on every talent build.
+
+Version 1.6.8 extends that policy around the verified level 26–30 rank-cost
+jump. The rotation raises its mana reserve in that band, adjusts Serpent Sting's
+target-life floor by level, and requires three targets before Multi-Shot while
+mana pooling is active. Live learned spells and costs remain authoritative for
+future cap increases. Status and snapshots expose the detected level band.
 
 Version 1.6.7 extends the level-aware Forever policy. BM and Marksmanship can
 maintain Track Hidden from level 24 against Rogue and Druid targets without

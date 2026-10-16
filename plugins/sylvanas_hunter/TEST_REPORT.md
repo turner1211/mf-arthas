@@ -1,5 +1,10 @@
 # Sylvanas Hunter test report
 
+## 1.6.8
+
+- Added boundary checks for WoW Forever level-band mana reserves, Serpent Sting target-life floors, and Multi-Shot thresholds.
+- Compiled all 41 published Hunter Lua files and verified every manifest size and SHA-256 entry.
+
 42 Lua files compiled.
 
 23808 behavioral assertions passed in Lua 5.4 with an offline Sylvanas API mock.

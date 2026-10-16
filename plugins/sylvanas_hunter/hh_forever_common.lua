@@ -1,5 +1,23 @@
 local U=require('hh_util');local S=require('hh_spells');local A=require('hh_aura');local F={}
+local function current_level(c)return math.max(1,math.floor(U.number(c.level)or 1))end
 function F.level(c,n)return(U.number(c.level)or 60)>=n end
+function F.level_band(c)
+ local n=current_level(c)
+ return n<10 and '1-9' or n<20 and '10-19' or n<26 and '20-25' or n<=30 and '26-30' or '31+'
+end
+function F.mana_reserve(c,requested)
+ local n=current_level(c)
+ local reserve=U.number(requested)or 0
+ if n<10 then return math.min(reserve,10)end
+ if n<18 then return math.min(reserve,18)end
+ if n<25 then return math.min(reserve,25)end
+ if n>=26 and n<=30 then return math.max(reserve,45)end
+ return reserve
+end
+function F.sting_health_floor(c)
+ local n=current_level(c)
+ return n<10 and 65 or n<20 and 55 or n<26 and 45 or 40
+end
 local function has_any(c,ids,debuff)for _,id in ipairs(ids or{})do local active,left=(debuff and c.debuff or c.buff)(id);if active==true then return true,left end end;return false end
 function F.has(unit,ids)
  for _,id in ipairs(ids or{})do if A.read(unit,id)==true then return true end end
@@ -21,7 +39,7 @@ function F.mark_and_sting(c,e)
   -- keep evaluating so a mana target still receives Serpent Sting.
   a=c.pick('viper_sting','drain a mana target with the Forever 15-second Viper cooldown');if a then return a end
  end
- if (not c.target_hp or c.target_hp>35)and(not c.ttd or c.ttd>=9)and not has_any(c,S.aura.serpent,true)then
+ if (not c.target_hp or c.target_hp>F.sting_health_floor(c))and(not c.ttd or c.ttd>=9)and not has_any(c,S.aura.serpent,true)then
   a=c.pick('serpent_sting','maintain efficient Serpent Sting on a durable target');if a then return a end
  end
 end
@@ -36,10 +54,7 @@ end
 function F.mana(c)return c.resource_pct or 0 end
 function F.can_spend(c,key,reserve)
  if c.settings.forever_mana_pool==false then return true end
- local level=U.number(c.level)or 60
- if level<10 then reserve=math.min(reserve,10)
- elseif level<18 then reserve=math.min(reserve,18)
- elseif level<25 then reserve=math.min(reserve,25)end
+ reserve=F.mana_reserve(c,reserve)
  local cost=c.cost and c.cost(key)
  if not cost or not c.focus_max or c.focus_max<=0 then return F.mana(c)>=reserve end
  return ((c.focus-cost)/c.focus_max*100)>=reserve
@@ -54,7 +69,11 @@ function F.hawks(c,e)
  end
  e.forever_hawks=active;return count
 end
-function F.multi_threshold(c)return c.pvp and 3 or 2 end
+function F.multi_threshold(c)
+ if c.pvp then return 3 end
+ if current_level(c)>=26 and current_level(c)<=30 and c.settings.forever_mana_pool~=false then return 3 end
+ return 2
+end
 function F.rapid_fire(c)
  if not F.level(c,26)or not c.burst then return false end
  return c.pvp or F.mana(c)<95
