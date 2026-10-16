@@ -1,9 +1,8 @@
-local p={name='Sylvanas Hunter — BM / MM / Survival',version='1.4.64',author='Local',load=false}
-if core and core.object_manager then
- local ok,I=pcall(require,'hh_identity')
- if ok then local me=core.object_manager.get_local_player();local success,v=pcall(I.read,me);p.load=success and v~=nil end
-end
-return p
+-- The loader can evaluate this file before WoW Forever has loaded its DB2
+-- tables. Do not touch the player, specialization, spell book, or game UI
+-- here: native DB2 assertions happen below Lua and cannot be caught by pcall.
+-- main.lua performs guarded identity detection after the client is ready.
+return {name='Sylvanas Hunter — BM / MM / Survival',version='1.6.5',author='Local',load=true}
 
 
 

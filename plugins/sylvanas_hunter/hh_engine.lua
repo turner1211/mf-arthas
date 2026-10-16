@@ -9,6 +9,8 @@ function E:reset(scope,now)
  self.recent={};self.history={};self.history_target={};self.defer={};self.health=nil;self.target_health=nil
  self.last_major=-math.huge;self.manual_until=now+0.35;self.transition_until=now+0.35
  self.last_action=nil;self.pvp_trinket={}
+ self.forever_hawks={}
+ self.forever_target_motion=nil
  self.raid_roster=nil;self.raid_roster_time=nil
  if not scope or not tostring(scope):find(':arena:',1,true) then self.pvp_trinket={} end
 end
@@ -46,6 +48,9 @@ function E:target_life(c)
  if r.samples>=3 and r.rate>=0.75 then return c.target_hp/r.rate end
 end
 function E:resolve(row)
+ for _,candidate in ipairs(row.ids or{})do
+  if U.fn(core.spell_book.is_spell_known,candidate)==true then return candidate end
+ end
  local override=U.number(U.fn(core.spell_book.get_override_spell_id,row.id))
  return override and override>0 and override or row.id
 end
@@ -121,7 +126,7 @@ function E:ready(c,key,target)
  -- Black Arrow has its own availability rules; it is not an execute-only Kill Shot.
  -- Check the resolved row so a Kill Shot -> Black Arrow replacement is handled too.
  if r.key=='kill_shot' and not c.execute and c.buff(S.aura.deathblow)~=true then return false end
- if c.buff(S.aura.turtle)==true and not r.defensive and not r.heal then return false end
+ if S.aura.turtle and c.buff(S.aura.turtle)==true and not r.defensive and not r.heal then return false end
  if c.pvp and r.stun then
   local P=N.Pvp;local flags=require('common/enums').cc_flags;local flag=flags and flags.STUN
   local dr=flag and U.number(U.call(P,'get_unit_dr',target or c.target,flag,0))
@@ -212,6 +217,14 @@ function E:confirmed(id,target,c)
  local sample=math.max(0,math.min(2,c.now-p.time))
  self.cast_latency=math.max(0.05,math.min(0.55,(self.cast_latency or 0.15)*0.75+sample*0.25))
  self.last_action=p.key;self.history[p.key]=c.now;self.history_target[p.key]=p.target_guid
+ if p.key=='summon_hawk'then
+  self.forever_hawks=self.forever_hawks or{};self.forever_hawks[#self.forever_hawks+1]={time=c.now,target=p.target_guid}
+ end
+ if p.key=='feign_death'then
+  -- Preserve enough time for the server to apply the threat drop / target loss.
+  -- Any following attack would immediately stand the Hunter back up.
+  self.transition_until=math.max(self.transition_until or 0,c.now+(c.pvp and 0.8 or 1.5))
+ end
  self.failures[p.retry_key]=nil;self.retry[p.retry_key]=nil
  if S.rows[p.key].major then self.last_major=c.now end
 

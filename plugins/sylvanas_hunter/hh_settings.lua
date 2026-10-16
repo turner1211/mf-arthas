@@ -1,4 +1,5 @@
 local Modes=require('hh_modes')
+local Runtime=require('hh_runtime')
 local C={cells={},status='Hunter ready',identity=nil,mode=nil}
 local specs={{253,'Beast Mastery'},{254,'Marksmanship'},{255,'Survival'}}
 C.labels={enabled='Enable this profile',damage='Damage rotation',defensives='Defensive abilities',interrupts='Interrupts',
@@ -18,12 +19,17 @@ C.order={'enabled','damage','execute','training_dummy','manual_pause','cooldowns
 C.spec_order={[253]={'bm_barbed_setup','bm_cleave','bm_focus_pool','bm_dire_beast','bm_dark_ranger'},
  [254]={'mm_precise','mm_trick','mm_explosive','mm_volley','mm_chakram'},
  [255]={'sv_tip','sv_bombs','sv_boomstick','sv_chakram','sv_eagle'}}
+if Runtime.family=='forever'then C.spec_order={[253]={'forever_hawk','forever_pet_first','forever_stings','forever_readiness','forever_mana_pool'},[254]={'forever_sniper','forever_lone_wolf','forever_stings','forever_readiness','forever_mana_pool'},[255]={'forever_melee','forever_lacerate','forever_traps','forever_stings','forever_pvp_tracking','forever_readiness','forever_mana_pool'}}end
 local specific_labels={bm_barbed_setup='Barbed Shot burst preparation',bm_cleave='Beast Cleave upkeep',bm_focus_pool='Reserve Focus for Kill Command',
  bm_dire_beast='Dire Beast damage',bm_dark_ranger='Dark Ranger arrows',mm_precise='Spend Precise Shots',mm_trick='Trick Shots upkeep',
  mm_explosive='Explosive Shot damage',mm_volley='Volley cleave setup',mm_chakram='Sentinel Moonlight Chakram',
  sv_tip='Tip of the Spear preparation',sv_bombs='Wildfire Bomb damage',sv_boomstick='Empowered Boomstick',sv_chakram='Sentinel Moonlight Chakram',sv_eagle='Aspect of the Eagle at range'}
 for k,v in pairs(specific_labels)do C.labels[k]=v end
+for k,v in pairs({forever_hawk='Summon Hawk upkeep',forever_pet_first='Pet-first engagement safety',forever_stings='Adaptive Forever sting selection',forever_traps='Survival Fire/Frost trap logic',forever_pvp_tracking='Track Humanoids for Improved Tracking',forever_readiness='Readiness reset planning',forever_mana_pool='Preserve mana reserve',forever_sniper='Sniper Shot priority',forever_lone_wolf='Lone Wolf petless mode',forever_melee='Survival melee rotation',forever_lacerate='Lacerating Strikes upkeep'})do C.labels[k]=v end
 function C.available(spec,mode,key)
+ if Runtime.family=='forever'and key=='forever_pvp_tracking'then return spec==255 and Modes.pvp[mode]==true end
+ if Runtime.family=='forever' and (key=='interrupts'or key=='urgent_interrupts'or key=='cc_interrupt_fallback')then return spec==253 end
+ if Runtime.family=='forever' and ({purge=true,misdirection=true,harpoon=true,team_roar=true,masters_healer=true,roar=true,critical_pet_exhilaration=true})[key]then return false end
  if key=='harpoon' then return spec==255 end
  if key=='arena_control' or key=='arena_scatter' or key=='arena_sting' or key=='arena_cc_min' or key=='arena_trinket_window' then return mode=='arena' end
  if key=='automatic_burst' then return Modes.pvp[mode]==true end
@@ -35,6 +41,9 @@ function C.available(spec,mode,key)
  return true
 end
 function C.label(spec,key)
+ if Runtime.family=='forever'and key=='interrupts'then return 'Intimidation cast stops' end
+ if Runtime.family=='forever'and key=='urgent_interrupts'then return 'Immediate Intimidation stops' end
+ if Runtime.family=='forever'and key=='cc_interrupt_fallback'then return 'Pet-stun fallback for critical casts' end
  if key=='interrupts' then return spec==255 and 'Muzzle interrupts' or 'Counter Shot interrupts' end
  if key=='cc' then return spec==254 and 'DR-safe Ranger stun stops' or 'DR-safe Intimidation stops' end
  return C.labels[key] or key
@@ -68,14 +77,14 @@ end
 function C.init()
  C.root=core.menu.tree_node();C.spec_nodes={};C.hotkey_node=core.menu.tree_node();C.hotkeys={};C.hotkey_down={}
  for _,k in ipairs({'enabled','pause','themed_gui','boss_guide','logging','burst'}) do
-  C[k]=core.menu.checkbox(k~='pause','hh_global_'..k..(k=='pause' and '_v1' or '_v2'))
+  C[k]=core.menu.checkbox(k~='pause',Runtime.storage_prefix..'global_'..k..(k=='pause' and '_v1' or '_v2'))
  end
  for _,s in ipairs(specs) do
   C.spec_nodes[s[1]]=core.menu.tree_node();C.cells[s[1]]={}
   for _,mode in ipairs(Modes.order) do
    local cell={node=core.menu.tree_node(),controls={}}
    for key,v in pairs(C.defaults(s[1],mode)) do
-    local tag='hh_'..s[1]..'_'..mode..'_'..key..(type(v)=='boolean' and '_v2' or '_v1')
+    local tag=Runtime.storage_prefix..s[1]..'_'..mode..'_'..key..(type(v)=='boolean' and '_v2' or '_v1')
     cell.controls[key]=type(v)=='boolean' and core.menu.checkbox(v,tag) or core.menu.slider_int(0,100,v,tag)
    end
    C.cells[s[1]][mode]=cell
@@ -84,7 +93,7 @@ function C.init()
  local seen={};C.hotkey_order={}
  local function add_hotkey(key)
   if seen[key] then return end;seen[key]=true;C.hotkey_order[#C.hotkey_order+1]=key
-  C.hotkeys[key]=core.menu.keybind and core.menu.keybind(7,false,'hh_bind_'..key..'_v1') or nil
+  C.hotkeys[key]=core.menu.keybind and core.menu.keybind(7,false,Runtime.storage_prefix..'bind_'..key..'_v1') or nil
  end
  for _,key in ipairs({'enabled','pause','themed_gui','boss_guide','logging','burst'})do add_hotkey(key)end
  for _,key in ipairs(C.order)do

@@ -11,11 +11,15 @@ function I.resolve(class,reported,index)
 end
 function I.read(player)
  local class=U.number(U.call(player,'get_class'))
+ local version=U.fn(core.get_game_version)
  local raw=core.spell_book and U.fn(core.spell_book.get_specialization_id)
  local index=core.game_ui and U.fn(core.game_ui.get_specialization)
  local id,why=I.resolve(class,raw,index)
- local version=U.fn(core.get_game_version)
- if version~='Midnight' then return nil,'unsupported_client_'..tostring(version) end
+ if version~='Midnight' and version~='Forever' then return nil,'unsupported_client_'..tostring(version) end
+ if version=='Forever'and not id and class==3 then
+  local known=core.spell_book and core.spell_book.is_spell_known
+  for spell,candidate in pairs({[1293241]=253,[1310687]=254,[1317257]=255})do if U.fn(known,spell)==true then if id and id~=candidate then return nil,'forever_specialization_conflict'end;id=candidate end end
+ end
  if not id then return nil,why end
  local expected='DAMAGER'
  local assigned=U.call(player,'get_group_role')
@@ -26,6 +30,6 @@ function I.read(player)
  elseif assigned==enums.group_role.HEALER then role='HEALER' end
  if type(assigned)=='string' then role=assigned:upper() end
  return {id=id,spec=I.specs[id],role=expected,assigned=role,
-  role_conflict=role~='NONE' and role~=expected,player=U.guid(player),version=version}
+  role_conflict=role~='NONE' and role~=expected,player=U.guid(player),version=version,runtime=version=='Forever'and'forever'or'midnight'}
 end
 return I

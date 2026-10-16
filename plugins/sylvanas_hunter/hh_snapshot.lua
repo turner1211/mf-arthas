@@ -152,11 +152,13 @@ function N.build(player,identity,mode,settings,engine)
   return row[1],row[2],row[3],row[4]
  end
  local enums=require('common/enums')
- c.focus=U.number(U.call(player,'get_power',enums.power_type.FOCUS))
+ local runtime=require('hh_runtime')
+ local power=runtime.family=='forever' and (enums.power_type.MANA or 0) or enums.power_type.FOCUS
+ c.focus=U.number(U.call(player,'get_power',power))
  local haste=U.number(U.call(player,'get_spell_haste'))
  c.gcd_duration=haste and haste>=0 and math.max(0.75,1.5/(1+haste/100)) or 1.5
- c.focus_max=U.number(U.call(player,'get_max_power',enums.power_type.FOCUS))
- if c.focus and c.focus_max then c.deficit=math.max(0,c.focus_max-c.focus) end
+ c.focus_max=U.number(U.call(player,'get_max_power',power))
+ if c.focus and c.focus_max then c.deficit=math.max(0,c.focus_max-c.focus);c.resource_pct=c.focus_max>0 and c.focus/c.focus_max*100 or 0 end
  c.combat=U.call(player,'is_in_combat')==true
  c.player_in_control=U.fn(core.spell_book.is_player_in_control)
  c.busy=U.call(player,'is_casting_spell')==true or U.call(player,'is_channelling_spell')==true
@@ -277,6 +279,24 @@ function N.build(player,identity,mode,settings,engine)
  if c.target_valid then
   c.target_hp=U.hp(c.target);c.target_guid=U.guid(c.target);c.target_name=U.call(c.target,'get_name')
   c.distance=U.point_distance(c.player_position,c.target_position)
+  local motion=engine.forever_target_motion
+  if runtime.family=='forever'and c.target_guid and c.distance<math.huge then
+   if motion and motion.guid==c.target_guid then
+    local dt=c.now-motion.time
+    if dt>=0.1 and dt<=2 then c.closing_speed=math.max(0,(motion.distance-c.distance)/dt) end
+   end
+   engine.forever_target_motion={guid=c.target_guid,distance=c.distance,time=c.now}
+   c.ranged_cast_safe=function(seconds)
+    local projected=c.distance-(c.closing_speed or 0)*(tonumber(seconds)or 0)
+    return c.attackers==0 and projected>=8.5
+   end
+  end
+  if runtime.family=='forever'then
+   local mana=enums.power_type.MANA or 0
+   local target_mana=U.number(U.call(c.target,'get_power',mana))
+   local target_mana_max=U.number(U.call(c.target,'get_max_power',mana))
+   if target_mana and target_mana_max and target_mana_max>0 then c.target_mana_pct=target_mana/target_mana_max*100 end
+  end
   c.target_engaged=N.engaged(player,c.target,mode,c.party)
   local dummy,dummy_source=N.dummy(c.target)
   c.training_dummy=mode=='world_pve' and dummy or false;c.dummy_source=dummy_source
@@ -303,7 +323,7 @@ function N.build(player,identity,mode,settings,engine)
  -- City dummies can report effectively zero health indefinitely. Preserve the
  -- raw value for diagnostics, but do not let it force execute-only priorities.
  -- A real Deathblow proc still authorizes Kill Shot during dummy testing.
- c.execute=settings.execute~=false and ((not c.training_dummy and c.target_hp and c.target_hp<=20) or c.buff(S.aura.deathblow)==true)
+ c.execute=settings.execute~=false and ((not c.training_dummy and c.target_hp and c.target_hp<=20) or (S.aura.deathblow and c.buff(S.aura.deathblow)==true))
  c.charges=function(k)local r=S.rows[k];return r and U.number(U.fn(core.spell_book.get_spell_charge,engine:resolve(r))) or 0 end
  c.fractional=function(k)
   local r=S.rows[k];if not r or not S.allowed(k,c.spec) then return 0 end
@@ -328,7 +348,8 @@ function N.build(player,identity,mode,settings,engine)
   local r=S.rows[k];local costs=r and U.fn(core.spell_book.get_spell_costs,engine:resolve(r))
   local base,modified
   for _,cost in pairs(type(costs)=='table' and costs or {})do
-   if cost.cost_type==enums.power_type.FOCUS then
+   local resource=require('hh_runtime').family=='forever'and(enums.power_type.MANA or 0)or enums.power_type.FOCUS
+   if cost.cost_type==resource then
     local amount=U.number(cost.cost) or U.number(cost.min_cost)
     if amount and amount>=0 then
      if not cost.required_buff_id or cost.required_buff_id==0 then base=base and math.min(base,amount) or amount

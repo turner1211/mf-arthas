@@ -1,15 +1,21 @@
-SYLVANAS HUNTER 1.4.64 — BM / MARKSMANSHIP / SURVIVAL
+SYLVANAS HUNTER 1.6.5 — MIDNIGHT + WOW FOREVER
 
 PLUGIN FOLDER RULE: Every file inside this plugin folder and every subfolder
 must end in `.lua` or `.md`. Release packaging fails if any other file type is
 present. Images and icon atlases are embedded as Lua data; never place PNG,
 JPEG, ZIP, Python, JSON, layered-art, or other file types in the plugin folder.
 
-Built for Project Sylvanas's Midnight client APIs. This is an offline-validated
+Built for Project Sylvanas's Midnight and WoW Forever client APIs. This is an offline-validated
 release candidate; live testing is still required. It is not a claim of flawless
 gameplay, maximum DPS, or verified behavior on every talent build.
 
+Version 1.6.5 keeps the hard-separated WoW Forever runtime and adds Survival-only PvP Track Humanoids automation for Improved Tracking, a dedicated saved toggle/hotkey, unknown-aura repetition protection, and the current explicit Mongoose Bite/Strider Kick/Raptor Strike priority. It retains level-cap sting fallback, simulator-backed BM Multi-Shot, target-life-aware Lacerate, all-spec Rapid Fire, spec-aware Readiness, Hawk tracking, closing-speed checks, melee-only Deterrence, and pressure-safe pet recovery. `core.get_game_version()` and `core.get_exact_game_version()` select Midnight or Forever before spell data, settings, logs, utility, or rotations load. Midnight retains its original focus modules and storage keys. Forever uses its own mana-based, rank-aware spell table; separate BM, Marksmanship, and Survival rotations; `hh_forever_` settings and hotkeys; and `sylvanas_hunter_forever/logs`. Midnight encounter data and modern abilities never enter Forever combat decisions.
+
+Forever BM maintains Aspect of the Hawk, Hunter's Mark and Serpent Sting, keeps Summon Hawk active, uses Bestial Wrath in permitted windows, selects Multi-Shot for safe packs, and spends excess mana with Arcane Shot. Marksmanship adds Rapid Fire, Sniper Shot, Multi-Shot and Aimed Shot priorities with a mana reserve. Survival switches between ranged approach logic and its melee Strider Kick, Mongoose Bite, Counterattack, Lacerate and Raptor Strike priorities.
+
 Version 1.4.64 expands city practice-dummy support for all three specs. Detection now uses the native unit flag, Project Sylvanas's maintained unit-helper database, known capital-city NPC IDs, and name fallbacks for raid, dungeon, PvP, cleave, tanking, damage, target, combat, training-bag, Kelpfist, and Crystalmaw variants. Dummy mode remains isolated to World PvE and can be disabled per profile.
+
+Version 1.4.65 rebuilds the F1 customer window around a clear Hunter dashboard: a persistent left navigation rail, activity selection, wide option rows, explicit ON/OFF and hotkey controls, and compact threshold cards. Beast Mastery, Marksmanship, and Survival each use a distinct color system, title, character identity, embedded portrait, icon atlas, and spec-filtered option set. The redesign does not add another window; F1 remains the main GUI and F7 remains the boss helper.
 
 Version 1.4.63 reorganizes the customer window into 12 focused tabs and adds persistent, conflict-safe hotkeys to every boolean feature. Each bind toggles only the currently active specialization and activity. New controls cover execute usage, dummy mode, manual-input yielding, urgent interrupts, CC interrupt fallback, predictive defensives, teammate Roar, emergency pet Exhilaration, automatic kiting, separate target/healer lines, boss world cues, boss auto-popup, and performance telemetry.
 

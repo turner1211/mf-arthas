@@ -13,6 +13,10 @@ same while the plugin logic behind them changes.
 | `tools/loader_template/mf_loader.lua` | The loader copied into every loader folder. Not a plugin. |
 | `tools/test_loader.lua` | Offline tests for the loader (LuaJIT, fake `core`, no network). |
 
+The Hunter install uses `plugin_loader.lua` as its stable entrypoint. It is the
+same asynchronous, commit-pinned protocol as `mf_loader.lua`; the compatibility
+copy remains in the loader folder for older installs and repository tooling.
+
 ## Installing a plugin
 
 1. Copy one folder from `loaders/` (for example `loaders/sylvanas_mage_loader`)

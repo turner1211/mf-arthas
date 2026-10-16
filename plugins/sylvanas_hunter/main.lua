@@ -1,10 +1,10 @@
 local U,I,Modes=require('hh_util'),require('hh_identity'),require('hh_modes')
-local me=U.fn(core.object_manager.get_local_player)
-if not me or not I.read(me) then return end
-local C,E,N,Q,L=require('hh_settings'),require('hh_engine'),require('hh_snapshot'),require('hh_utility'),require('hh_log')
-local Boss,Gui,PvpOverlay=require('hh_dps_boss_guides'),require('hh_gui'),require('hh_pvp_overlay')
-local rotations={[253]=require('hh_bm'),[254]=require('hh_mm'),[255]=require('hh_sv')}
+local Runtime=require('hh_runtime')
+local C,E,N,Q,L=require('hh_settings'),require('hh_engine'),require('hh_snapshot'),Runtime.module('hh_utility','hh_utility_forever'),require('hh_log')
+local Boss,Gui,PvpOverlay=Runtime.module('hh_dps_boss_guides','hh_dps_boss_guides_forever'),require('hh_gui'),require('hh_pvp_overlay')
+local rotations=Runtime.family=='forever'and{[253]=require('hh_bm_forever'),[254]=require('hh_mm_forever'),[255]=require('hh_sv_forever')}or{[253]=require('hh_bm'),[254]=require('hh_mm'),[255]=require('hh_sv')}
 local engine=E.new();local current,next_tick=nil,0
+local forever_identity_ready_at=nil
 engine.perf={tick_avg=0,tick_max=0,snapshot_avg=0,snapshot_max=0,samples=0,serial=0}
 local function perf_sample(kind,milliseconds)
  local p=engine.perf;milliseconds=math.max(0,U.number(milliseconds) or 0)
@@ -13,7 +13,7 @@ local function perf_sample(kind,milliseconds)
  p[maximum]=math.max(p[maximum] or 0,milliseconds)
 end
 C.init()
-L.enabled=C.logging:get_state();L.emit('session_start',nil,'Hunter v1.4.64; previous files preserved; bounded batch logging with forced lifecycle saves')
+L.enabled=C.logging:get_state();L.emit('session_start',nil,'Hunter v1.6.5; runtime='..Runtime.family..'; exact='..tostring(Runtime.exact)..'; isolated settings, spells and rotations')
 local function stop(reason,now,hide)
  C.status=reason;engine:reset(nil,now);current=nil;Boss.active=nil;C.recommendation=nil
  if hide then C.identity=nil;C.mode=nil end
@@ -24,7 +24,14 @@ local function tick()
  Gui.poll_hotkey()
  L.enabled=C.logging:get_state();L.flush(now)
  local player=U.fn(core.object_manager.get_local_player)
- if not U.valid(player) then return stop('Waiting for a living Hunter',now,true) end
+ if not U.valid(player) then forever_identity_ready_at=nil;return stop('Waiting for a living Hunter',now,true) end
+ -- Forever may expose a valid player before its specialization/spell DB2 data
+ -- is ready. Give the native client a quiet startup window before any DB2-
+ -- backed identity query. Retail/Midnight keeps its established fast path.
+ if Runtime.family=='forever'then
+  forever_identity_ready_at=forever_identity_ready_at or(now+8)
+  if now<forever_identity_ready_at then C.status='Waiting for WoW Forever game data';return end
+ end
  local identity,why=I.read(player);if not identity then return stop(why,now,true) end
  local mode,reason=Modes.detect(player,U.call(player,'get_target'));if not mode then return stop(reason,now,true) end
  C.identity=identity;C.mode=mode;engine:bind(identity,mode,now)
@@ -47,7 +54,7 @@ local function tick()
   C.recommendation=nil;C.status='Hunter paused';return
  end
  if identity.role_conflict then return stop('Assigned role conflicts with Hunter DPS',now) end
- if not current.hp or not current.focus then C.status='Waiting for health or focus data';return end
+ if not current.hp or not current.focus then C.status='Waiting for health or resource data';return end
  if now<(engine.transition_until or 0) or now<engine.manual_until then C.status='Yielding to transition or manual input';return end
  local hook=_G.SylvanasHunterCombatHold
  if type(hook)=='function' and U.fn(hook,{spec=identity.id,mode=mode,role=identity.role})==true then C.status='Companion requests combat hold';return end
@@ -76,10 +83,13 @@ core.register_on_update_callback(function()
   L.last_heartbeat=now
   L.emit('heartbeat',current,'status='..C.status..'; target_name='..U.clean(current.target_name)..'; training_dummy='..tostring(current.training_dummy==true)..'; dummy_source='..tostring(current.dummy_source)..'; player_in_control='..tostring(current.player_in_control)..'; global_enabled='..tostring(C.enabled:get_state())..'; profile_enabled='..tostring(current.settings.enabled)..'; paused='..tostring(C.pause:get_state())..'; pending='..tostring(engine.pending and engine.pending.key)..'; last_action='..tostring(engine.last_action)..'; trap_block='..tostring(current.trap_block)..string.format('; perf_tick_avg_ms=%.3f; perf_tick_max_ms=%.3f; perf_snapshot_avg_ms=%.3f; perf_snapshot_max_ms=%.3f; perf_samples=%d',engine.perf.tick_avg,engine.perf.tick_max,engine.perf.snapshot_avg,engine.perf.snapshot_max,engine.perf.samples))
   if L.enabled and current.combat and current.target_valid then
-   local probe_ok,probe_error=pcall(engine.probe,engine,current,({[253]='bestial_wrath',[254]='trueshot',[255]='takedown'})[current.spec])
+   local probe_key=(Runtime.family=='forever'and{[253]='summon_hawk',[254]='sniper_shot',[255]='strider_kick'}or{[253]='bestial_wrath',[254]='trueshot',[255]='takedown'})[current.spec]
+   local probe_ok,probe_error=pcall(engine.probe,engine,current,probe_key)
    if not probe_ok then L.change('diagnostic_error',current,U.clean(probe_error)) end
-   local charge_ok,charge_error=pcall(engine.charge_probe,engine,current,({[253]='barbed_shot',[254]='aimed_shot',[255]='wildfire_bomb'})[current.spec])
-   if not charge_ok then L.change('charge_diagnostic_error',current,U.clean(charge_error)) end
+   if Runtime.family=='midnight'then
+    local charge_ok,charge_error=pcall(engine.charge_probe,engine,current,({[253]='barbed_shot',[254]='aimed_shot',[255]='wildfire_bomb'})[current.spec])
+    if not charge_ok then L.change('charge_diagnostic_error',current,U.clean(charge_error)) end
+   end
   end
  end
 end)
@@ -110,7 +120,7 @@ if core.register_on_game_event_callback then core.register_on_game_event_callbac
   engine:reset(nil,U.fn(core.time) or 0);current=nil;Boss.active=nil;C.recommendation=nil
  end
 end)end
-_G.SylvanasHunterStatus=function()return {version='1.4.64',spec=C.identity and C.identity.id,mode=C.mode,status=C.status,enabled=C.enabled:get_state(),paused=C.pause:get_state()}end
+_G.SylvanasHunterStatus=function()return {version='1.6.5',runtime=Runtime.family,client=Runtime.version,exact=Runtime.exact,spec=C.identity and C.identity.id,mode=C.mode,status=C.status,enabled=C.enabled:get_state(),paused=C.pause:get_state()}end
 
 
 

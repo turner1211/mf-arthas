@@ -1,11 +1,12 @@
-local U=require('hh_util')
-local L={rows={},queue={},enabled=true,last={},status='Logger starting',notice='',directory='sylvanas_hunter/logs',sequence=0,bytes=0}
+local U=require('hh_util');local runtime=require('hh_runtime')
+local root=runtime.family=='forever'and'sylvanas_hunter_forever'or'sylvanas_hunter'
+local L={rows={},queue={},enabled=true,last={},status='Logger starting',notice='',directory=root..'/logs',sequence=0,bytes=0}
 local MAX_FILE,MAX_COPY,MAX_QUEUE=1024*1024,64*1024,1024*1024
 local FLUSH_INTERVAL,FLUSH_BYTES=.25,8192
 local function open_session()
  if type(core.create_data_file)~='function' or type(core.write_data_file)~='function'
   or type(core.get_data_file_size)~='function' then L.status='Persistent storage API unavailable';return false end
- U.fn(core.create_data_folder,'sylvanas_hunter');U.fn(core.create_data_folder,L.directory)
+ U.fn(core.create_data_folder,root);U.fn(core.create_data_folder,L.directory)
  local files=U.fn(core.read_dir,L.directory)
  if type(files)~='table' then L.status='Cannot read log directory; records queued';return false end
  local names={}

@@ -96,10 +96,10 @@ function Host:install_globals()
     _G.core = core
     _G.require = function(name)
         if h.modules[name] ~= nil then return h.modules[name] end
-        if name == "mf_loader" then
+        if name == "mf_loader" or name == "plugin_loader" then
             -- Loaded from the loader folder like the host does, so the chunk
             -- name carries that folder.
-            local fn = assert(loadfile(h.loader_dir .. "/mf_loader.lua"))
+            local fn = assert(loadfile(h.loader_dir .. "/" .. name .. ".lua"))
             h.modules[name] = fn()
             return h.modules[name]
         end
@@ -328,6 +328,10 @@ local function run_real()
         if manifest then
             local loader_dir = REPO .. "/loaders/" .. loader_name
             check(read_disk(loader_dir .. "/mf_loader.lua") == read_disk(TEMPLATE), id .. ": mf_loader.lua matches the template")
+            local plugin_loader = read_disk(loader_dir .. "/plugin_loader.lua")
+            if plugin_loader then
+                check(plugin_loader == read_disk(TEMPLATE), id .. ": plugin_loader.lua matches the async loader protocol")
+            end
 
             -- Every manifest entry matches the published bytes and compiles.
             local count = 0
