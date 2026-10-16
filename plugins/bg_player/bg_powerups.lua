@@ -18,6 +18,14 @@ local function position(o)
  end
 end
 local function distance(a,b)return math.sqrt((a.x-b.x)^2+(a.y-b.y)^2+(a.z-b.z)^2)end
+local function stealth_threat(snapshot,origin)
+ for _,row in ipairs(type(snapshot)=="table" and snapshot.enemies or {})do
+  local p=row.position or row
+  if row.dead~=true and (row.stealthed==true or row.invisible==true or row.stealth==true) and
+   p and distance(origin,p)<=60 then return true end
+ end
+ return false
+end
 local function kind(o)
  if call(o,"is_unit")==true then return nil end
  local known=IDS[entry(o)];if known then return known end
@@ -40,6 +48,7 @@ function P.choose(state,objects,player,player_position,match,now,role,route_dist
  local health_ratio=1
  local ok,health,max_health=pcall(function()return player:get_health(),player:get_max_health()end)
  if ok and type(health)=="number" and type(max_health)=="number" and max_health>0 then health_ratio=health/max_health end
+ local stealth_near=stealth_threat(snapshot,player_position)
  local best,best_score,best_distance,best_key,best_kind
  for _,o in pairs(objects or {})do
   local k=call(o,"is_valid")==true and kind(o)or nil
@@ -65,9 +74,15 @@ function P.choose(state,objects,player,player_position,match,now,role,route_dist
   if useful and d<=pursuit_radius and route_feasible and not state.used[key]then
    if d<=3 then state.used[key]=now+60;if state.pursuit and state.pursuit.key==key then state.pursuit=nil end
    else
-    local priority=k=="restoration" and 5 or k=="protection" and 4 or
-     k=="frequency" and 3 or k=="berserking" and 3 or
-     (k=="shadows" or k=="shadow_sight") and 2 or 1
+    -- Blitz runes are scarce detours, so value them by the current job instead
+    -- of treating every rune as equally useful. This changes only selection;
+    -- the existing route, layer and eight-second pursuit limits still apply.
+    local priority=k=="restoration" and 5 or
+     k=="protection" and (health_ratio<=0.55 and 5 or 4) or
+     k=="frequency" and ((role=="healer" or role=="damage") and 4 or 3) or
+     k=="berserking" and 3 or
+     k=="shadows" and (role=="damage" and 3 or 2) or
+     k=="shadow_sight" and (stealth_near and 5 or 1) or 1
     local score=priority*100-travel
     if not best_score or score>best_score then best,best_score,best_distance,best_key,best_kind=o,score,d,key,k end
    end

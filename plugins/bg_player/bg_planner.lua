@@ -571,7 +571,11 @@ function P.choose(s,previous)
       clear and n.object or nil,nil,n.id)
      if candidate and handoff_bonus>0 then candidate.objective_handoff=true;candidate.handoff_bonus=handoff_bonus end
     end
-   elseif n.owner==s.team and (n.defenders or 0)==0 then
+   -- Blitz ownership shields a base for its scoring window. Sending a guard
+   -- there during that lock wastes an 8-player slot because the enemy cannot
+   -- interact with it until it deactivates. Resume normal guarding as soon as
+   -- the live provider clears `locked`.
+   elseif n.owner==s.team and (n.defenders or 0)==0 and not (s.mode=="blitz" and n.locked) then
     offer("guard",n.position,(defend_majority and 135 or 60)+DarkspearStrategy.node_bonus(n,s.team,darkspear),nil,nil,n.id)
    end
    end
