@@ -10,9 +10,10 @@ local Engine=require("druid_spec_engine").new("forever",Log)
 local Dummy=require("guardian_dummy")
 local R={client="forever",settings=Settings,rotation=Rotation,engine=Engine,log=Log}
 local generation=_G.__druid_suite_generation;local next_tick=0;local db_ready_at=(tonumber(U.call(core.time))or 0)+10;local known_level=nil
+local function current()return generation==_G.__druid_suite_generation and Client.is_forever()end
 local function active()
  local p=U.call(core.object_manager.get_local_player)
- return generation==_G.__druid_suite_generation and Client.is_forever()and U.valid(p)and U.call(p.get_class,p)==11
+ return current()and U.valid(p)and U.call(p.get_class,p)==11
 end
 local function form(player)
  local id=tonumber(U.call(core.spell_book.get_shapeshift_form_id))or tonumber(U.call(player.get_shapeshift_form_id,player))or 0
@@ -114,5 +115,5 @@ core.register_on_update_callback(function()local ok,e=pcall(tick);if not ok then
 core.register_on_render_menu_callback(function()if active()then local ok,e=pcall(Settings.render);if not ok then Log.error("MENU",e)end end end)
 local render=core.register_on_render_window_callback or core.register_on_render_callback;if render then render(function()if active()then local ok,e=pcall(Gui.render,Settings);if not ok then Log.error("GUI",e)end end end)end
 core.register_on_spell_cast_callback(function(data)if active()then local p=U.call(core.object_manager.get_local_player);if U.valid(p)then Engine.confirm(data,p)end end end)
-if core.register_on_game_event_callback then core.register_on_game_event_callback(function(event)if active()and(event=="PLAYER_LOGOUT"or event=="PLAYER_LEAVING_WORLD"or event=="DISCONNECTED_FROM_SERVER")then Log.flush(true)end;if event=="PLAYER_LEVEL_UP"or event=="SPELLS_CHANGED"or event=="LEARNED_SPELL_IN_TAB"then Spells.invalidate();known_level=nil end;if event=="PLAYER_ENTERING_WORLD"then Engine.reset();U.reset_ttd();Spells.invalidate();known_level=nil;next_tick=0;db_ready_at=(tonumber(U.call(core.time))or 0)+10 end end)end
+if core.register_on_game_event_callback then core.register_on_game_event_callback(function(event)if not current()then return end;if event=="PLAYER_LOGOUT"or event=="PLAYER_LEAVING_WORLD"or event=="DISCONNECTED_FROM_SERVER"then Log.flush(true)end;if event=="PLAYER_LEVEL_UP"or event=="SPELLS_CHANGED"or event=="LEARNED_SPELL_IN_TAB"then Spells.invalidate();known_level=nil end;if event=="PLAYER_ENTERING_WORLD"then Engine.reset();U.reset_ttd();U.reset_objects();Spells.invalidate();known_level=nil;next_tick=0;db_ready_at=(tonumber(U.call(core.time))or 0)+10 end end)end
 return R

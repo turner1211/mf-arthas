@@ -1,5 +1,7 @@
 local M={}
 local ttd_samples={}
+local ttd_prune_at=-math.huge
+local object_cache,object_cache_at={},-math.huge
 function M.call(fn,...)
     if type(fn)~="function" then return nil end
     local ok,a,b,c=pcall(fn,...); if ok then return a,b,c end
@@ -60,9 +62,28 @@ function M.ttd(unit)
         sample.rate=sample.rate>0 and(sample.rate*0.7+rate*0.3)or rate
         sample.health=health;sample.time=now
     end
+    if now>=ttd_prune_at then
+        local count=0;for guid,row in pairs(ttd_samples)do count=count+1;if now-row.time>30 then ttd_samples[guid]=nil;count=count-1 end end
+        while count>128 do
+            local oldest,stamp=nil,math.huge
+            for guid,row in pairs(ttd_samples)do if row.time<stamp then oldest,stamp=guid,row.time end end
+            if not oldest then break end;ttd_samples[oldest]=nil;count=count-1
+        end
+        ttd_prune_at=now+10
+    end
     return sample.rate>0 and health/sample.rate or nil
 end
-function M.reset_ttd()ttd_samples={}end
+function M.reset_ttd()ttd_samples={};ttd_prune_at=-math.huge end
+local function objects()
+    local now=tonumber(M.call(core.time))or tonumber(M.call(core.game_time))or 0
+    if now-object_cache_at>=0.20 then
+        local rows=M.call(core.object_manager.get_all_objects or core.object_manager.get_objects)
+        if type(rows)=="table"then object_cache=rows end
+        object_cache_at=now
+    end
+    return object_cache
+end
+function M.reset_objects()object_cache={};object_cache_at=-math.huge end
 function M.power(unit,kind)
     return tonumber(M.call(unit and unit.get_power,unit,kind)) or 0
 end
@@ -145,7 +166,7 @@ function M.protected(unit)
     return false
 end
 function M.aoe_safe(player,radius,mode)
-    local rows=M.call(core.object_manager.get_all_objects or core.object_manager.get_objects)
+    local rows=objects()
     if type(rows)~="table" then return false end
     for _,unit in pairs(rows) do
         if M.valid(unit) and M.call(player.can_attack,player,unit)==true and M.distance(player,unit)<=radius
@@ -182,7 +203,7 @@ function M.enemies(player,target,radius,mode,include_protected)
         end
     end
     add(target)
-    local rows=M.call(core.object_manager.get_all_objects or core.object_manager.get_objects)
+    local rows=objects()
     if type(rows)=="table" then for _,unit in pairs(rows) do add(unit) end end
     local arena=M.call(core.object_manager.get_arena_frames)
     if type(arena)=="table" then for _,entry in pairs(arena) do add(M.unwrap(entry)) end end

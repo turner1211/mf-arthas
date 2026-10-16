@@ -18,9 +18,14 @@ local function fail(message)
 end
 local function boot()
     if started or generation~=_G.__druid_suite_generation then return started end
-    local player=core.object_manager and core.object_manager.get_local_player and core.object_manager.get_local_player()
-    local valid=player and player.is_valid and player:is_valid()
-    local class=valid and player.get_class and player:get_class()or nil
+    local manager=core.object_manager
+    if not manager or type(manager.get_local_player)~="function"then return false end
+    local player_ok,player=pcall(manager.get_local_player)
+    if not player_ok or not player then return false end
+    local valid_ok,valid=pcall(player.is_valid,player)
+    if not valid_ok or valid~=true then return false end
+    local class_ok,class=pcall(player.get_class,player)
+    if not class_ok then return false end
     if not class or class==0 then return false end
     if class~=11 then started=true;bootstrap.status="Inactive: player is not a Druid";return true end
     local family=_client.family()

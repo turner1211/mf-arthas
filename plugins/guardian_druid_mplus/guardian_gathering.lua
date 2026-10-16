@@ -171,5 +171,5 @@ function M.reset()
  fish_at,last_cast,loot_at,corpse_at,skin_at,next_tick=0,-math.huge,0,0,0,0
 end
 local registered=safe(M.update,"Gathering")
-core.register_on_update_callback(function() if _G.__guardian_runtime_generation==generation then registered() end end)
+core.register_on_update_callback(function() if _G.__guardian_runtime_generation==generation and Settings.is_guardian() then registered() end end)
 return M

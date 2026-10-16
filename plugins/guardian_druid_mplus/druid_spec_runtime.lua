@@ -167,7 +167,7 @@ function Factory.start(spec,key)
     if core.register_on_game_event_callback then core.register_on_game_event_callback(function(event)
         if not active() then return end
         if event=="PLAYER_LOGOUT" or event=="PLAYER_LEAVING_WORLD" or event=="DISCONNECTED_FROM_SERVER" then finish_arena(event);log.flush(true) end
-        if event=="PLAYER_SPECIALIZATION_CHANGED" or event=="PLAYER_ENTERING_WORLD" then engine.reset();Pvp.reset(spec);pvp_signature=nil;next_tick=0 end
+        if event=="PLAYER_SPECIALIZATION_CHANGED" or event=="PLAYER_ENTERING_WORLD" then engine.reset();U.reset_ttd();U.reset_objects();Pvp.reset(spec);pvp_signature=nil;next_tick=0 end
     end) end
     return {settings=settings,rotation=rotation,engine=engine,log=log,tick=tick}
 end

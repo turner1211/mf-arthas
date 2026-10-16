@@ -10,7 +10,7 @@ local vec3=require("common/geometry/vector_3")
 local vec2=require("common/geometry/vector_2")
 local Color=require("common/color")
 local generation=_G.__guardian_runtime_generation
-local function active() return _G.__guardian_runtime_generation==generation end
+local function active() return _G.__guardian_runtime_generation==generation and Settings.is_guardian() end
 local M={profile=nil,role="TANK",role_source="Guardian specialization",position_hint=nil,zones={},warnings={},directions={},status="Waiting for boss"}
 local state={instance=nil,event_id=nil,seen_auras={},next_scan=0,last_error=0,journal={},last_profile=nil}
 local kindojan={name="Kindo'jan",map=16913,npcs={266600},encounters={},mechanics={},auras={},roles={

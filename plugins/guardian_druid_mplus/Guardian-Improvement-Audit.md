@@ -1,5 +1,22 @@
 # Guardian improvement audit — 6.32.0
 
+## 8.11.0 — cross-spec callback and shared-scan audit
+
+- Guardian route, boss, BigWigs, repair, and gathering callbacks now stop before
+  doing work unless Guardian is the active specialization.
+- Disabled route logic no longer wakes at frame rate, and enabled route scans
+  always honor their bounded cadence.
+- Balance, Feral, Restoration, and Forever context construction shares one
+  short-lived object-manager snapshot across enemy and AoE-safety queries.
+- Local TTD history is bounded and stale GUIDs are pruned.
+- Header and bootstrap local-player reads retry transient native failures.
+- Forever logout logging no longer depends on a still-valid player object.
+
+Current rotation sources checked October 16, 2026:
+https://www.method.gg/guides/guardian-druid/playstyle-and-rotation
+https://foreverdb.net/class/Druid/pve
+https://foreverdb.net/changelog
+
 This update improves the shared party awareness used by predictive defense,
 threat recovery, battle resurrection and support healing.
 

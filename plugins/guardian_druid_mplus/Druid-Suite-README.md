@@ -1,4 +1,19 @@
-# Arthas Druid Suite — Retail + Forever — v8.10.0
+# Arthas Druid Suite — Retail + Forever — v8.11.0
+
+## Cross-spec performance and lifecycle audit (8.11.0)
+
+Guardian-only route, encounter, BigWigs, repair, and gathering callbacks now
+stop at their callback boundary unless Guardian is the active specialization.
+The route scanner also exits before its full object-manager pass while disabled
+and obeys its scan interval unconditionally. This removes background Guardian
+work while playing Balance, Feral, or Restoration.
+
+The shared Retail/Forever context now reuses one 200-millisecond object snapshot
+across enemy selection, PvP selection, and crowd-control safety checks. TTD
+samples are pruned and capped, while object and TTD caches reset on world and
+specialization transitions. Login header and bootstrap player reads tolerate
+temporary native failures and retry instead of permanently stopping startup.
+Forever logs now flush on logout even after the local player handle is invalid.
 
 ## Startup and Forever decision audit (8.10.0)
 

@@ -33,5 +33,5 @@ function M.update()
     Settings.repair_status=M.status
 end
 function M.reset() next_check=0; M.status="Idle" end
-core.register_on_update_callback(function() if _G.__guardian_runtime_generation==generation then M.update() end end)
+core.register_on_update_callback(function() if _G.__guardian_runtime_generation==generation and Settings.is_guardian() then M.update() end end)
 return M

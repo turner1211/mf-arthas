@@ -98,5 +98,5 @@ function M.update_status()
     if not ok then M.status="BigWigs error: "..tostring(err); M.next=nil end
     Settings.bigwigs_status=M.status
 end
-core.register_on_update_callback(function() if _G.__guardian_runtime_generation==generation then M.update_status() end end)
+core.register_on_update_callback(function() if _G.__guardian_runtime_generation==generation and Settings.is_guardian() then M.update_status() end end)
 return M

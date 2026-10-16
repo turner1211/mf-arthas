@@ -11,7 +11,7 @@ local vec2=require("common/geometry/vector_2")
 local colors=require("common/color")
 local yellow,green=colors.yellow(255),colors.green(255)
 local generation=_G.__guardian_runtime_generation
-local function active() return _G.__guardian_runtime_generation==generation end
+local function active() return _G.__guardian_runtime_generation==generation and Settings.is_guardian() end
 local M={state={pull=1,guide=nil,visible={},bound={},dead={},used={},completed={},skipped={},failures={},location_locked=false,location_candidate=nil,location_hits=0}}
 local state=M.state
 local last_context,next_scan=nil,0
@@ -516,7 +516,11 @@ function M.overlay_status()
         skipped>0 and (" | skipped "..skipped) or ""):sub(1,120)
 end
 function M.update()
-    if core.time()<next_scan and Settings.allowed() and Settings.on("route_map") then return end
+    if not active() then return end
+    if not Settings.allowed() or not Settings.on("route_map") then
+        state.visible={};Settings.route_context=nil;Settings.route_status="Off";return
+    end
+    if core.time()<next_scan then return end
     -- Route matching walks the whole object manager; it does not need combat
     -- frame frequency to guide the next pull.
     local player=core.object_manager.get_local_player()
