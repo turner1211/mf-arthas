@@ -10,6 +10,10 @@ end
 
 local function player() return call(core and core.object_manager,"get_local_player") end
 local function target() return call(core and core.object_manager,"get_current_target") or call(player(),"get_target") end
+local function level(unit)
+    local detected=tonumber(call(unit,"get_level")) or tonumber(call(unit,"get_character_level"))
+    return detected and math.max(1,math.min(60,detected)) or nil
+end
 local function valid(unit) return unit and call(unit,"is_valid")==true end
 local function hp(unit)
     local pct=tonumber(call(unit,"get_health_percentage"));if pct then return pct>1 and pct or pct*100 end
@@ -30,11 +34,12 @@ local function resolve(key)
     local ids=Data.spells[key] or {}
     for i=1,#ids do if known(ids[i]) then return ids[i] end end
 end
-local function resolve_efficient(key)
+local function resolve_efficient(key,fraction)
     local learned={}
     for _,id in ipairs(Data.spells[key] or {}) do if known(id) then learned[#learned+1]=id end end
     if #learned==0 then return nil end
-    return learned[math.min(#learned,math.max(2,math.ceil(#learned*0.60)))] or learned[1]
+    fraction=tonumber(fraction) or 0.60
+    return learned[math.min(#learned,math.max(2,math.ceil(#learned*fraction)))] or learned[1]
 end
 local function ready(id)
     if not id then return false end
@@ -55,12 +60,24 @@ end
 local function cast(key,unit,instance,efficient)
     local me=player()
     if call(me,"is_casting")==true or call(me,"is_channeling")==true then return false end
-    local id=efficient and resolve_efficient(key) or resolve(key)
+    local id=efficient and resolve_efficient(key,type(efficient)=="number" and efficient or nil) or resolve(key)
     if not ready(id) or not valid(unit) then return false end
+    local required=Data.levels[key]
+    if required and instance.level and instance.level<required then return false end
+    local clock=tonumber(call(core,"time")) or 0
+    instance.cast_backoff=instance.cast_backoff or {}
+    if clock<(instance.cast_backoff[key] or -math.huge) then return false end
+    if Data.hardcasts[key] and call(me,"is_moving")==true then
+        local cast_time=tonumber(call(core and core.spell_book,"get_spell_cast_time",id))
+            or tonumber(call(core and core.spell_book,"get_cast_time",id))
+        if cast_time==nil or cast_time>0 then return false end
+    end
     local accepted=call(core and core.input,"cast_target_spell",id,unit)
     if accepted==true then
+        instance.cast_backoff[key]=clock+0.10
         instance.last_action=key;instance.logger.event("cast",key);return true
     end
+    instance.cast_backoff[key]=clock+0.35
     return false
 end
 
@@ -161,6 +178,11 @@ members=function()
     if type(list)=="table" then for _,unit in pairs(list) do if valid(unit) then out[#out+1]=unit end end end
     return out
 end
+
+local function group_has_aura(key)
+    for _,unit in ipairs(members()) do if aura(unit,key) then return true end end
+    return false
+end
 local function projected_hp(instance,unit)
     local current=hp(unit)
     local maximum=tonumber(call(unit,"get_max_health")) or 0
@@ -202,7 +224,7 @@ local function settings(spec)
     if not menu then return {enabled=true,auto_def=true,utility=true,damage=true,auto_buffs=true,
         crowd_control=true,cooldowns=true,mana_conserve=true,racial_defensives=true,freedom_support=true,
         emergency_bop=false,adaptive_seals=true,predictive_health=true,resistance_auras=true,
-        crusader_opener=true,
+        crusader_opener=true,auto_salvation=true,
         heal=75,emergency=25,mana_floor=18} end
     return {
         enabled=menu.checkbox(true,prefix.."enabled_v1"),
@@ -220,6 +242,7 @@ local function settings(spec)
         predictive_health=menu.checkbox(true,prefix.."predictive_health_v1"),
         resistance_auras=menu.checkbox(true,prefix.."resistance_auras_v1"),
         crusader_opener=menu.checkbox(true,prefix.."crusader_opener_v1"),
+        auto_salvation=menu.checkbox(true,prefix.."auto_salvation_v1"),
         heal=menu.slider_int(35,95,spec=="holy" and 82 or 58,prefix.."heal_v1"),
         emergency=menu.slider_int(5,50,25,prefix.."emergency_v1"),
         mana_floor=menu.slider_int(5,40,18,prefix.."mana_floor_v1")
@@ -240,18 +263,26 @@ end
 
 local function maintain_profile(instance,me)
     if instance.spec~="prot" and aura(me,"RIGHTEOUS_FURY") then cancel_aura("RIGHTEOUS_FURY") end
+    if instance.spec=="prot" and aura(me,"SALVATION") then cancel_aura("SALVATION") end
     if combat(me) or not value(instance.config.auto_buffs,true) then return false end
     local desired_aura=instance.spec=="prot" and "DEVOTION_AURA"
         or (instance.spec=="holy" and "CONCENTRATION_AURA" or "RETRIBUTION_AURA")
     if not resolve(desired_aura) then desired_aura="DEVOTION_AURA" end
     -- Restore the profile aura after a temporary combat resistance aura.
     if not aura(me,desired_aura) and cast(desired_aura,me,instance) then return true end
-    if not any_aura(me,Data.blessings) then
-        local blessing=instance.spec=="holy" and "BLESSING_WISDOM"
-            or (resolve("BLESSING_KINGS") and "BLESSING_KINGS" or "BLESSING_MIGHT")
-        if not resolve(blessing) then blessing=resolve("BLESSING_KINGS") and "BLESSING_KINGS" or "BLESSING_MIGHT" end
-        if cast(blessing,me,instance) then return true end
+    for _,ally in ipairs(members()) do
+        if not any_aura(ally,Data.blessings) then
+            local ally_role=role(ally)
+            local blessing=(ally_role=="healer" and resolve("BLESSING_WISDOM")) and "BLESSING_WISDOM"
+                or (resolve("BLESSING_KINGS") and "BLESSING_KINGS" or "BLESSING_MIGHT")
+            if cast(blessing,ally,instance) then return true end
+        end
     end
+    -- As of the October 15 build, Salvation is independent of Blessings.  Keep
+    -- it on non-tanks, but remove it immediately when Protection becomes active.
+    if instance.spec~="prot" and value(instance.config.auto_salvation,true)
+        and resolve("SALVATION") and not aura(me,"SALVATION")
+        and cast("SALVATION",me,instance) then return true end
     return false
 end
 
@@ -326,13 +357,17 @@ local function holy(instance,me)
         if value(instance.config.cooldowns,true) and pressured>=3 and hp(me)>70
             and not aura(me,"FORBEARANCE") and cast("AVENGING_WRATH",me,instance) then return true end
         if value(instance.config.cooldowns,true) and (health<=42 or pressured>=3)
-            and mana(me)>=35 and cast("LIGHTS_VIGIL",ally,instance) then return true end
+            and mana(me)>=35 and not group_has_aura("LIGHTS_VIGIL")
+            and cast("LIGHTS_VIGIL",ally,instance) then return true end
         if health<=38 and cast("DIVINE_FAVOR",me,instance) then return true end
         if cast("HOLY_SHOCK",ally,instance) then return true end
         if health<=58 and cast("HOLY_LIGHT",ally,instance) then return true end
         local conserve=value(instance.config.mana_conserve,true)
             and mana(me)<=value(instance.config.mana_floor,18) and health>value(instance.config.emergency,25)
-        if cast("FLASH_LIGHT",ally,instance,conserve) then return true end
+        -- While levelling, down-rank more aggressively when the deficit is small;
+        -- emergency healing always retains the highest learned rank.
+        local rank_fraction=conserve and ((instance.level or 60)<40 and 0.75 or 0.60) or false
+        if cast("FLASH_LIGHT",ally,instance,rank_fraction) then return true end
     end
     local foe=target()
     if value(instance.config.damage,true) and valid(foe) and enemy(foe) and combat(me) then
@@ -349,7 +384,8 @@ local function prot(instance,me)
     local foe=loose_enemy(instance,me) or target()
     if not aura(me,"RIGHTEOUS_FURY") and cast("RIGHTEOUS_FURY",me,instance) then return true end
     if not aura(me,"SEAL_FURY") and cast("SEAL_FURY",me,instance) then return true end
-    if combat(me) and not aura(me,"HOLY_SHIELD") and cast("HOLY_SHIELD",me,instance) then return true end
+    if (combat(me) or (valid(foe) and enemy(foe) and distance(me,foe)<=12))
+        and not aura(me,"HOLY_SHIELD") and cast("HOLY_SHIELD",me,instance) then return true end
     if not valid(foe) or not enemy(foe) then return false end
     if cast_school_aura(instance,me,foe) then return true end
     if control_cast(instance,me,foe) then return true end
@@ -369,8 +405,11 @@ local function prot(instance,me)
     if instance.taunt_follow and valid(instance.taunt_follow)
         and (tonumber(call(core,"time")) or 0)<(instance.taunt_follow_until or 0) then foe=instance.taunt_follow
     else instance.taunt_follow=nil end
-    return cast("HAMMER_RIGHTEOUS",foe,instance) or cast("HOLY_STRIKE",foe,instance)
-        or (nearby_enemies(instance,me,8)>=2 and cast("CONSECRATION",me,instance))
+    -- Improved Seal of Fury makes Holy Strike a six-second mitigation window;
+    -- keep it ahead of throughput buttons whenever it is learned and ready.
+    return cast("HOLY_STRIKE",foe,instance) or cast("HAMMER_RIGHTEOUS",foe,instance)
+        or ((not instance.level or instance.level>=20) and nearby_enemies(instance,me,8)>=2
+            and cast("CONSECRATION",me,instance))
         or (nearby_enemies(instance,me,20,true)>=2 and mana(me)>=45 and cast("HOLY_WRATH",me,instance))
         or cast("JUDGEMENT",foe,instance)
 end
@@ -396,7 +435,8 @@ local function ret(instance,me)
         end
     end
     local long_fight=call(foe,"is_boss")==true or call(foe,"is_elite")==true
-    if value(instance.config.crusader_opener,true) and long_fight and not instance.recovery_seal
+    if (not instance.level or instance.level>=20) and value(instance.config.crusader_opener,true)
+        and long_fight and not instance.recovery_seal
         and resolve("SEAL_CRUSADER") and mana(me)>=25 then
         local now=tonumber(call(core,"time")) or 0
         local needs_judgement=instance.crusader_target~=foe
@@ -438,6 +478,13 @@ local function tick(instance)
     instance.next_tick=now+0.05
     if not value(instance.config.enabled,true) then return end
     local me=player();if not valid(me) or dead(me) then return end
+    instance.level=level(me)
+    local in_combat=combat(me)
+    if instance.was_in_combat and not in_combat then
+        instance.taunt_target=nil;instance.taunt_follow=nil;instance.crusader_stage_target=nil
+        instance.health_samples=setmetatable({},{__mode="k"})
+    end
+    instance.was_in_combat=in_combat
     if maintain_profile(instance,me) then return end
     if common(instance,me) then return end
     if instance.spec=="holy" then holy(instance,me)
@@ -448,7 +495,8 @@ end
 local function render_menu(instance)
     local menu=core and core.menu;if not menu or type(menu.text)~="function" then return end
     menu.text("PALADIN TRINITY - WOW FOREVER")
-    menu.text("Profile: "..string.upper(instance.spec).." | Data: "..Data.data_build)
+    menu.text("Profile: "..string.upper(instance.spec).." | Level: "..tostring(instance.level or "?")
+        .." | Data: "..Data.data_build)
     menu.text("Talent aware: only learned spell ranks are considered")
     menu.text("Last action: "..instance.last_action)
     for _,row in ipairs({{"Enabled",instance.config.enabled},{"Damage",instance.config.damage},
@@ -459,6 +507,7 @@ local function render_menu(instance)
         {"Emergency Blessing of Protection",instance.config.emergency_bop},{"Adaptive recovery seals",instance.config.adaptive_seals},
         {"Predictive health triage",instance.config.predictive_health},{"Cast-school resistance auras",instance.config.resistance_auras},
         {"Crusader Judgement boss opener",instance.config.crusader_opener},
+        {"Automatic Salvation (non-tank)",instance.config.auto_salvation},
         {"Heal threshold",instance.config.heal},{"Emergency threshold",instance.config.emergency},
         {"Mana reserve",instance.config.mana_floor}}) do
         if type(row[2])~="boolean" and type(row[2])~="number" then call(row[2],"render",row[1]) end
@@ -466,7 +515,8 @@ local function render_menu(instance)
 end
 
 function R.start(spec)
-    local instance={spec=spec,config=settings(spec),logger=Logger.new(spec),last_action="ready",next_tick=-math.huge}
+    local instance={spec=spec,config=settings(spec),logger=Logger.new(spec),last_action="ready",
+        next_tick=-math.huge,level=nil}
     R.instances[spec]=instance
     if type(core.register_on_update_callback)=="function" then core.register_on_update_callback(function() tick(instance) end) end
     if type(core.register_on_render_menu_callback)=="function" then

@@ -53,6 +53,15 @@ starts or resumes the selected GUI and runtime.
   expands safe Holy damage, skips stun-immune cast stops, and adds a configurable
   Seal of the Crusader Judgement opener for bosses and elites before returning to
   the normal damage seal. Sacred Arbiter builds avoid needless timed reapplication.
+- Forever 1.6.0 adds safe character-level detection and shows the detected level in
+  the menu. Learned ranks remain authoritative while the runtime scales low-mana
+  down-ranking, gates advanced openers and area spells by level, clears encounter
+  state after combat, avoids repeated rejected casts, protects hard casts while
+  moving, maintains role-aware group blessings, pre-casts Holy Shield near a pull,
+  and prioritizes Holy Strike's Protection damage-reduction window.
+  Light's Vigil now respects its one-active-target party rule and its cast time.
+  The October 15 Salvation change is handled as a separate non-tank threat buff;
+  Protection cancels it automatically instead of treating it as a Blessing.
 - The selector writes only to `paladin_trinity_suite/status.md`.
 - No combat, utility, route, overlay, hotkey, log, or render callback can run when
   it belongs to an inactive specialization.
