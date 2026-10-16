@@ -283,6 +283,7 @@ function N.build(player,identity,mode,settings,engine)
  end
  c.execute=c.target_hp and c.target_hp<=30 or false
  c.charges=function(k)local r=S.rows[k];return r and S.allowed(k,c.spec) and U.number(U.fn(core.spell_book.get_spell_charge,engine:resolve(r))) or 0 end
+ c.max_charges=function(k)local r=S.rows[k];return r and S.allowed(k,c.spec) and U.number(U.fn(core.spell_book.get_spell_charge_max,engine:resolve(r))) or 0 end
  c.cd=function(k)local r=S.rows[k];return r and S.allowed(k,c.spec) and U.number(U.fn(core.spell_book.get_spell_cooldown,engine:resolve(r))) or math.huge end
  c.fractional=function(k)
   local r=S.rows[k];if not r or not S.allowed(k,c.spec)then return 0 end

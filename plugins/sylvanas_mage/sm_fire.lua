@@ -11,6 +11,9 @@ function R.decide(c,e)
  local firestarter=c.talent('firestarter') and c.target_hp and c.target_hp>90
  local cast=c.player_cast
  local hardcast=cast and not cast.channel and cast.left and cast.left>0.1
+ local combustion_cd=c.cd('combustion');local blast_charges=c.charges('fire_blast');local blast_max=c.max_charges('fire_blast')
+ local bank_fire_blast=c.known('combustion') and combustion_cd>0.05 and combustion_cd<=12
+  and blast_max>0 and blast_charges<blast_max
  local pyro_hardcast=hardcast and cast.id==S.rows.pyroblast.id and pyro
  local filler_hardcast=hardcast and (cast.id==S.rows.fireball.id or cast.id==S.rows.frostfire_bolt.id
   or pyro_hardcast or cast.id==S.rows.flamestrike.id or cast.id==S.rows.flamestrike_target.id)
@@ -29,7 +32,7 @@ function R.decide(c,e)
   a=c.pick('fire_blast','prevent Firestarter Fire Blast charge overcap');if a then return a end
  end
  local blast_spacing=c.now-(e.history.fire_blast or -math.huge)>0.45
- if c.settings.fire_blast and not hot and pyro_hardcast and blast_spacing then
+ if c.settings.fire_blast and not hot and pyro_hardcast and blast_spacing and not bank_fire_blast then
   a=c.pick('fire_blast','build Hot Streak during confirmed Pyroclasm hardcast');if a then return a end
  end
  if c.settings.fire_blast and not hot and c.execute and hardcast and cast.id==S.rows.scorch.id
@@ -38,7 +41,7 @@ function R.decide(c,e)
  end
  local heating_window=combustion or free or filler_hardcast and not c.execute
   or firestarter and c.cd('combustion')<=0.05
- if c.settings.fire_blast and not hot and c.buff(S.aura.heating)==true and heating_window and blast_spacing then
+ if c.settings.fire_blast and not hot and c.buff(S.aura.heating)==true and heating_window and blast_spacing and not bank_fire_blast then
   a=c.pick('fire_blast','convert Heating Up in a confirmed Fire Blast window');if a then return a end
  end
  local precast=cast and not cast.channel and (cast.id==S.rows.fireball.id or cast.id==S.rows.frostfire_bolt.id

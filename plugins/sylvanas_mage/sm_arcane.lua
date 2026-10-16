@@ -26,9 +26,10 @@ function R.decide(c,e)
   a=c.pick('presence','instant charge recovery after Barrage');if a then return a end
  end
  if not sun and c.settings.arcane_prismatic and c.buff(S.aura.prismatic)==true
-  and (salvo>13 or aoe and c.stacks(S.aura.clearcasting)<3)then
-  a=c.pick('prismatic_bolt',salvo>13 and 'Spellslinger Prismatic priority at high Salvo'
-   or 'Spellslinger multi-target Prismatic before Clearcasting cap');if a then return a end
+  and (c.stacks(S.aura.cumulative)>=6 or salvo>13 or aoe and c.stacks(S.aura.clearcasting)<3)then
+  a=c.pick('prismatic_bolt',c.stacks(S.aura.cumulative)>=6 and'Spellslinger Prismatic at six Cumulative Power'
+   or salvo>13 and'Spellslinger Prismatic priority at high Salvo'
+   or'Spellslinger multi-target Prismatic before Clearcasting cap');if a then return a end
  end
  -- Sunfury has a different front of list: low-Salvo Clearcasting is spent first.
  if sun and c.settings.arcane_missiles and c.buff(S.aura.clearcasting)==true and salvo<12 then

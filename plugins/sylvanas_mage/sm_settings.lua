@@ -64,7 +64,7 @@ function C.defaults(spec,mode)
  cooldown_min_ttd=mode=='mythic_plus' and 10 or 5,cooldown_min_enemies=mode=='mythic_plus' and 3 or 1}
  for _,key in ipairs(C.spec_order[spec])do out[key]=true end
  if spec~=62 then out.heal_hp=nil end
- if spec==62 then out.arcane_images=family~='forever';out.arcane_reserve=family=='forever'and 40 or 20 elseif spec==63 then out.fire_flamestrike=3 end
+ if spec==62 then out.arcane_images=family~='forever';out.arcane_reserve=family=='forever'and 40 or 20 elseif spec==63 then out.fire_flamestrike=family=='forever'and 3 or 5 end
  return out
 end
 function C.init()
@@ -78,7 +78,7 @@ function C.init()
  for _,s in ipairs(specs)do
  C.spec_nodes[s[1]]=core.menu.tree_node();C.cells[s[1]]={}
  for _,mode in ipairs(Modes.order)do local cell={node=core.menu.tree_node(),controls={},hotkeys={}}
- for key,v in pairs(C.defaults(s[1],mode))do local tag=tag_root..s[1]..'_'..mode..'_'..key..'_v1'
+ for key,v in pairs(C.defaults(s[1],mode))do local revision=key=='fire_flamestrike'and family~='forever'and'_v2'or'_v1';local tag=tag_root..s[1]..'_'..mode..'_'..key..revision
  cell.controls[key]=type(v)=='boolean' and core.menu.checkbox(v,tag) or core.menu.slider_int(0,100,v,tag)
  if type(v)=='boolean'then cell.hotkeys[key]={enabled=core.menu.checkbox(false,tag..'_hk_enabled_v1'),code=core.menu.slider_int(0,255,0,tag..'_hk_code_v1')}end end
  C.cells[s[1]][mode]=cell end end
