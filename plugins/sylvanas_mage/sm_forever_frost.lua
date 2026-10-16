@@ -10,10 +10,12 @@ function R.decide(c,e)
  end
  if c.settings.frost_freezing and (fingers>0 or c.target_frozen)then a=c.pick('ice_lance',c.target_frozen and'Ice Lance while Forever target is frozen'or'consume Forever Fingers of Frost');if a then return a end end
  if winter>=5 and c.aoe_safe and aoe_budget then a=c.pick('cone_of_cold','consume five redesigned Winter\'s Chill stacks when learned');if a then return a end end
+ if winter==4 and not c.moving then a=c.pick('frost_blast','quickly build the fifth Winter\'s Chill stack for Cone of Cold');if a then return a end end
  if c.settings.frost_blizzard and c.aoe_safe and aoe_budget and c.enemy_count>=5 and (not c.pvp or require('sm_pvp').channel_safe(c,2500))then a=c.pick('blizzard','Forever five-target Blizzard with escape mana reserved');if a then return a end end
  if c.aoe_safe and aoe_budget and c.enemy_count>=3 then a=c.pick('cone_of_cold','Forever close cone damage with escape mana reserved');if a then return a end end
  if aoe_budget and c.enemy_count>=3 and (not c.aoe_safe or c.pvp and not require('sm_pvp').channel_safe(c,2500))then a=c.pick('arcane_explosion','Forever instant area fallback when Blizzard cannot be safely channeled');if a then return a end end
  if c.moving or c.execute then return c.pick('fire_blast',c.execute and'Forever instant low-health finisher'or'Forever movement damage')end
+ if c.pvp and c.target_slowed==false then a=c.pick('frost_blast','apply the fast nine-second PvP slow before a longer Frost cast');if a then return a end end
  if c.known('frostfire_bolt')then a=c.pick('frostfire_bolt','Forever learned Frostfire hybrid filler');if a then return a end end
  return c.pick('frostbolt','Forever Frost filler and Fingers generation')
 end

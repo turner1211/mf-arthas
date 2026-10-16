@@ -312,6 +312,8 @@ function N.build(player,identity,mode,settings,engine)
   c.predicted_hp=math.min(c.predicted_hp or c.hp,math.max(0,c.hp-incoming/maximum*100))
  end
  c.enemy_burst=false
+ c.target_slowed=nil
+ if c.pvp and Pvp and c.target_valid then c.target_slowed=U.call(Pvp,'is_slow',c.target,0.5,500)end
  c.temporal_space=true
  for _,r in ipairs(c.enemies)do
   if r.engaged and r.pressuring and (r.distance or math.huge)<20 then c.temporal_space=false end

@@ -20,6 +20,13 @@ function R.decide(c,e)
  -- window which is not consumed by another damage spell. Build all four
  -- stacks, refresh only near expiry, and use Missiles inside the window.
  if not c.moving and (stacks<4 or stacks>=4 and stack_left and stack_left<=2.2)then a=c.pick('arcane_blast',stacks<4 and'build the four-stack Forever Arcane Blast window'or'refresh expiring Forever Arcane Blast window');if a then return a end end
+ -- Arcane Wrath scales with maximum mana and can proc Missile Barrage. Cast it
+ -- inside the completed Arcane Blast power window, but never expose a long
+ -- PvP hardcast unless Presence of Mind or protected cast space is available.
+ local presence=c.buff(S.aura.presence)==true
+ if stacks>=4 and not c.moving and (not c.pvp or presence or require('sm_pvp').channel_safe(c,3500))then
+  a=c.pick('arcane_wrath','Forever Arcane Wrath inside the four-stack spell-power window');if a then return a end
+ end
  if c.settings.arcane_missiles and stacks>=4 and (not c.pvp or require('sm_pvp').channel_safe(c,2500))then a=c.pick('arcane_missiles','channel Arcane Missiles inside the four-stack damage window');if a then return a end end
  if not c.moving then if c.settings.arcane_missiles then a=c.pick('arcane_missiles','Forever Arcane Missiles filler');if a then return a end end;a=c.pick('frostbolt','efficient filler while preserving the Arcane Blast window');if a then return a end end
  return c.pick('fire_blast',c.execute and'Forever instant finisher'or'Forever movement damage')
