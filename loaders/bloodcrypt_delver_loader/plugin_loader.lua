@@ -62,7 +62,9 @@ end
 
 local function now()
     local ok, t = call(core and core.time)
-    return ok and type(t) == "number" and t or os.time()
+    if ok and type(t) == "number" then return t end
+    local wall_ok, wall = call(os and os.time)
+    return wall_ok and type(wall) == "number" and wall or 0
 end
 
 local function url_encode_path(path)

@@ -53,7 +53,7 @@ end
 function Host:install_globals()
     local h = self
     local core = {}
-    core.time = function() return h.time or 0 end
+    core.time = function() if h.time_error then error("clock unavailable") end;return h.time or 0 end
     core.log = function(m) h.log[#h.log + 1] = m end
     core.log_warning = core.log
     core.log_error = function(m) h.log[#h.log + 1] = "E " .. m end
@@ -300,6 +300,15 @@ local function run_synthetic(tmp)
     SYNTH_RUNS = nil
     host:session(dir)
     check(host:logged("incomplete") and SYNTH_RUNS == 1 and SYNTH_VALUE == 44, "damaged install is repaired and booted")
+
+    -- 10. Restricted hosts may expose neither a working core clock nor os.
+    host.time_error = true
+    local saved_os = os
+    os = nil
+    local clock_ok, clock_error = pcall(function() host:session(dir) end)
+    os = saved_os
+    host.time_error = false
+    check(clock_ok, "missing host clocks do not stall all loaders: " .. tostring(clock_error))
 end
 
 --------------------------------------------------------------------------------
