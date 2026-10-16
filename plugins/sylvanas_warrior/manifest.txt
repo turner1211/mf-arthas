@@ -1,5 +1,5 @@
 # mf-arthas-manifest 1
-build 43a607e34e0badd5
+build 44a7b16a4c9f652a
 project sylvanas_warrior
 version 1.8.0
 entry mf_entry.lua
@@ -9,7 +9,7 @@ file 8636 f17acbdef5911fd0a8f01de8709627969d82019123a5a1d6bc5ba02643a27661 main.
 file 4045 9f4570619c0f4e50ffc7d66866250f555cc53898aaacc5310f8cee89c0126f5f manifest.lua
 file 288 9b56fc1f55ade9e3db1238448a2a46d7f8c3eed7e99f816f9cbccdf196a57761 mf_entry.lua
 file 1841 306a065c5c36a200adf923a291bb1e1690ec186f831b684f65909648efcbb41c mf_game_ids.lua
-file 13696 c9b8168ef5d1de5ff9851c622b2c6ced1e976e1312533935fd708eaf91b0f1cf mf_i18n.lua
+file 13914 96825594052004db6c5e322365410b313a98bee8bd66c44ff6da55e504db1731 mf_i18n.lua
 file 64121 7e2e155eb92c9a5826704b4f8e57204aeaa73ee6b38ed88fbd566a0f7bda564b mf_locales.lua
 file 64 3d7d513e56eb510c4432c0c8d54bf67a380bb79bc78cf7225c4dc1e3a726004f mf_project.lua
 file 2493 9b1542da73d22a45dc31ce69c441c3afedd541d3ac5ba0e4b83b948687c24a20 mf_unicode_font.lua

@@ -1,5 +1,5 @@
 # mf-arthas-manifest 1
-build 9cdd2b82410f1a49
+build 663e14bcbbdb6715
 project sylvanas_mage
 version 1.2.41
 entry mf_entry.lua
@@ -8,7 +8,7 @@ file 1022 8ecc0d31a0a0be0ad85fb4f24e308404dac82612e66d2e08fe3ecb8fc7c8d132 heade
 file 616 1927695a8ae1cf0a9cfce0a5f6badaed5183c16e7407d55b9beb1f6a54bad4eb main.lua
 file 288 9b56fc1f55ade9e3db1238448a2a46d7f8c3eed7e99f816f9cbccdf196a57761 mf_entry.lua
 file 1841 306a065c5c36a200adf923a291bb1e1690ec186f831b684f65909648efcbb41c mf_game_ids.lua
-file 13696 c9b8168ef5d1de5ff9851c622b2c6ced1e976e1312533935fd708eaf91b0f1cf mf_i18n.lua
+file 13914 96825594052004db6c5e322365410b313a98bee8bd66c44ff6da55e504db1731 mf_i18n.lua
 file 64121 7e2e155eb92c9a5826704b4f8e57204aeaa73ee6b38ed88fbd566a0f7bda564b mf_locales.lua
 file 61 080a30a337dd433199f70ace0b93ad4406f672c83f62df9f847b7962cfa16335 mf_project.lua
 file 2493 9b1542da73d22a45dc31ce69c441c3afedd541d3ac5ba0e4b83b948687c24a20 mf_unicode_font.lua

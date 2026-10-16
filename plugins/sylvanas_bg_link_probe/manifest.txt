@@ -1,5 +1,5 @@
 # mf-arthas-manifest 1
-build b6b969c3246963fc
+build a4f8ca3f3dccb3e6
 project sylvanas_bg_link_probe
 version 0.1.1
 entry mf_entry.lua
@@ -8,7 +8,7 @@ file 94 a605566853c23fc0438af9b30f813f4951bc75b7cc931b76447877c02296b059 header.
 file 1389 ab6e8ed0b3dbef4b68de886d2a87d4dbb9aafa2d41ff46e36aec6aaca41bd9d2 main.lua
 file 288 9b56fc1f55ade9e3db1238448a2a46d7f8c3eed7e99f816f9cbccdf196a57761 mf_entry.lua
 file 1841 306a065c5c36a200adf923a291bb1e1690ec186f831b684f65909648efcbb41c mf_game_ids.lua
-file 13696 c9b8168ef5d1de5ff9851c622b2c6ced1e976e1312533935fd708eaf91b0f1cf mf_i18n.lua
+file 13914 96825594052004db6c5e322365410b313a98bee8bd66c44ff6da55e504db1731 mf_i18n.lua
 file 64121 7e2e155eb92c9a5826704b4f8e57204aeaa73ee6b38ed88fbd566a0f7bda564b mf_locales.lua
 file 70 7fa279ee9a385bc7fce25d8befdd2b50564505794b55e9e72a56fe183f852355 mf_project.lua
 file 2493 9b1542da73d22a45dc31ce69c441c3afedd541d3ac5ba0e4b83b948687c24a20 mf_unicode_font.lua

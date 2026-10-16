@@ -29,7 +29,7 @@ function T.choose(candidates)
    local wait,board,land,risk=c.wait_seconds or 0,c.board_seconds or 0,c.land_seconds or 0,c.risk_seconds or 0
    if finite(wait) and finite(board) and finite(land) and finite(risk) and wait>=0 and board>=0 and land>=0 and risk>=0 and T.evidence(c.is_valid) then
     local total=c.distance/c.speed+wait+board+land+risk
-    if not cost or total<cost then best,cost=c,total end
+    if finite(total)and (not cost or total<cost)then best,cost=c,total end
    end
   end
  end

@@ -1,5 +1,5 @@
 # mf-arthas-manifest 1
-build 85dbc17e27b27ec5
+build cdfcb65fb63bea2a
 project prot_paladin_mplus
 version 6.13.67
 entry mf_entry.lua
@@ -8,7 +8,7 @@ file 2329 6c9f27962794f66772e569114ffe8bd7ce9986ebe0fe8e18d752d747f40f5742 heade
 file 60215 1f31529c83e024db018520b923e65fadb50fa22d625c5e2fdcb3fab35598338e main.lua
 file 288 9b56fc1f55ade9e3db1238448a2a46d7f8c3eed7e99f816f9cbccdf196a57761 mf_entry.lua
 file 1841 306a065c5c36a200adf923a291bb1e1690ec186f831b684f65909648efcbb41c mf_game_ids.lua
-file 13696 c9b8168ef5d1de5ff9851c622b2c6ced1e976e1312533935fd708eaf91b0f1cf mf_i18n.lua
+file 13914 96825594052004db6c5e322365410b313a98bee8bd66c44ff6da55e504db1731 mf_i18n.lua
 file 64121 7e2e155eb92c9a5826704b4f8e57204aeaa73ee6b38ed88fbd566a0f7bda564b mf_locales.lua
 file 66 bd954c382924d6d4b101bc74c9bf11563d827a4494acf8a6419d1757be0e5bdc mf_project.lua
 file 2493 9b1542da73d22a45dc31ce69c441c3afedd541d3ac5ba0e4b83b948687c24a20 mf_unicode_font.lua

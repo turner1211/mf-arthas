@@ -1,5 +1,5 @@
 # mf-arthas-manifest 1
-build e3a15c5302de7055
+build dacca7c90068bea1
 project ret_paladin_plugin
 version 1.61.54
 entry mf_entry.lua
@@ -8,7 +8,7 @@ file 241 40e576f4ca0a7a26186097f392f3701da88615615005a5ebd819890af05172a6 header
 file 297 5d583a13774bcd2ed1066aad3677d3cc048fff5b402d8da86e4cd579e06ea908 main.lua
 file 288 9b56fc1f55ade9e3db1238448a2a46d7f8c3eed7e99f816f9cbccdf196a57761 mf_entry.lua
 file 1841 306a065c5c36a200adf923a291bb1e1690ec186f831b684f65909648efcbb41c mf_game_ids.lua
-file 13696 c9b8168ef5d1de5ff9851c622b2c6ced1e976e1312533935fd708eaf91b0f1cf mf_i18n.lua
+file 13914 96825594052004db6c5e322365410b313a98bee8bd66c44ff6da55e504db1731 mf_i18n.lua
 file 64121 7e2e155eb92c9a5826704b4f8e57204aeaa73ee6b38ed88fbd566a0f7bda564b mf_locales.lua
 file 66 3fd54b955928f395bf819324cce03ac72ec7d2883f2fcb327179513e5f697c04 mf_project.lua
 file 2493 9b1542da73d22a45dc31ce69c441c3afedd541d3ac5ba0e4b83b948687c24a20 mf_unicode_font.lua

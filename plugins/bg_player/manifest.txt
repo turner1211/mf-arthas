@@ -1,5 +1,5 @@
 # mf-arthas-manifest 1
-build bc086fdda2d25940
+build 0d4f98cc8602ce26
 project bg_player
 version 1.101.0
 entry mf_entry.lua
@@ -92,7 +92,7 @@ file 92 80c12237f054eca826ca389482e361b683ad6c61a454ba6aa7914f47400a3884 header.
 file 94106 d3a27844c97ae3df9b7457370c6332e78c019c0ce6b76276c8f6ebeb1c382ec5 main.lua
 file 288 9b56fc1f55ade9e3db1238448a2a46d7f8c3eed7e99f816f9cbccdf196a57761 mf_entry.lua
 file 1841 306a065c5c36a200adf923a291bb1e1690ec186f831b684f65909648efcbb41c mf_game_ids.lua
-file 13696 c9b8168ef5d1de5ff9851c622b2c6ced1e976e1312533935fd708eaf91b0f1cf mf_i18n.lua
+file 13914 96825594052004db6c5e322365410b313a98bee8bd66c44ff6da55e504db1731 mf_i18n.lua
 file 64121 7e2e155eb92c9a5826704b4f8e57204aeaa73ee6b38ed88fbd566a0f7bda564b mf_locales.lua
 file 57 08d0abbe2864e4dc20a66160e07cc6e579428eb950e4a31ef919b23b29bff72f mf_project.lua
 file 2493 9b1542da73d22a45dc31ce69c441c3afedd541d3ac5ba0e4b83b948687c24a20 mf_unicode_font.lua

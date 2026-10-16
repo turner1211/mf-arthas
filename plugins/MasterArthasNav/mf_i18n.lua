@@ -116,17 +116,20 @@ local function ends(s)
  end
  return result
 end
+local function finite_number(value,default)
+ local n=tonumber(value);if not n or n~=n or math.abs(n)==math.huge then return default end;return n
+end
 function L.clip(value,count)
- local s=tostring(value or'');local boundaries=ends(s);count=math.max(0,math.floor(tonumber(count)or 0))
+ local s=tostring(value or'');local boundaries=ends(s);count=math.max(0,math.floor(finite_number(count,0)))
  if #boundaries<=count then return s end
  if count<=3 then return string.rep('.',count)end
  return s:sub(1,boundaries[count-3])..'...'
 end
 function L.fit(value,width,font,size)
- local s=L.text(value);width=math.max(0,tonumber(width)or 0)
+ local s=L.text(value);width=math.max(0,finite_number(width,0))
  local measure=core and core.graphics and core.graphics.get_text_width
  if type(measure)~='function'then return L.clip(s,math.floor(width/8))end
- local function pixels(v)local ok,n=pcall(measure,v,size or 13,font or 0);return ok and type(n)=='number'and n or nil end
+ local function pixels(v)local ok,n=pcall(measure,v,size or 13,font or 0);return ok and type(n)=='number'and n==n and n>=0 and n<math.huge and n or nil end
  local measured=pixels(s);if not measured or measured<=0 then return L.clip(s,math.floor(width/8))end
  if measured<=width then return s end
  local boundaries=ends(s);local lo,hi=0,#boundaries
@@ -134,7 +137,7 @@ function L.fit(value,width,font,size)
  while lo<hi do local mid=math.ceil((lo+hi)/2);if (pixels(s:sub(1,boundaries[mid]or 0)..'...')or math.huge)<=width then lo=mid else hi=mid-1 end end
  return s:sub(1,boundaries[lo]or 0)..'...'
 end
-function L.set_font(id)if type(id)=='number'and id>=0 then L.font_id=id;return true end;return false end
+function L.set_font(id)if type(id)=='number'and id>=0 and id<math.huge and id%1==0 then L.font_id=id;return true end;return false end
 function L.font_for(original)
  if L.font_id then return L.font_id end
  if L.locale~='enUS'then

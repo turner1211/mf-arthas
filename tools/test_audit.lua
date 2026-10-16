@@ -48,4 +48,38 @@ local weak=setmetatable({},{__mode='v'})
 do local native={render=function()end};weak[1]=native;weak[2]=L.wrap_control(native)end
 collectgarbage('collect');collectgarbage('collect')
 check(weak[1]==nil and weak[2]==nil,'discarded control proxies are collectible')
+
+local travel=require('anav/travel_policy')
+local huge={available=true,distance=1e308,speed=1e-308}
+check(travel.choose({huge})==nil,'overflowing travel time cannot be selected')
+local sane={available=true,distance=100,speed=5,wait_seconds=2}
+local chosen,cost=travel.choose({huge,sane})
+check(chosen==sane and cost==22,'finite verified travel remains selectable')
+local recorder=require('anav/flight_recorder')
+local origin={x=0,y=0,z=0}
+for i=0,29 do recorder.sample(i,origin,{})end
+recorder.failure(30,'test')
+for i=30,39 do recorder.sample(i,origin,{})end
+recorder.sample(40,{x=0/0,y=0,z=0},{})
+check(recorder.pending==nil and #recorder.captures==1,'bad coordinates cannot prevent capture finalization')
+check(#recorder.captures[1].rows==40,'failure capture bounded to thirty pre and ten post samples')
+recorder.failure(41,'next');recorder.failure(52,'new')
+check(#recorder.captures==2 and recorder.pending.reason=='new','new failure settles expired pending capture')
+local sample_deadline=recorder.next_sample
+recorder.sample(0/0,origin,{})
+check(recorder.next_sample==sample_deadline,'invalid timestamp cannot poison sample schedule')
+check(pcall(recorder.sample,53,origin,nil),'missing diagnostic status handled')
+local runtime=require('anav/runtime_api')
+local stale=setmetatable({},{__index=function()error('expired object')end})
+core.object_manager={get_local_player=function()return stale end}
+check(runtime.position()==nil and runtime.casting()==false,'expired player properties safely handled')
+core.object_manager={get_local_player=function(self)if not self then return nil end;return{is_valid=function()return true end,get_position=function()return origin end,is_channelling_spell=function()return true end}end}
+check(runtime.position()==origin and runtime.casting()==true,'method-style player access supported')
+for _,bad in ipairs({0/0,math.huge,-math.huge})do
+ check(L.clip('sample',bad)=='','invalid clipping count handled')
+ check(L.fit('sample',bad,0,13)=='','invalid GUI width handled')
+ check(not L.set_font(bad),'invalid font handle rejected')
+end
+core.graphics={get_text_width=function()return 0/0 end}
+check(L.fit('abcdef',40,0,13)=='ab...','invalid native measurement uses bounded fallback')
 io.write(string.format('%d navigation and host-failure checks passed.\n',checks))
