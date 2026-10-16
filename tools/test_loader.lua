@@ -190,7 +190,12 @@ local function synth_files(value, version)
 end
 
 local function write_loader_dir(dir, config)
-    os.execute(('mkdir "%s" 2>nul || mkdir -p "%s" 2>/dev/null'):format(dir:gsub("/", "\\"), dir))
+    if package.config:sub(1, 1) == "\\" then
+        os.execute(('mkdir "%s" 2>nul'):format(dir:gsub("/", "\\")))
+    else
+        local quoted = "'" .. dir:gsub("'", "'\\''") .. "'"
+        os.execute('mkdir -p ' .. quoted)
+    end
     local fields = {}
     for k, v in pairs(config) do
         fields[#fields + 1] = ("    %s = %s,"):format(k, type(v) == "table" and "{ " .. table.concat(v, ", ") .. " }" or ("%q"):format(v))
@@ -317,14 +322,15 @@ end
 
 local function list_dirs(path)
     local out = {}
-    local p = io.popen(('dir /b /ad "%s" 2>nul'):format(path:gsub("/", "\\")))
+    local command
+    if package.config:sub(1, 1) == "\\" then
+        command = ('dir /b /ad "%s" 2>nul'):format(path:gsub("/", "\\"))
+    else
+        command = "ls -1 '" .. path:gsub("'", "'\\''") .. "' 2>/dev/null"
+    end
+    local p = io.popen(command)
     for line in p:lines() do out[#out + 1] = line end
     p:close()
-    if #out == 0 then
-        p = io.popen(('ls -1 "%s" 2>/dev/null'):format(path))
-        for line in p:lines() do out[#out + 1] = line end
-        p:close()
-    end
     table.sort(out)
     return out
 end
