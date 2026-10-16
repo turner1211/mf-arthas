@@ -1,4 +1,12 @@
-SYLVANAS BATTLEGROUND COMMAND - v1.93.0 - October 15, 2026
+SYLVANAS BATTLEGROUND COMMAND - v1.94.0 - October 15, 2026
+
+Version 1.94.0 completes ID-first discovery for all six published Darkspear
+recovery supplies, so localized item names no longer hide Field/Iron/Enriched
+rations or Silk/Mageweave/Runecloth bandages. Both families now enforce their
+25/35/45 character-level requirements before selection. The catalog also records
+the bandages' First Aid requirements of 125/175/225. Forever tactics now track
+the character's position within each 10-level PvP bracket and add a bounded
+grouping/retreat bias near the bracket floor, where fewer abilities are learned.
 
 Version 1.93.0 applies published WoW Forever level gates before queue dispatch:
 Warsong Gulch 10+, Arathi Basin 20+, Darkspear Islands 30+, and Alterac Valley

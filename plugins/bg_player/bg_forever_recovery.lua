@@ -2,7 +2,14 @@
 -- unknown lower-rank item IDs remain supported without guessing IDs.
 local R={}
 local ForeverRules=require("bg_forever_level_rules")
-R.known_items={[272055]="ration",[272057]="bandage"}
+R.known_items={
+ [272053]={kind="ration",rank="field",power=1},
+ [272054]={kind="ration",rank="iron",power=2},
+ [272055]={kind="ration",rank="enriched",power=3},
+ [272056]={kind="bandage",rank="silk",power=1},
+ [272057]={kind="bandage",rank="mageweave",power=2},
+ [272058]={kind="bandage",rank="runecloth",power=3},
+}
 R.names={
  ["darkspear islands field ration"]="ration",
  ["darkspear islands iron ration"]="ration",
@@ -27,10 +34,12 @@ function R.find(wanted,level)
   if item and (count==nil or count>0) then
    local id=tonumber(item_value(item,"get_item_id"))
    local name=tostring(item_value(item,"get_name") or ""):lower():gsub("%s+"," "):gsub("^%s+",""):gsub("%s+$","")
-   local kind=id and R.known_items[id] or R.names[name]
-   local level_ok=kind~="bandage" or ForeverRules.bandage_eligible(name,level)
+   local metadata=id and R.known_items[id] or nil
+   local kind=metadata and metadata.kind or R.names[name]
+   local level_ok=kind~="bandage" or ForeverRules.bandage_eligible(metadata and metadata.rank or name,level)
+   if kind=="ration" then level_ok=ForeverRules.ration_eligible(metadata and metadata.rank or name,level) end
    if kind and level_ok and (not wanted or kind==wanted) then
-    local rank=name:find("enriched",1,true) and 3 or name:find("runecloth",1,true) and 3 or
+    local rank=metadata and metadata.power or name:find("enriched",1,true) and 3 or name:find("runecloth",1,true) and 3 or
      name:find("iron",1,true) and 2 or name:find("mageweave",1,true) and 2 or 1
     if id and (not best or rank>best.rank) then
      best={item_id=id,name=name,rank=rank,kind=kind,hold_seconds=kind=="bandage" and 8 or 20}
@@ -59,6 +68,6 @@ function R.choose(snapshot)
  if health and health<=.35 and not (mana and mana<=.15) then
   local bandage=R.find("bandage",snapshot.player_level);if bandage then return bandage end
  end
- return R.find("ration")
+ return R.find("ration",snapshot.player_level)
 end
 return R

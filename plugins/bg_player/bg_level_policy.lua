@@ -50,15 +50,28 @@ function L.for_level(level,is_forever,role,damage_style)
   maximum="use the complete learned PvP rotation and full utility package",
  }
  local eligible,next_profile,next_level
+ local pvp_bracket
  if is_forever then
   eligible=ForeverRules.eligible_profiles(level)
   next_profile,next_level=ForeverRules.next_unlock(level)
+  pvp_bracket=ForeverRules.bracket(level)
+  -- Lower-bracket characters have fewer learned abilities than players near
+  -- the bracket ceiling. Apply a small bounded team-play bias without ever
+  -- overriding urgent defense, carrier, or objective rules.
+  if pvp_bracket and pvp_bracket.stage=="lower" then
+   row={aggression=row.aggression-4,solo=row.solo-8,outnumber=row.outnumber,
+    retreat=math.min(.60,row.retreat+.03),group=row.group+8}
+  elseif pvp_bracket and pvp_bracket.stage=="upper" then
+   row={aggression=row.aggression+2,solo=row.solo,outnumber=row.outnumber,
+    retreat=row.retreat,group=row.group}
+  end
  end
  return {level=level,source="detected",cap=cap,band=name,tier=tier,
   rotation_profile=name.."_"..style,rotation_directive=directives[name],
   aggression_adjustment=row.aggression,solo_assault_penalty=row.solo,
   outnumber_tolerance=row.outnumber,retreat_health=row.retreat,group_priority=row.group,
-  eligible_battlegrounds=eligible,next_battleground_unlock=next_profile,next_unlock_level=next_level}
+  eligible_battlegrounds=eligible,next_battleground_unlock=next_profile,next_unlock_level=next_level,
+  pvp_bracket=pvp_bracket}
 end
 
 function L.detect(player,is_forever,role,damage_style)

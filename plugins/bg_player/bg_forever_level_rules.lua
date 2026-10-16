@@ -11,6 +11,8 @@ F.battlegrounds={
 }
 F.queue_profiles={[1]="alterac",[2]="warsong",[3]="arathi"}
 F.bandage_min_levels={silk=25,mageweave=35,runecloth=45}
+F.ration_min_levels={field=25,iron=35,enriched=45}
+F.first_aid_requirements={silk=125,mageweave=175,runecloth=225}
 
 local function normalized_level(level)
  level=tonumber(level)
@@ -59,10 +61,31 @@ function F.bandage_eligible(name,level)
  level=normalized_level(level)
  if not level then return false end
  name=tostring(name or ""):lower()
- local rank=name:find("runecloth",1,true) and "runecloth" or
+ local rank=F.bandage_min_levels[name] and name or name:find("runecloth",1,true) and "runecloth" or
   name:find("mageweave",1,true) and "mageweave" or
   name:find("silk",1,true) and "silk" or nil
  return rank~=nil and level>=F.bandage_min_levels[rank],rank
+end
+
+function F.ration_eligible(name,level)
+ level=normalized_level(level)
+ if not level then return false end
+ name=tostring(name or ""):lower()
+ local rank=F.ration_min_levels[name] and name or name:find("enriched",1,true) and "enriched" or
+  name:find("iron",1,true) and "iron" or
+  name:find("field",1,true) and "field" or nil
+ return rank~=nil and level>=F.ration_min_levels[rank],rank
+end
+
+function F.bracket(level)
+ level=normalized_level(level)
+ if not level or level<10 or level>60 then return nil end
+ if level==60 then return {minimum=60,maximum=60,position=1,stage="cap"} end
+ local minimum=math.floor(level/10)*10
+ local maximum=minimum+9
+ local position=(level-minimum)/(maximum-minimum)
+ local stage=position<.34 and "lower" or position<.67 and "middle" or "upper"
+ return {minimum=minimum,maximum=maximum,position=position,stage=stage}
 end
 
 return F

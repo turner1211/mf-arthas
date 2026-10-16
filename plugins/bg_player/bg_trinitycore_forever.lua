@@ -6,11 +6,13 @@ T.forever={profiles={"warsong","arathi","alterac","darkspear_islands"},
  darkspear={team_size=15,capture_points=4,score_to_win=2000,min_level=30,max_level=60,
   central_flag=true,flag_requires_owned_base=true,flag_aura=1284560,carrier_speed_cap=.85}}
 T.forever.levels={warsong={10,60},arathi={20,60},darkspear_islands={30,60},alterac={51,60}}
-T.forever.darkspear.recovery={known_item=272055,
+T.forever.darkspear.recovery={known_items={272053,272054,272055,272056,272057,272058},known_item=272055,
  names={"Darkspear Islands Field Ration","Darkspear Islands Iron Ration","Darkspear Islands Enriched Ration"},
  spells={field_ration=1290860,iron_ration=1290859,first_aid={1290863,1290865,1290867}}}
 T.forever.darkspear.recovery.known_bandage=272057
 T.forever.darkspear.recovery.bandage_min_levels={silk=25,mageweave=35,runecloth=45}
+T.forever.darkspear.recovery.ration_min_levels={field=25,iron=35,enriched=45}
+T.forever.darkspear.recovery.first_aid_requirements={silk=125,mageweave=175,runecloth=225}
 T.forever.warsong={flag_auras={23333,23335},carrier_speed_cap=.85,captures_to_win=3,
  capture_requires_own_flag_home=true}
 T.queue_slots=3
