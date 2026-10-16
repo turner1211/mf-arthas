@@ -1,7 +1,7 @@
 local S=require('sm_spells');local R={}
 function R.decide(c,e)
  if c.spec~=63 or not c.settings.damage then return end
- local a;local level=c.level or 60;local hot=c.stacks(S.aura.hot_streak);local _,hot_left=c.buff(S.aura.hot_streak)
+ local a;local level=c.level and c.level>0 and c.level or 60;local hot=c.stacks(S.aura.hot_streak);local _,hot_left=c.buff(S.aura.hot_streak)
  local vulnerability=c.stacks(S.aura.fire_vulnerability,true)
  local short_pyro=hot>=3 or hot>=2 and (c.execute or hot_left and hot_left<=4 or c.pvp and not c.moving and require('sm_pvp').channel_safe(c,2000))
  -- October 15: every Fire Blast supplies one Heating Up charge (two on a
