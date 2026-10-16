@@ -1,13 +1,8 @@
 # Sylvanas Hunter test report
 
-## 1.6.11
-
-- Aura expiration tests cover native millisecond and seconds clocks. Both report the same 4.25-second remaining duration.
-- All shared loader and Unicode localization modules remain part of the compiled package.
-
 48 Lua files compiled.
 
-23893 behavioral assertions passed in Lua 5.4 with an offline Sylvanas API mock.
+23896 behavioral assertions passed in Lua 5.4 with an offline Sylvanas API mock.
 
 Spec/mode isolation, all 24 profiles, override allowlist, movement, range, LoS, GCD, charges, pet absence/death, CC protection, pending-cast confirmation, transition invalidation, direct casting without an observe mode, native GUI/HUD, PvE boss helper and entrypoint tested.
 

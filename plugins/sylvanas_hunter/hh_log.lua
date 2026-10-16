@@ -40,6 +40,7 @@ function L.emit(kind,c,detail)
   L.queue[#L.queue+1]=row..'\n';L.queued_bytes=(L.queued_bytes or 0)+#row+1
   -- The update callback drains this queue in bounded batches. Lifecycle and
   -- fatal-error paths force a synchronous flush before the client disappears.
+  if kind=='checkpoint'or kind=='fatal'then L.flush(now,true)end
  end
 end
 function L.change(key,c,detail)

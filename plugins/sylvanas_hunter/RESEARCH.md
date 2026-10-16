@@ -956,3 +956,25 @@ in seconds, so a real 4.25-second buff could be reported as 0.00425 seconds.
 The reader now compares game time with the monotonic `core.time` clock to select
 milliseconds or seconds. Tests exercise both formats with the same expected
 remaining duration.
+
+# 1.6.12 cross-client rotation audit — 2026-10-16
+
+Current Patch 12.1.5 guidance adds a specific Sentinel/Twin Fangs Survival
+single-target opener: Boomstick builds the damage state before Takedown. The
+Retail Survival module now applies that ordering only outside PvP, only for
+Sentinel + Twin Fangs, and only below three targets. Arena/BG/world-PvP,
+Pack Leader, and AoE decisions retain their independent paths.
+
+ForeverDB build 1.60.1.70425 simulator data places reactive Mongoose Bite,
+Strider Kick, and Raptor Strike ahead of Serpent Sting in level-30 Survival
+melee. The Forever Survival module now protects those higher-value cooldown
+strikes before sting and durable-target Lacerate maintenance. Existing level
+gates and the dedicated Forever spell/settings/runtime modules remain intact.
+
+Sources reviewed:
+- https://www.icy-veins.com/wow/survival-hunter-pve-dps-rotation-cooldowns-abilities
+- https://www.icy-veins.com/wow/survival-hunter-pvp-rotation-and-playstyle
+- https://www.icy-veins.com/wow/marksmanship-hunter-pve-dps-rotation-cooldowns-abilities
+- https://www.icy-veins.com/wow/beast-mastery-hunter-pvp-rotation-and-playstyle
+- https://foreverdb.net/class/Hunter
+- https://foreverdb.net/sim/hunter/survival

@@ -1,4 +1,4 @@
-SYLVANAS HUNTER 1.6.11 — MIDNIGHT + WOW FOREVER
+SYLVANAS HUNTER 1.6.12 — MIDNIGHT + WOW FOREVER
 
 PLUGIN FOLDER RULE: Every file inside this plugin folder and every subfolder
 must end in `.lua` or `.md`. Release packaging fails if any other file type is
@@ -8,6 +8,13 @@ JPEG, ZIP, Python, JSON, layered-art, or other file types in the plugin folder.
 Built for Project Sylvanas's Midnight and WoW Forever client APIs. This is an offline-validated
 release candidate; live testing is still required. It is not a claim of flawless
 gameplay, maximum DPS, or verified behavior on every talent build.
+
+Version 1.6.12 adds the current Retail Sentinel/Twin Fangs single-target
+Boomstick-to-Takedown setup and updates WoW Forever Survival's melee priority
+from build 1.60.1.70425 simulator data. Runtime, spec, level, and activity
+guards prevent either priority from entering an unrelated profile. Critical
+checkpoint and fatal logger records now flush immediately so an
+abrupt process exit cannot strand those records in the in-memory batch.
 
 Version 1.6.11 normalizes native aura expiration timestamps against the
 monotonic session clock. Hosts that expose aura expiration in seconds retain

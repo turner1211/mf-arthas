@@ -147,3 +147,8 @@ Version 1.6.9 adds early-level Monkey aspect transitions, level-8 solo Concussiv
 Version 1.6.10 guards the remaining direct native reads in the portrait and icon texture paths and consolidates the live scripts installation to a single Hunter release folder. This removes a confirmed duplicate-load risk and prevents transient time or window-position failures from aborting a GUI frame.
 
 Version 1.6.11 corrects mixed-unit aura expiration math. Millisecond and seconds-based native timestamps are both covered offline, preventing a five-second aura from being misread as 0.005 seconds on seconds-based hosts.
+
+Version 1.6.12 adds the Patch 12.1.5 Sentinel/Twin Fangs Boomstick opener and
+updates Forever Survival's melee ordering from build 1.60.1.70425 simulator
+data. Both changes remain isolated by client, specialization and activity.
+Critical lifecycle/checkpoint/fatal log records now force a disk flush; ordinary high-frequency telemetry remains batched for performance.

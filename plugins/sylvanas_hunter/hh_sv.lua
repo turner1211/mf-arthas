@@ -19,6 +19,14 @@ function R.decide(c,e)
   and (howl and low or not twin and c.cd('takedown')<=(c.gcd_duration or 1.5) and low) then
   a=c.pick('sv_kill_command','prepare Pack Leader summon or Takedown Tip stacks');if a then return a end
  end
+ -- Patch 12.1.5 Sentinel/Twin Fangs opens with Boomstick so its channel builds
+ -- the damage state that Takedown consumes. Keep this PvE-only and single-target
+ -- so Arena setup, Pack Leader and AoE openers retain their separate priorities.
+ local sentinel_twin_opener=not c.pvp and twin and c.talent('sentinel') and c.enemy_count<3
+  and c.cd('takedown')<=(c.gcd_duration or 1.5)
+ if sentinel_twin_opener and c.settings.sv_boomstick~=false then
+  a=c.pick('boomstick','build Sentinel Twin Fangs pressure before Takedown');if a then return a end
+ end
  if visible and (not twin and stacks>=1 or twin and stacks==0) then
   a=c.pick('takedown','Takedown with the correct Twin Fangs setup');if a then return a end
  end

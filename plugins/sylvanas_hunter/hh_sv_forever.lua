@@ -10,15 +10,18 @@ function R.decide(c,e)
   else
    a=F.aspect(c,'aspect_beast',S.aura.beast,'maintain melee Aspect of the Beast');if a then return a end
   end
-  a=F.mark_and_sting(c,e);if a then return a end
   if F.rapid_fire(c)then a=c.pick('rapid_fire','accelerate the Survival melee attack window');if a then return a end end
   a=F.burst_reset(c,{'rapid_fire'},'reset spent Survival burst abilities for a durable target');if a then return a end
   if F.level(c,16)then a=c.pick('mongoose_bite','use reactive Mongoose Bite');if a then return a end end
   if F.level(c,30)then a=c.pick('counterattack','use reactive Counterattack');if a then return a end end
-  local lacerated=false;for _,id in ipairs(S.aura.lacerate or{})do if c.debuff(id)==true then lacerated=true;break end end
-  if F.level(c,30)and c.settings.forever_lacerate~=false and not lacerated and F.durable(c,14,50)then a=c.pick('lacerate','apply the 21-second bleed only to a durable target');if a then return a end end
   if F.level(c,30)then a=c.pick('strider_kick','highest-priority cooldown strike with movement-speed window');if a then return a end end
   a=c.pick('raptor_strike','Forever Survival weapon strike');if a then return a end
+  -- The current level-30 Forever simulator puts the cooldown weapon strikes
+  -- ahead of Sting maintenance. Reach this block only while those attacks are
+  -- unavailable, preserving their much larger share of melee damage.
+  a=F.mark_and_sting(c,e);if a then return a end
+  local lacerated=false;for _,id in ipairs(S.aura.lacerate or{})do if c.debuff(id)==true then lacerated=true;break end end
+  if F.level(c,30)and c.settings.forever_lacerate~=false and not lacerated and F.durable(c,14,50)then a=c.pick('lacerate','apply the 21-second bleed only to a durable target');if a then return a end end
   if F.level(c,16)and c.settings.forever_traps~=false and (not c.target_hp or c.target_hp>35) and F.can_spend(c,'immolation_trap',25)then
    a=c.pick('immolation_trap','place the separate Fire trap for durable melee pressure');if a then return a end
   end
