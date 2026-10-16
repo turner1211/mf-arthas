@@ -1,4 +1,6 @@
-# Bloodcrypt Delver — development build 0.6.36
+# Bloodcrypt Delver — development build 0.6.37
+
+Build 0.6.37 improves Retail Season 2 routing across standard, Bountiful, Tier 11, Nemesis, and Labyrinth runs. Optional content—Mislaid Curiosities, Shrines of Abundance, Venom-Crazed rares, Heavy Trunks, and Nemesis Strongboxes—no longer steals the active story route. Hostile optional rares remain covered by combat-defense logic, and eligible reward containers remain handled by the dedicated post-completion collector. Pull budgets now become more conservative at tiers 9–11, where the run has fewer revives, and the external combat context receives the tier, starting revive budget, and risk class.
 
 Build 0.6.36 is audited against the supplied Sylvanas API reflection dump. The navigation, delve, interaction, recovery, loot, mount, targeting and BigWigs API names match. Automatic UI locale detection now includes the reflected `core.get_language()` API, preventing non-English clients from silently falling back to English when the newer locale aliases are unavailable. The supplied dump identifies itself as TBC, so its absence of Retail-only data is not treated as evidence that Midnight APIs should be removed.
 

@@ -11,13 +11,17 @@ local function bracket(level)
  return "Endgame",5
 end
 
-function M.get(character,options)
+function M.get(character,options,tier)
  character=character or {};options=options or {}
  local level=math.max(1,math.floor(tonumber(character.level) or 1))
  local name,pull=bracket(level);local role=character.role or "UNKNOWN";local spec=tonumber(character.spec_id) or 0
  if role=="TANK" then pull=pull+1 elseif role=="HEALER" then pull=math.max(1,pull-1) end
+ tier=math.max(1,math.min(11,math.floor(tonumber(tier or options.tier) or 1)))
+ local revives=tier<=3 and -1 or tier<=8 and 5 or tier==9 and 4 or 3
+ if tier>=9 then pull=math.max(1,pull-1) end
+ if tier>=10 then pull=math.max(1,pull-1) end
  local configured=math.max(1,math.floor(tonumber(options.max_pull) or 5))
- return {level=level,name=name,label="Level "..level.." / "..name,max_pull=math.min(configured,pull),approach_range=ranged[spec] and 25 or role=="HEALER" and 20 or 4.5,mount=level>=10,flying=level>=20,rotation=ranged[spec] and "RANGED" or role=="HEALER" and "HEALER" or "MELEE",role=role,spec_id=spec}
+ return {level=level,name=name,label="Level "..level.." / "..name,max_pull=math.min(configured,pull),approach_range=ranged[spec] and 25 or role=="HEALER" and 20 or 4.5,mount=level>=10,flying=level>=20,rotation=ranged[spec] and "RANGED" or role=="HEALER" and "HEALER" or "MELEE",role=role,spec_id=spec,tier=tier,revive_budget=revives,risk=tier>=10 and "SEVERE" or tier>=9 and "HIGH" or tier>=4 and "BOUNTIFUL" or "STANDARD"}
 end
 
 return M

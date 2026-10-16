@@ -19,7 +19,7 @@ local function contact_name(name)
  name=tostring(name or ""):lower()
  return name:find("focus crystal",1,true) or name:find("ley line focuser",1,true) or name:find("focuser socket",1,true)
 end
-local OPTIONAL_OBJECTS={"campfire","refulgent copper","copper vein","ore deposit","mining deposit","herb","fishing","skinning","leave delve","the darkway","sturdy chest","explorers' league supplies","explorer's league supplies","delver's supplies","delvers' supplies","valeera sanguinar","corner piece","doodad_","bountiful coffer","delve trunk","gilded stash","nemesis supplies"}
+local OPTIONAL_OBJECTS={"campfire","refulgent copper","copper vein","ore deposit","mining deposit","herb","fishing","skinning","leave delve","the darkway","sturdy chest","heavy trunk","mislaid curiosity","mislaid curiosities","shrine of abundance","venom-crazed","explorers' league supplies","explorer's league supplies","delver's supplies","delvers' supplies","valeera sanguinar","corner piece","doodad_","bountiful coffer","delve trunk","gilded stash","nemesis supplies","nemesis strongbox"}
 local function optional_object(name)
  name=tostring(name or ""):lower()
  for _,word in ipairs(OPTIONAL_OBJECTS) do if name:find(word,1,true) then return true end end
@@ -130,10 +130,10 @@ end
 function M:tick()
  if not self.enabled then return end
  local a=self.api;local now=a.now();local snap=a.snapshot();local delve=Catalog[self.selected]
- local character=a.character and a.character() or {};local profile=LevelProfile.get(character,self.options)
+ local character=a.character and a.character() or {};local profile=LevelProfile.get(character,self.options,self.options.tier)
  if self.options.auto_level==false then profile.max_pull=self.options.max_pull or 5;profile.approach_range=4.5;profile.mount=true;profile.flying=true end
  self.level_profile=profile
- _G.BloodcryptCombatContext={level=profile.level,bracket=profile.name,role=profile.role,spec_id=profile.spec_id,rotation=profile.rotation,approach_range=profile.approach_range,max_pull=profile.max_pull,delve=self.selected,story=self.variant,state=self.state,updated_at=now}
+ _G.BloodcryptCombatContext={level=profile.level,bracket=profile.name,role=profile.role,spec_id=profile.spec_id,rotation=profile.rotation,approach_range=profile.approach_range,max_pull=profile.max_pull,tier=profile.tier,revive_budget=profile.revive_budget,risk=profile.risk,delve=self.selected,story=self.variant,state=self.state,updated_at=now}
  local detected,label
  if self.options.auto_story~=false and a.detect_story then detected,label=a.detect_story(delve) end
  if detected and detected~=self.variant then self.variant=detected;self:note("Detected story: "..tostring(label)) end
