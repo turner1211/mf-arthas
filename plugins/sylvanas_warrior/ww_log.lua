@@ -67,8 +67,8 @@ end
 function L.snapshot(c)
  if not c then return end
  local target=U.call(c.target,'get_name')or c.target_guid or'none'
- local detail=string.format('hp=%s predicted=%s rage=%s target=%s target_hp=%s distance=%s rooted=%s training=%s enemies=%s attackers=%s burst=%s opener=%s aoe_safe=%s ttd=%s casts=%s status=%s',
-  tostring(c.hp),tostring(c.predicted_hp),tostring(c.rage),U.clean(target),tostring(c.target_hp),tostring(c.distance),
+local detail=string.format('level=%s band=%s hp=%s predicted=%s rage=%s target=%s target_hp=%s distance=%s rooted=%s training=%s enemies=%s attackers=%s burst=%s opener=%s aoe_safe=%s ttd=%s casts=%s status=%s',
+  tostring(c.level),tostring(c.level_band),tostring(c.hp),tostring(c.predicted_hp),tostring(c.rage),U.clean(target),tostring(c.target_hp),tostring(c.distance),
   tostring(c.rooted),tostring(c.training),tostring(c.enemy_count),tostring(c.attackers),tostring(c.burst),tostring(c.arena_opener),tostring(c.aoe_safe),tostring(c.ttd),tostring(#(c.casts or{})),U.clean(require('ww_settings').status))
  local signature=tostring(c.spec)..':'..tostring(c.mode)..':'..detail
  local changed=signature~=last_snapshot_signature

@@ -135,9 +135,9 @@ if core.register_on_game_event_callback then
  end)
 end
 C.init()
-L.initialize('1.5.0')
+L.initialize('1.6.0')
 -- Read-only coordination surface: no foreign rotation or setting is imported.
-_G.SylvanasWarrior={version='1.5.0',status=function()
+_G.SylvanasWarrior={version='1.6.0',status=function()
  return {status=C.status,spec=C.identity and C.identity.spec,role=C.identity and C.identity.role,
   assigned_role=C.identity and C.identity.assigned,mode=C.mode,epoch=engine.epoch}
 end,diagnostics=function()
@@ -148,10 +148,10 @@ end,log_paths=function()return L.paths()end,copy_log=function()return L.copy_tex
  for i,r in ipairs(current.casts or {}) do
   casts[i]={id=r.id,name=r.name,left=r.left,priority=r.priority,critical=r.critical,target=U.guid(r.target)}
  end
- return {spec=current.spec,mode=current.mode,training=current.training,hp=current.hp,predicted_hp=current.predicted_hp,rage=current.rage,
+ return {spec=current.spec,mode=current.mode,level=current.level,level_band=current.level_band,training=current.training,hp=current.hp,predicted_hp=current.predicted_hp,rage=current.rage,
   target=current.target_guid,target_hp=current.target_hp,enemies=current.enemy_count,attackers=current.attackers,
   burst=current.burst,aoe_safe=current.aoe_safe,arena_healer=U.guid(current.arena_healer),
   healer_trinket_down=current.healer_trinket_down,upcoming=current.upcoming and
    {text=current.upcoming.text,remaining=current.upcoming.remaining,source=current.upcoming.source} or nil,casts=casts}
 end}
-L.emit('startup',nil,'Warrior-only 1.5.0; Forever October 15 build logic active')
+L.emit('startup',nil,'Warrior-only 1.6.0; level-aware Forever build 1.60.1.70374 logic active')

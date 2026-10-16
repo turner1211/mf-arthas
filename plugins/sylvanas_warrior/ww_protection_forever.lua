@@ -7,7 +7,7 @@ function R.mitigation(c)
  if low<=20 then return c.pick('shield_wall','Forever Protection lethal-pressure Shield Wall')or c.pick('last_stand','Forever Protection emergency Last Stand')end
  if low<=40 then return c.pick('last_stand','Forever Protection early Last Stand health buffer')end
  local block,left=c.buff(S.aura.shield_block)
- if c.attackers>0 and(block~=true or left and left<=1.5)then return c.pick('shield_block','Forever Protection maintain two-block mitigation')end
+ if c.physical and c.attackers>0 and(block~=true or left and left<=1.5)then return c.pick('shield_block','Forever Protection maintain two-block physical mitigation')end
 end
 function R.decide(c,engine)
  if c.spec~=73 or not c.settings.damage then return end
@@ -22,7 +22,8 @@ function R.decide(c,engine)
   a=c.pick('thunder_clap','Forever Protection maintain single-target attack-speed slow');if a then return a end
  end
  if c.attackers>0 and due(engine,c,'demoralizing_shout',S.aura.demoralizing_shout,4)then a=c.pick('demoralizing_shout','Forever Protection reduce pack damage');if a then return a end end
- local _,_,stacks=c.debuff(S.aura.sunder);local wanted=(c.mode=='dungeon'or c.mode=='raid')and 5 or 2
+ local _,_,stacks=c.debuff(S.aura.sunder)
+ local wanted=(c.mode=='dungeon'or c.mode=='raid')and((c.level or 60)<30 and 3 or 5)or 2
  if(not stacks or stacks<wanted)and since(engine,c,'sunder_armor')>2 then a=c.pick('sunder_armor','Forever Protection build target threat and armor reduction');if a then return a end end
  if(stacks or 0)>=wanted and due(engine,c,'rend',S.aura.rend,4)and(not c.ttd or c.ttd>9)then
   a=c.pick('rend','Forever Protection add Rend after primary threat is secure');if a then return a end
@@ -30,7 +31,8 @@ function R.decide(c,engine)
  if c.target_hp and c.target_hp<=20 and(c.rage or 0)>=35 and c.solo then a=c.pick('execute','Forever Protection solo execute');if a then return a end end
  if aoe and c.recovery_target then a=c.pick('challenging_shout','Forever Protection emergency pack recovery');if a then return a end end
  if c.buff(S.aura.victorious)==true then a=c.pick('victory_rush','Forever Protection spend Victorious proc for damage');if a then return a end end
- if aoe and(c.rage or 0)>=75 then a=c.pick('cleave','Forever Protection excess-Rage queued pack threat');if a then return a end end
- if(c.rage or 0)>=75 then return c.pick('heroic_strike','Forever Protection excess-Rage queued threat')end
+ local discount=c.talent('focused_rage')and 3 or 0
+ if aoe and(c.rage or 0)>=75-discount then a=c.pick('cleave','Forever Protection excess-Rage queued pack threat');if a then return a end end
+ if(c.rage or 0)>=75-discount then return c.pick('heroic_strike','Forever Protection excess-Rage queued threat')end
 end
 return R

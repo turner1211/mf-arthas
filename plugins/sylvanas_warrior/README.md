@@ -1,5 +1,11 @@
 SYLVANAS WARRIOR — ARMS / FURY / PROTECTION
-Version 1.5.0 — Midnight and WoW Forever dual-runtime Warrior suite
+Version 1.6.0 — Midnight and WoW Forever dual-runtime Warrior suite
+
+Forever 1.6.0 detects the live character level and selects novice, developing,
+veteran, or endgame priorities while still requiring every ability to be
+learned. It adds current Fury Whirlwind and Raging Blows Rage handling, safe
+Death Wish health gating, Gore Drinker recovery setup, Protection Vanguard
+pull stance logic, Focused Rage thresholds, and physical-only Shield Block.
 
 Forever 1.5.0 uses the newly fixed Improved Berserker Rage to break distant
 roots and heavy slows with safe stance recovery, converts it into Rage only in

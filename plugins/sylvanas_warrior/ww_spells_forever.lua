@@ -28,7 +28,8 @@ S.aura={battle_shout={25289,11551,11550,11549,6192,6673},rend={25208,11574,11573
  defensive_stance=71,battle_stance=2457,berserker_stance=2458,sweeping=12292,sudden_death=99999999,enrage=99999998,recklessness=1719,avatar=99999997,
  smash=99999996,colossal_might=99999995,thunder_blast=99999994,phalanx=99999993,whirlwind=99999992,precision=99999991}
 S.talent={spearing_strike=1310222,death_wish=12328,concussion_blow=12809,sweeping_strikes=12292,
- improved_slam={12862,12330},improved_berserker_rage={20500,20501}}
+ improved_slam={12862,12330},improved_berserker_rage={20500,20501},raging_blows=1310315,
+ vanguard=1310317,focused_rage={29787,29790,29792},gore_drinker={1323967,1323968}}
 function S.allowed(key,spec)local r=S.rows[key];return r and r.specs[spec]==true end
 function S.id_allowed(id,spec)for _,r in pairs(S.rows)do for _,v in ipairs(r.ids or{r.id})do if v==id then return r.specs[spec]==true end end end;return false end
 return S

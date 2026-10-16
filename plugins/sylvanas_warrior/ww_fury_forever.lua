@@ -7,10 +7,16 @@ function R.decide(c,engine)
  if c.buff(S.aura.victorious)==true and c.hp and c.hp<c.settings.heal_hp then a=c.pick('victory_rush','Forever Fury consume Victorious healing');if a then return a end end
  if pvp and due(engine,c,'hamstring',S.aura.hamstring,4)then a=c.pick('hamstring','Forever Fury maintain PvP slow');if a then return a end end
  local low=math.min(c.hp or 100,c.predicted_hp or c.hp or 100)
- if c.settings.cooldowns and c.burst and(c.rage or 0)>=35 and low>45 then a=c.pick('death_wish','Forever Fury Death Wish window')or c.pick('recklessness','Forever Fury Recklessness window');if a then return a end end
+ -- Death Wish now increases damage taken. Use it only from a stable health
+ -- position; Recklessness no longer shares its cooldown and follows on the
+ -- next decision tick when the burst window remains valid.
+ if c.settings.cooldowns and c.burst and(c.rage or 0)>=20 and low>65 then a=c.pick('death_wish','Forever Fury safe Death Wish window')or c.pick('recklessness','Forever Fury Recklessness window');if a then return a end end
  if c.target_hp and c.target_hp<=20 and((c.rage or 0)>=35 or pvp or c.ttd and c.ttd<=3)then a=c.pick('execute','Forever Fury execute without wasting pooled Rage');if a then return a end end
  if due(engine,c,'rend',S.aura.rend,4)and(not c.ttd or c.ttd>9)then a=c.pick('rend','Forever Fury maintain Rend');if a then return a end end
  a=c.pick('overpower','Forever Fury consume reactive Overpower');if a then return a end
+ if c.talent('gore_drinker')and low<=60 then
+  a=c.pick('bloodthirst','Forever Fury trigger Gore Drinker recovery');if a then return a end
+ end
  a=c.pick('bloodthirst','Forever Fury primary strike when learned');if a then return a end
  if pvp and c.physical and c.enemy_count>=2 and due(engine,c,'thunder_clap',S.aura.thunder_clap,3)then
   a=c.pick('thunder_clap','Forever Fury slow multiple melee attackers');if a then return a end
@@ -24,7 +30,14 @@ function R.decide(c,engine)
  end
  if c.talent('improved_slam')and(c.rage or 0)>=30 then a=c.pick('slam','Forever Fury Improved Slam on cooldown');if a then return a end end
  local aoe=c.aoe_safe and c.enemy_count>=2
- if aoe and(c.rage or 0)>=35 then a=c.pick('whirlwind','Forever Fury safe area strike')or c.pick('cleave','Forever Fury safe queued cleave');if a then return a end end
+ local discount=c.talent('raging_blows')and 3 or 0
+ if aoe and(c.rage or 0)>=32-discount then a=c.pick('whirlwind','Forever Fury dual-weapon area strike')or c.pick('cleave','Forever Fury discounted queued cleave');if a then return a end end
+ -- Forever Whirlwind always strikes with both weapons. It is the primary
+ -- single-target filler after Bloodthirst once learned, while retaining Rage
+ -- for the next Bloodthirst and Execute window.
+ if not aoe and(c.level or 60)>=36 and(c.rage or 0)>=45-discount then
+  a=c.pick('whirlwind','Forever Fury dual-weapon single-target filler');if a then return a end
+ end
  if due(engine,c,'demoralizing_shout',S.aura.demoralizing_shout,4)and c.attackers>0 then a=c.pick('demoralizing_shout','Forever Fury reduce incoming melee damage');if a then return a end end
  if c.just_swung==true and(c.rage or 0)>=50 then a=c.pick('slam','Forever Fury post-swing Slam');if a then return a end end
  if c.buff(S.aura.victorious)==true then a=c.pick('victory_rush','Forever Fury spend Victorious proc for damage');if a then return a end end

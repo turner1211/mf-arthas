@@ -21,7 +21,7 @@ function R.decide(c,engine)
  if pvp and c.physical and c.attackers>=2 and due(engine,c,'demoralizing_shout',S.aura.demoralizing_shout,4)then
   a=c.pick('demoralizing_shout','Forever Arms reduce multi-melee PvP pressure');if a then return a end
  end
- local _,_,stacks=c.debuff(S.aura.sunder);local wanted=5
+ local _,_,stacks=c.debuff(S.aura.sunder);local wanted=(c.level or 60)<30 and 3 or 5
  if(not stacks or stacks<wanted)and(not c.ttd or c.ttd>12)and(c.rage or 0)>=25 then a=c.pick('sunder_armor','Forever Arms build useful Sunder stacks');if a then return a end end
  a=c.pick('spearing_strike','Forever Arms talented weapon strike');if a then return a end
  a=c.pick('mortal_strike','Forever Arms primary strike when learned');if a then return a end
@@ -31,7 +31,7 @@ function R.decide(c,engine)
  -- without that signal, keep enough Rage for the priority list above.
  if c.just_swung==true and(c.rage or 0)>=45 then a=c.pick('slam','Forever Arms post-swing Slam');if a then return a end end
  if c.buff(S.aura.victorious)==true then a=c.pick('victory_rush','Forever Arms spend Victorious proc for damage');if a then return a end end
- local dump=(c.target_hp or 100)<=25 and 85 or 70
+ local dump=(c.level or 60)<20 and 55 or(c.target_hp or 100)<=25 and 85 or 70
  if(c.rage or 0)>=dump then return c.pick('heroic_strike','Forever Arms excess-Rage queued attack')end
 end
 return R

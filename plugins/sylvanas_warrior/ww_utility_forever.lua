@@ -3,8 +3,10 @@ local ok,Pvp=pcall(require,'common/utility/pvp_helper');if not ok then Pvp=nil e
 function Q.prepare(c)
  if c.settings.stances then
   -- Battle Stance permits Charge and Rend for both leveling DPS specs. Fury
-  -- only enters Berserker Stance for an explicit Berserker-only action.
-  local key=c.spec==73 and'defensive_stance'or'battle_stance';local aura=S.aura[key]
+  -- only enters Berserker Stance for an explicit Berserker-only action. A
+  -- Protection Warrior may pull from Defensive Stance only with Vanguard.
+  local prot_vanguard=c.spec==73 and c.talent('vanguard')
+  local key=prot_vanguard and'defensive_stance'or'battle_stance';local aura=S.aura[key]
   if c.buff(aura)~=true then local a=c.pick(key,'Forever safe pull stance');if a then return a end end
  end
  if c.buff(S.aura.battle_shout)~=true then local a=c.pick('battle_shout','maintain Forever Battle Shout');if a then return a end end
@@ -16,6 +18,7 @@ function Q.prepare(c)
  end
 end
 function Q.run(c,engine)
+ local low=math.min(c.hp or 100,c.predicted_hp or c.hp or 100)
  if c.feared then
   local a=c.pick('berserker_rage','break Forever fear or incapacitate')
   if not a and c.spec==72 and c.settings.cooldowns then a=c.pick('death_wish','Forever Fury emergency fear immunity')end
@@ -39,7 +42,6 @@ function Q.run(c,engine)
   local a=c.pick('berserker_rage','Forever remove movement impairment');if a then return a end
  end
  if c.settings.defensives then
-  local low=math.min(c.hp or 100,c.predicted_hp or c.hp or 100)
   if low<=20 then local a=c.pick('shield_wall','Forever lethal-pressure Shield Wall');if a then return a end end
   if c.spec==73 and low<=40 then local a=c.pick('last_stand','Forever early Last Stand health buffer');if a then return a end end
   local retaliation_safe=c.spec~=73 and c.attackers>=3 and low>55
@@ -48,6 +50,12 @@ function Q.run(c,engine)
    if c.settings.stances and c.buff(S.aura.battle_stance)~=true then local a=c.pick('battle_stance','Forever stance for Retaliation');if a then return a end end
    local a=c.pick('retaliation','Forever multi-attacker Retaliation');if a then return a end
   end
+ end
+ -- Gore Drinker makes Berserker Rage a small recovery primer. Keep the fear
+ -- break available in PvP and do not spend it when health is already critical.
+ if not c.pvp and c.spec==72 and c.talent('gore_drinker') and not c.feared
+  and low>30 and low<=60 and(c.rage or 0)<=70 then
+  local a=c.pick('berserker_rage','Forever Gore Drinker recovery primer');if a then return a end
  end
  local disarm_pressure=c.pvp and c.physical and Pvp and Pvp.is_disarmable and Pvp:is_disarmable(c.target)==true
  if c.settings.stances and c.spec==72 and not disarm_pressure and not(c.pvp and c.distance and c.distance>8)then

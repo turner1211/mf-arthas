@@ -944,3 +944,27 @@ pages, Wowhead's level-30 Arms guide, Icy Veins' Arms/Fury/Protection guides,
 and the AHledger client-table comparison. Offline checks cover priority and
 isolation behavior; equipment and native usability still require live testing.
 
+
+
+VERSION 1.6.0 — LEVEL-AWARE FOREVER ROTATION AUDIT
+
+- The live player level is sampled into every combat snapshot. Four level
+  bands tune low-level Rage dumps and Sunder stack goals without pretending an
+  untrained spell exists; the spellbook remains the final availability gate.
+- Current build data says Whirlwind always strikes with both weapons and
+  Raging Blows reduces Whirlwind and Cleave cost by 3 Rage. Fury now uses
+  Whirlwind as a post-Bloodthirst single-target filler and lowers safe area
+  thresholds when Raging Blows is learned.
+- Gore Drinker triggers from Berserker Rage and Bloodthirst. PvE Fury can prime
+  its three healing swings under moderate pressure while PvP preserves
+  Berserker Rage for control removal.
+- Death Wish now increases incoming damage by 5%; automatic use requires a
+  stable health position. Recklessness remains independently available because
+  the three major Warrior cooldowns no longer share a cooldown.
+- Vanguard is explicitly detected before Protection attempts to Charge from
+  Defensive Stance. Builds without Vanguard enter Battle Stance for the pull.
+- Focused Rage discounts Protection's excess-Rage queued attacks, and Shield
+  Block is reserved for detected physical pressure.
+- Sources checked October 15, 2026: Blizzard's Warrior class deep dive,
+  Wowhead's current Forever Warrior beta build updates and Arms overview, and
+  WoW Forever Builds & Tools data for build 1.60.1.70374.
