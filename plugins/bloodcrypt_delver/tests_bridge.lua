@@ -16,6 +16,9 @@ end)
 test("partial scenario data stays unpublished",function()
  assert(receive(line("S",2952,123,456,1,"Objective")));assert(receive(line("Z"))==false);assert(b:current(2952)==nil)
 end)
+test("zero scenario identities are rejected",function()
+ assert(not receive(line("S",2952,0,0,0,"Loading")));assert(b:current(2952)==nil)
+end)
 test("complete criterion transaction publishes atomically",function()
  assert(receive(line("C",1,789,1,1,1,0,"Test objective")));assert(receive(line("Z")))
  assert(b:criterion(2952,456,789).complete);assert(b:criterion(2952,457,789)==nil)
@@ -93,7 +96,9 @@ test("WoW bridge rejects foreign requests and selects an eligible tier",function
  local picker_seen=false;for _,message in ipairs(outgoing) do if message:match("^BCDV1|P|test|1|2952|8|1|Ready$") then picker_seen=true end end;assert(picker_seen)
  assert(frame.events.CHAT_MSG_WHISPER and callbacks.BigWigs_StartBar and callbacks.BigWigs_PauseBar and callbacks.BigWigs_ResumeBar and callbacks.BigWigs_SetStage and callbacks.BigWigs_OnBossEngageMidEncounter)
  local saved=selected;now=3;handler(frame,"CHAT_MSG_WHISPER","BCDV1|T|other|8|3003","Tester-Realm");assert(selected==saved)
- now=6;_G.C_Map={GetBestMapForUnit=function() return 2502 end};C_ScenarioInfo.GetScenarioStepInfo=function() local spells={};for i=1,16 do spells[i]={spellID=1200000+i,name="Spell "..i,icon=i} end;return {stepID=456,numCriteria=64,title="Maximum transaction",description="Stress",spells=spells} end
+ now=5;C_ScenarioInfo.GetScenarioStepInfo=function() return nil end;handler(frame,"CHAT_MSG_WHISPER","BCDV1|R|loading|0|2952","Tester-Realm")
+ for _,message in ipairs(bridge.queue) do assert(not message:match("^BCDV1|[SZ]|loading|"),"missing scenario data must not publish a placeholder transaction") end
+ now=7;_G.C_Map={GetBestMapForUnit=function() return 2502 end};C_ScenarioInfo.GetScenarioStepInfo=function() local spells={};for i=1,16 do spells[i]={spellID=1200000+i,name="Spell "..i,icon=i} end;return {stepID=456,numCriteria=64,title="Maximum transaction",description="Stress",spells=spells} end
  C_ScenarioInfo.GetCriteriaInfo=function(i) return {criteriaID=700000+i,quantity=i,totalQuantity=64,completed=false,failed=false,description="Criterion "..i,duration=0,elapsed=0} end
  C_ScenarioInfo.GetScenarioIconInfo=function() local pins={};for i=1,32 do pins[i]={x=i/100,y=i/100,atlas="poi",description="Pin "..i} end;return pins end
  handler(frame,"CHAT_MSG_WHISPER","BCDV1|R|max|0|2952","Tester-Realm");assert(#bridge.queue>128 and #bridge.queue<256,"maximum documented snapshot must fit the bounded queue");assert(bridge.queue[#bridge.queue]:match("^BCDV1|Z|max|"),"maximum snapshot must retain its atomic commit marker")

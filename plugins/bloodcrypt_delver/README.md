@@ -1,4 +1,6 @@
-# Bloodcrypt Delver — development build 0.6.33
+# Bloodcrypt Delver — development build 0.6.34
+
+Build 0.6.34 rejects incomplete scenario transactions instead of publishing scenario ID or step ID zero during loading transitions. The WoW bridge now preserves the last valid snapshot when Blizzard temporarily returns no scenario step, allowing the existing freshness and recovery logic to handle the interruption. Route storage now validates against the live catalog, enabling saved routes for the fifteenth identity, Labyrinth of Kindo'jan, and rejecting story indexes that do not exist for the selected delve.
 
 Build 0.6.33 prevents a delayed bridge refresh from changing routing modes mid-objective. After receiving exact live scenario data, a temporary snapshot loss now cancels movement and holds the verified route for a bounded 15-second recovery window. Fresh evidence resumes the same objective; only a sustained loss permits the existing local fallback scanner. The hold is logged once with the last verified scenario step for live debugging.
 

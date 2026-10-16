@@ -73,7 +73,9 @@ local function capture(token,expected)
  enqueue("J",token,currency and currency.quantity or 0,keyItems or 0)
  local story=poi_story(expected);if story then enqueue("K",token,expected,story) end
  local _,_,_,_,_,_,_,instance=GetInstanceInfo()
- local info=C_ScenarioInfo.GetScenarioInfo();local step=C_ScenarioInfo.GetScenarioStepInfo()
+ local info=C_ScenarioInfo and C_ScenarioInfo.GetScenarioInfo and C_ScenarioInfo.GetScenarioInfo()
+ local step=C_ScenarioInfo and C_ScenarioInfo.GetScenarioStepInfo and C_ScenarioInfo.GetScenarioStepInfo()
+ if not info or not step or not tonumber(info.scenarioID) or info.scenarioID<1 or not tonumber(step.stepID) or step.stepID<1 then return end
  local count=step and step.numCriteria or 0
  if count>64 then enqueue("E",token,"Scenario exceeds protocol limit");return end
  enqueue("S",token,instance or 0,info and info.scenarioID or 0,step and step.stepID or 0,count,step and step.title or "")

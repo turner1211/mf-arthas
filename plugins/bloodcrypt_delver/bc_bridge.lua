@@ -48,7 +48,7 @@ function M:event(event,args)
   self.picker={map=map,tier=tier,ready=f[7]=="1",reason=f[8],at=self.api.now()};self.status=self.picker.ready and "Tier selection confirmed" or f[8];return true
  elseif kind=="S" and #f==9 then
   local instance,scenario,step,count=integer(f[5]),integer(f[6]),integer(f[7]),integer(f[8],64)
-  if not instance or not scenario or not step or not count then return false end
+  if not instance or instance<1 or not scenario or scenario<1 or not step or step<1 or not count then return false end
   self.pending={seq=seq,instance=instance,scenario_id=scenario,step_id=step,count=count,title=f[9],criteria={},pins={},spells={},received=0};return true
  elseif kind=="G" and #f==8 and self.pending and seq==self.pending.seq then
   local current,total,flags=integer(f[5],1000),integer(f[6],1000),integer(f[7],4294967295)

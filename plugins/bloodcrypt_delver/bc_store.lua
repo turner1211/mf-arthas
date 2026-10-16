@@ -1,8 +1,9 @@
 local Routes=require("bc_routes")
+local Catalog=require("bc_catalog")
 local M={root="bloodcrypt_delver"}
 local function path(id,variant)
- assert(type(id)=="number" and id%1==0 and id>=1 and id<=14,"Invalid delve ID")
- variant=variant or 1;assert(type(variant)=="number" and variant%1==0 and variant>=1 and variant<=16,"Invalid variant index")
+ assert(type(id)=="number" and id%1==0 and Catalog[id]~=nil,"Invalid delve ID")
+ variant=variant or 1;assert(type(variant)=="number" and variant%1==0 and variant>=1 and variant<=#Catalog[id].variants,"Invalid variant index")
  return M.root.."/route_"..id.."_v"..variant..".md"
 end
 function M.load(id,variant)
