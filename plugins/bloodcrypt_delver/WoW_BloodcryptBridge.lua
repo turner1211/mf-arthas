@@ -124,24 +124,51 @@ local function select_single_delve_power()
 end
 local function select_tier(token,tier,expected)
  local f=DelvesDifficultyPickerFrame
- if not f or not f:IsShown() then enqueue("P",token,0,0,0,"Delve picker is not open");return end
  if InCombatLockdown() then enqueue("P",token,0,0,0,"Tier selection paused during combat");return end
- if f.entranceType~=Enum.TieredEntranceType.Delve then enqueue("P",token,0,0,0,"Picker is not a delve");return end
- local map=C_DelvesUI.GetDelveEntranceMapID()
+ local api=C_DelvesUI
+ if not api or type(api.GetDelveEntranceMapID)~="function" then enqueue("P",token,0,0,0,"Delve API is unavailable");return end
+ local public_select=type(api.GetDelveEntranceTiers)=="function" and type(api.SelectDelveEntranceTier)=="function"
+ if not public_select and (not f or type(f.IsShown)~="function" or not f:IsShown()) then enqueue("P",token,0,0,0,"Delve picker is not open");return end
+ local entrance_type=type(api.GetTieredEntranceType)=="function" and api.GetTieredEntranceType() or f and f.entranceType
+ if Enum and Enum.TieredEntranceType and entrance_type~=Enum.TieredEntranceType.Delve then enqueue("P",token,0,0,0,"Picker is not a delve");return end
+ local map=api.GetDelveEntranceMapID()
  if map~=expected then enqueue("P",token,map,0,0,"Wrong delve entrance");return end
+ local infos
+ if public_select then
+  local ok,result=pcall(api.GetDelveEntranceTiers)
+  if ok then infos=result end
+ end
+ if type(infos)~="table" and f and type(f.GetTierInfos)=="function" then infos=f:GetTierInfos() end
  local chosen
- for _,r in ipairs(f:GetTierInfos() or {}) do
-  local eligible=C_DelvesUI.IsDelveEntranceTierEnabled(r.tier)
+ for _,r in ipairs(infos or {}) do
+  local eligible=type(api.IsDelveEntranceTierEnabled)~="function" or api.IsDelveEntranceTierEnabled(r.tier)
   if r.unlocked and eligible and (tier==0 or r.tier==tier) and (not chosen or r.tier>chosen.tier) then chosen=r end
  end
  if not chosen then enqueue("P",token,map,0,0,"Requested tier is unavailable");return end
- local eligible,reason=C_DelvesUI.IsDelveEntranceTierEnabled(chosen.tier)
+ local eligible,reason=true
+ if type(api.IsDelveEntranceTierEnabled)=="function" then eligible,reason=api.IsDelveEntranceTierEnabled(chosen.tier) end
  if not eligible then enqueue("P",token,map,0,0,reason or "Tier is not eligible");return end
- -- Use the picker state methods verified in Blizzard's own implementation.
- f:SetSelectedTierInfo(chosen);f:UpdateWidgets();f.DelveRewardsContainerFrame:SetRewards();f:UpdatePortalButtonState()
- if f.Dropdown and f.Dropdown.Update then f.Dropdown:Update() end
- local selected=f:GetSelectedTierInfo();local ready=f:CanEnterDelve()
- enqueue("P",token,map,selected and selected.tier or 0,ready and 1 or 0,ready and "Ready" or "Picker cannot enter")
+ local method="picker_fallback"
+ if public_select then
+  local ok,err=pcall(api.SelectDelveEntranceTier,chosen.tier)
+  if not ok then enqueue("P",token,map,0,0,"Tier selection failed: "..tostring(err));return end
+  method="official_api"
+ elseif f and type(f.SetSelectedTierInfo)=="function" then f:SetSelectedTierInfo(chosen) else enqueue("P",token,map,0,0,"Tier selection is unavailable");return end
+ -- Refresh the visible picker when present, but do not require its internal widgets.
+ if f then
+  if type(f.UpdateWidgets)=="function" then pcall(f.UpdateWidgets,f) end
+  if f.DelveRewardsContainerFrame and type(f.DelveRewardsContainerFrame.SetRewards)=="function" then pcall(f.DelveRewardsContainerFrame.SetRewards,f.DelveRewardsContainerFrame) end
+  if type(f.UpdatePortalButtonState)=="function" then pcall(f.UpdatePortalButtonState,f) end
+  if f.Dropdown and type(f.Dropdown.Update)=="function" then pcall(f.Dropdown.Update,f.Dropdown) end
+ end
+ local selected=chosen
+ local ready=true
+ if not public_select then
+  if f and type(f.GetSelectedTierInfo)=="function" then selected=f:GetSelectedTierInfo() or chosen end
+  if f and type(f.CanEnterDelve)=="function" then ready=f:CanEnterDelve() end
+ end
+ B.last_tier_method=method
+ enqueue("P",token,map,selected and selected.tier or chosen.tier,ready and 1 or 0,ready and "Ready" or "Picker cannot enter")
 end
 local function attach_bigwigs()
  if B.bigwigs_attached or not BigWigsLoader or type(BigWigsLoader.RegisterMessage)~="function" then return end

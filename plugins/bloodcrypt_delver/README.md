@@ -1,4 +1,6 @@
-# Bloodcrypt Delver — development build 0.6.30
+# Bloodcrypt Delver — development build 0.6.31
+
+Build 0.6.31 hardens delve entry for current Retail clients. Tier discovery and selection now prefer Blizzard's public `C_DelvesUI.GetDelveEntranceTiers`, `GetTieredEntranceType`, and `SelectDelveEntranceTier` APIs, while retaining the older picker-frame path for compatible clients. Picker widget refreshes are isolated so a missing or changed internal frame cannot abort an otherwise valid tier selection.
 
 Build 0.6.30 auto-detects character level through both the Sylvanas player object and the WoW bridge. A level/spec/role profile now caps pull size, selects melee/ranged/healer engagement distance, gates mount and flying requests for low-level characters, appears in the Combat panel, and is published as `BloodcryptCombatContext` for external rotation plugins. Bloodcrypt still leaves spell selection and rotations to the dedicated combat plugin.
 
