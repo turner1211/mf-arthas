@@ -1,4 +1,20 @@
-# Arthas Druid Suite — Retail + Forever — v8.8.0
+# Arthas Druid Suite — Retail + Forever — v8.9.0
+
+## Attached audit fixes (8.9.0)
+
+The Retail Guardian burst gate no longer depends entirely on the optional
+native time-to-die call. A GUID-scoped, smoothed health-loss estimator supplies
+a bounded fallback when the host returns no useful value, resets after healing,
+maximum-health changes, stale samples, target changes, reloads, and world
+transitions, and allows the existing short-target and long-target cooldown
+rules to operate from observed combat data.
+
+The skinning walker now processes its active movement state on every host
+update while the more expensive corpse/object scan remains limited to roughly
+seven times per second. A destination is submitted once per selected corpse,
+and changing corpses first releases the old movement request. This prevents the
+walker from stalling between throttled scans without restoring the earlier
+high object-manager cost.
 
 ## Forever form, leveling, and mana audit (8.8.0)
 

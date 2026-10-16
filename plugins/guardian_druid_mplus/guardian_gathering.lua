@@ -121,6 +121,7 @@ local function skinning()
  if not nearest then stop(); status("Skinning: no harvestable corpse within 35 yd"); return end
  local k=key(nearest)
  if not skin_target or skin_target.key~=k then
+  stop()
   local point=pos(p)
   skin_target={key=k,object=nearest,progress_at=now,position=point and {x=point.x,y=point.y,z=point.z},gather_at=nil}
   pcall(core.input.set_target,nearest)
@@ -136,8 +137,11 @@ local function skinning()
  end
  if range>3.5 then
   local a,b=pos(p),pos(nearest); local scale=(range-3.5)/range
-  pcall(movement.move_to_position,movement,vec3.new(a.x+(b.x-a.x)*scale,a.y+(b.y-a.y)*scale,a.z+(b.z-a.z)*scale))
-  pcall(movement.process,movement); movement_owned=true; status("Skinning: moving to corpse"); return
+  if not movement_owned then
+   local ok,accepted=pcall(movement.move_to_position,movement,vec3.new(a.x+(b.x-a.x)*scale,a.y+(b.y-a.y)*scale,a.z+(b.z-a.z)*scale))
+   movement_owned=ok and accepted~=false
+  end
+  status("Skinning: moving to corpse"); return
  end
  stop(); skin_target.gather_at=skin_target.gather_at or now; if now<skin_at then return end
  local ok,started=pcall(core.input.skin_object,nearest); started=ok and started==true
@@ -150,6 +154,10 @@ local next_tick=0
 function M.update()
  if not Settings.allowed() then stop(); skin_target=nil; pending_fish=nil; status("Off"); return end
  local p=player(); if not p or p:is_in_combat() then stop(); skin_target=nil; pending_fish=nil; status("Paused during combat"); return end
+ -- The simple_movement walker is stateful and must be advanced every host
+ -- update. Keep object discovery throttled below, but never throttle an active
+ -- skinning walk or re-submit its destination on every scan.
+ if movement_owned then pcall(movement.process,movement) end
  if core.time()<next_tick then return end; next_tick=core.time()+0.15
  if Settings.on("fishing") then stop(); M.fishing(); return end
  pending_fish=nil

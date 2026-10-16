@@ -182,14 +182,36 @@ local function major_defensive(p,severe,catastrophic)
     return success
 end
 local EXTERNALS={102342,33206,6940} -- confirmed damage-reduction externals only
+local ttd_samples={}
 local function external_active(p)
     for _,id in ipairs(EXTERNALS) do if Aura.read(p,id) then return true end end
     return false
 end
 local function target_ttd(target)
     if target and type(target.get_time_to_die)=="function" then
-        local ok,value=pcall(target.get_time_to_die,target); if ok then return tonumber(value) end
+        local ok,value=pcall(target.get_time_to_die,target);value=ok and tonumber(value)or nil
+        if value and value>0 and value<3600 then return value end
     end
+    if not valid(target) then return nil end
+    local id=Aura.guid(target)or tostring(target)
+    local ok,health,maximum=pcall(function()return tonumber(target:get_health()),tonumber(target:get_max_health())end)
+    if not ok or not health or not maximum or maximum<=0 or health<=0 then return nil end
+    local now=core.time();local row=ttd_samples[id]
+    if not row or row.maximum~=maximum or now-row.at>4 or health>row.health then
+        local retained=0
+        for key,sample in pairs(ttd_samples)do
+            if now-(sample.at or 0)>30 then ttd_samples[key]=nil else retained=retained+1 end
+        end
+        if retained>80 then ttd_samples={}end
+        ttd_samples[id]={at=now,health=health,maximum=maximum,loss=0};return nil
+    end
+    local elapsed=now-row.at
+    if elapsed>=0.25 then
+        local raw=math.max(0,(row.health-health)/elapsed)
+        local weight=1-math.exp(-elapsed/1.25)
+        row.loss=row.loss*(1-weight)+raw*weight;row.at,row.health=now,health
+    end
+    return row.loss>0 and health/row.loss or nil
 end
 local function target_classification(target)
     if target and type(target.get_classification)=="function" then
@@ -633,4 +655,4 @@ local function manual_safety()
     return false
 end
 
-return {update=update,failsafe=failsafe,manual_safety=manual_safety,on_confirm=on_confirm,manual_yielding=manual_yielding,spells=S,combat=Combat,reset=function() stop_combat_landing(); attempts={}; accepted_requests={}; manual_yield_until=-math.huge; failures={}; retry_until={}; failure_log_until={}; next_retry_cleanup=0; last_gcd=-math.huge; last_defensive_request=-math.huge; growl_target,growl_pressure_until=nil,-math.huge; combat_started_at=nil; Combat.reset(); Threat.reset(); Prediction.reset(); PvP.reset() end}
+return {update=update,failsafe=failsafe,manual_safety=manual_safety,on_confirm=on_confirm,manual_yielding=manual_yielding,spells=S,combat=Combat,reset=function() stop_combat_landing(); attempts={}; accepted_requests={}; manual_yield_until=-math.huge; failures={}; retry_until={}; failure_log_until={}; ttd_samples={}; next_retry_cleanup=0; last_gcd=-math.huge; last_defensive_request=-math.huge; growl_target,growl_pressure_until=nil,-math.huge; combat_started_at=nil; Combat.reset(); Threat.reset(); Prediction.reset(); PvP.reset() end}
