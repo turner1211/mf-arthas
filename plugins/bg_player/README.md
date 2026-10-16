@@ -1,4 +1,12 @@
-SYLVANAS BATTLEGROUND COMMAND - v1.102.0 - October 16, 2026
+SYLVANAS BATTLEGROUND COMMAND - v1.103.0 - October 16, 2026
+
+Version 1.103.0 incorporates the supplied Sylvanas runtime dump for
+Tbc / wow_tbc_us. TBC now uses the verified native active-match state binding
+instead of incorrectly requiring a phase adapter. Its GUI exposes one generic
+TBC battleground mode and hides modern Brawl, Epic, and Blitz choices whose join
+bindings are absent from that runtime. Queue metadata remains fail-closed because
+the dump contains no native queue-information API; a verified adapter is still
+required for automatic queue ownership.
 
 Version 1.102.0 contains ArthasNav provider faults at the adapter boundary.
 Provider discovery, server capability lookup, health-check lookup, optional

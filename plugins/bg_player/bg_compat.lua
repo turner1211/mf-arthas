@@ -21,7 +21,10 @@ function M.new(core)
   local version,exact=identity()
   local private=exact:find("_ps",1,true)~=nil
   return not private and (version=="Midnight" or version=="Forever" or version=="Tbc" or version=="Mop"),
-   not private and (version=="Midnight" or version=="Forever")
+   -- The 2026-10-16 runtime dump for Tbc/wow_tbc_us verifies the native
+   -- active-match state binding. MoP remains adapter-gated until its own
+   -- runtime surface is captured.
+   not private and (version=="Midnight" or version=="Forever" or version=="Tbc")
  end
  local paths={queue_status={"game_ui","get_battlefield_status"},
   match_state={"game_ui","get_active_match_state"},winner={"game_ui","get_battlefield_winner"},
