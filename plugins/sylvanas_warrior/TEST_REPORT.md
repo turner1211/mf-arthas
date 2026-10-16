@@ -1,9 +1,9 @@
-SYLVANAS WARRIOR 1.7.0 — OFFLINE VALIDATION
-Date: October 15, 2026
+SYLVANAS WARRIOR 1.7.1 — OFFLINE VALIDATION
+Date: October 16, 2026
 Runtime: lupa 2.8, Lua 5.4, bundled Python 3.12
 
 PASS: 41 runtime Lua files compile under Lua 5.4.
-PASS: 7,792 behavioral assertions.
+PASS: 7,796 behavioral assertions.
 Coverage: 24 spec/activity profiles, 62 registered spells,
 400 deterministic randomized combat contexts.
 

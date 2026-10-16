@@ -987,3 +987,14 @@ VERSION 1.7.0 — LEVEL-30 PRIORITY AND TRAINER-GATE AUDIT
 - Sources checked October 15, 2026: Blizzard's WoW Forever beta development
   notes (including the October 15 update), Wowhead's current level-30 Arms,
   Fury, and Protection guides, and WoW Forever build 1.60.1.70374 data.
+
+VERSION 1.7.1 — GUI INPUT SYNCHRONIZATION AUDIT
+
+- Replaced the sparse mouse-wheel fallback table with a dense receiver-aware
+  probe. A missing core.input wheel function can no longer prevent the root or
+  graphics wheel API from being checked.
+- Replaced one-way hotkey-to-checkbox copying with change-aware two-way
+  synchronization. Native Project Sylvanas menu clicks, custom GUI clicks, and
+  keybind edges now converge on the same persistent state without reverting.
+- Added regression checks for root wheel fallback, native checkbox persistence,
+  paired hotkey updates, and subsequent hotkey control.

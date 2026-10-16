@@ -1,5 +1,11 @@
 SYLVANAS WARRIOR — ARMS / FURY / PROTECTION
-Version 1.7.0 — Midnight and WoW Forever dual-runtime Warrior suite
+Version 1.7.1 — Midnight and WoW Forever dual-runtime Warrior suite
+
+Version 1.7.1 fixes two GUI defects found by the cross-plugin audit. Mouse-wheel
+scrolling now reaches every supported Sylvanas wheel API even when an earlier
+fallback is absent. Direct Project Sylvanas menu checkbox clicks and custom GUI
+clicks now update their paired hotkey state instead of reverting on the next
+update tick; later hotkey presses continue to update the checkbox normally.
 
 Forever 1.7.0 adds explicit character-level floors for trainer abilities while
 leaving talent abilities spellbook-driven for Legacy bonus-point builds. At the

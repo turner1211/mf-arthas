@@ -1,5 +1,5 @@
 local Modes,R=require('ww_modes'),require('ww_runtime')
-local C={cells={},hotkeys={},global_hotkeys={},status='Waiting for warrior',identity=nil,mode=nil}
+local C={cells={},hotkeys={},global_hotkeys={},mirrors={},status='Waiting for warrior',identity=nil,mode=nil}
 local specs={{71,'Arms'},{72,'Fury'},{73,'Protection'}}
 C.bounds={pvp_trinket_window={0,120},block_refresh={0,10}}
 function C.bound(key)
@@ -34,6 +34,7 @@ function C.init()
  end
  for _,key in ipairs({'enabled','pause','themed_gui','burst','logging','route_map','boss_guide','training_dummy'})do
   C.global_hotkeys[key]=hotkey(C[key]:get_state(),ns..'global_'..key..'_hotkey_v3')
+  C.mirrors[C[key]]={control=C[key]:get_state(),hotkey=C.global_hotkeys[key]:get_toggle_state()}
  end
  C.spec_nodes={}
  for _,s in ipairs(specs) do
@@ -45,7 +46,10 @@ function C.init()
     local minimum,maximum=C.bound(key)
     cell.controls[key]=type(value)=='boolean' and core.menu.checkbox(value,tag)
      or core.menu.slider_int(minimum,maximum,value,tag)
-    if type(value)=='boolean'then C.hotkeys[s[1]][mode][key]=hotkey(value,tag..'_hotkey')end
+    if type(value)=='boolean'then
+     C.hotkeys[s[1]][mode][key]=hotkey(value,tag..'_hotkey')
+     C.mirrors[cell.controls[key]]={control=cell.controls[key]:get_state(),hotkey=C.hotkeys[s[1]][mode][key]:get_toggle_state()}
+    end
    end
    C.cells[s[1]][mode]=cell
   end
@@ -53,7 +57,27 @@ function C.init()
 end
 local function sync(control,hotkey)
  if not control or not hotkey or type(hotkey.get_toggle_state)~='function'then return end
- local state=hotkey:get_toggle_state();if type(state)=='boolean'and control:get_state()~=state then control:set(state)end
+ local control_state=control:get_state();local hotkey_state=hotkey:get_toggle_state()
+ if type(control_state)~='boolean'or type(hotkey_state)~='boolean'then return end
+ local state=C.mirrors[control]
+ if not state then
+  -- The visible checkbox is authoritative on first contact. This preserves a
+  -- saved menu choice instead of immediately replacing it with a stale keybind.
+  if hotkey_state~=control_state and type(hotkey.set_toggle_state)=='function'then hotkey:set_toggle_state(control_state);hotkey_state=control_state end
+  C.mirrors[control]={control=control_state,hotkey=hotkey_state};return
+ end
+ local control_changed=control_state~=state.control
+ local hotkey_changed=hotkey_state~=state.hotkey
+ if control_changed and not hotkey_changed then
+  if type(hotkey.set_toggle_state)=='function'then hotkey:set_toggle_state(control_state);hotkey_state=control_state end
+ elseif hotkey_changed and not control_changed then
+  control:set(hotkey_state);control_state=hotkey_state
+ elseif control_changed and hotkey_changed and control_state~=hotkey_state then
+  -- A direct menu click and hotkey edge in the same frame is rare; retain the
+  -- explicit visible menu choice and converge both persistent widgets.
+  if type(hotkey.set_toggle_state)=='function'then hotkey:set_toggle_state(control_state);hotkey_state=control_state end
+ end
+ state.control,state.hotkey=control_state,hotkey_state
 end
 function C.sync_hotkeys()
  for key,h in pairs(C.global_hotkeys)do sync(C[key],h)end
@@ -136,10 +160,12 @@ function C.set(spec,mode,key,value)
  x:set(value)
  local h=C.hotkeys[spec]and C.hotkeys[spec][mode]and C.hotkeys[spec][mode][key]
  if type(value)=='boolean'and h and type(h.set_toggle_state)=='function'then h:set_toggle_state(value)end
+ if type(value)=='boolean'then C.mirrors[x]={control=value,hotkey=value}end
 end
 function C.set_global(key,value)
  local x=C[key];if not x or type(value)~='boolean'then return end;x:set(value)
  local h=C.global_hotkeys[key];if h and type(h.set_toggle_state)=='function'then h:set_toggle_state(value)end
+ C.mirrors[x]={control=value,hotkey=value}
 end
 function C.hotkey(spec,mode,key)return C.hotkeys[spec]and C.hotkeys[spec][mode]and C.hotkeys[spec][mode][key]end
 function C.render()
