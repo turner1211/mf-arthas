@@ -1,4 +1,4 @@
--- Offline checks for mf_loader.lua. Runs under LuaJIT (the Sylvanas runtime):
+-- Offline checks for plugin_loader.lua. Runs under LuaJIT (the Sylvanas runtime):
 --
 --   luajit tools/test_loader.lua
 --
@@ -8,7 +8,7 @@
 -- network or the real scripts_data folder.
 
 local REPO = (arg and arg[0] or ""):match("^(.*)[/\\]tools[/\\][^/\\]+$") or "."
-local TEMPLATE = REPO .. "/tools/loader_template/mf_loader.lua"
+local TEMPLATE = REPO .. "/tools/loader_template/plugin_loader.lua"
 local SHA = string.rep("ab", 20)
 
 local failures, checks = 0, 0
@@ -195,11 +195,11 @@ local function write_loader_dir(dir, config)
     for k, v in pairs(config) do
         fields[#fields + 1] = ("    %s = %s,"):format(k, type(v) == "table" and "{ " .. table.concat(v, ", ") .. " }" or ("%q"):format(v))
     end
-    local cfg = 'require("mf_loader").new({\n' .. table.concat(fields, "\n") .. "\n})"
+    local cfg = 'require("plugin_loader").new({\n' .. table.concat(fields, "\n") .. "\n})"
     local function put(name, text) local f = assert(io.open(dir .. "/" .. name, "wb")); f:write(text); f:close() end
     put("header.lua", "return " .. cfg .. ":header()\n")
     put("main.lua", cfg .. ":main()\n")
-    put("mf_loader.lua", assert(read_disk(TEMPLATE)))
+    put("plugin_loader.lua", assert(read_disk(TEMPLATE)))
 end
 
 local function run_synthetic(tmp)
@@ -255,7 +255,7 @@ local function run_synthetic(tmp)
 
     -- 5. Main project logic updated upstream: the loader files are untouched,
     --    the running session keeps the old build, only changed files download.
-    local loader_before = read_disk(dir .. "/mf_loader.lua") .. read_disk(dir .. "/main.lua") .. read_disk(dir .. "/header.lua")
+    local loader_before = read_disk(dir .. "/plugin_loader.lua") .. read_disk(dir .. "/main.lua") .. read_disk(dir .. "/header.lua")
     publish(synth_files(43, "1.1.0"), "1.1.0")
     SYNTH_RUNS = nil
     host:session(dir)
@@ -268,7 +268,7 @@ local function run_synthetic(tmp)
     header = host:session(dir)
     check(SYNTH_VALUE == 43 and header.version == "1.1.0", "next load runs the updated logic")
     check(host.data["mf_arthas/synth/" .. build1 .. "/src/main.lua"] == nil, "old build cleaned up")
-    local loader_after = read_disk(dir .. "/mf_loader.lua") .. read_disk(dir .. "/main.lua") .. read_disk(dir .. "/header.lua")
+    local loader_after = read_disk(dir .. "/plugin_loader.lua") .. read_disk(dir .. "/main.lua") .. read_disk(dir .. "/header.lua")
     check(loader_before == loader_after, "loader files unchanged by the update")
 
     -- 6. A failed download never replaces the installed build.
@@ -327,11 +327,7 @@ local function run_real()
         local manifest = id and read_disk(REPO .. "/plugins/" .. id .. "/manifest.txt")
         if manifest then
             local loader_dir = REPO .. "/loaders/" .. loader_name
-            check(read_disk(loader_dir .. "/mf_loader.lua") == read_disk(TEMPLATE), id .. ": mf_loader.lua matches the template")
-            local plugin_loader = read_disk(loader_dir .. "/plugin_loader.lua")
-            if plugin_loader then
-                check(plugin_loader == read_disk(TEMPLATE), id .. ": plugin_loader.lua matches the async loader protocol")
-            end
+            check(read_disk(loader_dir .. "/plugin_loader.lua") == read_disk(TEMPLATE), id .. ": plugin_loader.lua matches the template")
 
             -- Every manifest entry matches the published bytes and compiles.
             local count = 0

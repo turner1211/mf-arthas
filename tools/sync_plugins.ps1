@@ -9,9 +9,9 @@
     seen by players.
 
     A loader's header.lua and main.lua are only created, never rewritten: they
-    stay the same for every update. mf_loader.lua is copied from
+    stay the same for every plugin update. plugin_loader.lua is copied from
     tools/loader_template/ into every loader folder on each run so the copies
-    never drift apart.
+    never drift apart. mf_loader.lua remains a compatibility alias.
 
 .EXAMPLE
     pwsh tools/sync_plugins.ps1
@@ -31,7 +31,8 @@ $ErrorActionPreference = 'Stop'
 # "pwsh -File" hands "-Only a,b" over as one string.
 $Only = @($Only | ForEach-Object { $_ -split ',' } | Where-Object { $_ })
 $RepoRoot = Split-Path -Parent $PSScriptRoot
-$Template = Join-Path $RepoRoot 'tools/loader_template/mf_loader.lua'
+$Template = Join-Path $RepoRoot 'tools/loader_template/plugin_loader.lua'
+$CompatibilityShim = Join-Path $RepoRoot 'tools/loader_template/mf_loader.lua'
 
 # Project id (folder in plugins/, never changes) -> local source folder.
 # A Source with * picks the highest _v<version> folder, so a renamed release
@@ -102,13 +103,14 @@ function Sync-Loader($P) {
         New-Item -ItemType Directory -Force -Path $dir | Out-Null
         $fields = @("    project = $(Lua-String $P.Id),", "    name = $(Lua-String $P.Name),")
         if ($P.ClassIds) { $fields += "    class_ids = { $($P.ClassIds -join ', ') }," }
-        $config = "require(`"mf_loader`").new({`n" + ($fields -join "`n") + "`n})"
+        $config = "require(`"plugin_loader`").new({`n" + ($fields -join "`n") + "`n})"
         $note = "-- mf-arthas loader. This file stays the same for every update: the plugin's`n" +
-                "-- code, version and load rules are downloaded from GitHub by mf_loader.lua.`n"
+                "-- code, version and load rules are downloaded from GitHub by plugin_loader.lua.`n"
         [IO.File]::WriteAllText((Join-Path $dir 'header.lua'), "$note`nreturn $($config):header()`n", $Utf8)
         [IO.File]::WriteAllText((Join-Path $dir 'main.lua'), "$note`n$($config):main()`n", $Utf8)
     }
-    Copy-Item -LiteralPath $Template -Destination (Join-Path $dir 'mf_loader.lua') -Force
+    Copy-Item -LiteralPath $Template -Destination (Join-Path $dir 'plugin_loader.lua') -Force
+    Copy-Item -LiteralPath $CompatibilityShim -Destination (Join-Path $dir 'mf_loader.lua') -Force
     return $created
 }
 

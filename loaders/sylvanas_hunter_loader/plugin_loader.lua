@@ -1,4 +1,4 @@
--- mf-arthas plugin loader.
+-- mf-arthas stable asynchronous plugin loader.
 --
 -- This file never changes between plugin updates. It downloads a project from
 -- github.com/turner1211/mf-arthas with core.http_get, keeps it in scripts_data/,
@@ -108,7 +108,7 @@ local OWN_FOLDER = own_folder()
 
 ---@param config table { project = "folder in plugins/", name = "display name", author?, class_ids?, ... }
 function M.new(config)
-    assert(type(config) == "table" and type(config.project) == "string", "mf_loader: config.project is required")
+    assert(type(config) == "table" and type(config.project) == "string", "plugin_loader: config.project is required")
     local self = setmetatable({}, Loader)
     local cfg = {}
     for k, v in pairs(DEFAULTS) do cfg[k] = v end

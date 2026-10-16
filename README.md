@@ -7,10 +7,11 @@ same while the plugin logic behind them changes.
 
 | Path | What it is |
 | --- | --- |
-| `loaders/<project>_loader/` | The plugin folder you install. `header.lua`, `main.lua` and `mf_loader.lua` do not change when a project is updated. |
+| `loaders/<project>_loader/` | The plugin folder you install. `header.lua`, `main.lua` and `plugin_loader.lua` do not change when a project is updated. |
 | `plugins/<project>/` | The real plugin code the loader downloads, plus its `manifest.txt`. |
 | `tools/sync_plugins.ps1` | Copies the local project folders into `plugins/`, rewrites the manifests, creates missing loaders. |
-| `tools/loader_template/mf_loader.lua` | The loader copied into every loader folder. Not a plugin. |
+| `tools/loader_template/plugin_loader.lua` | The stable asynchronous loader copied into every loader folder. |
+| `tools/publish.ps1` | Synchronizes projects, tests the loader, commits changed files, and pushes them. |
 | `tools/test_loader.lua` | Offline tests for the loader (LuaJIT, fake `core`, no network). |
 
 The Hunter install uses `plugin_loader.lua` as its stable entrypoint. It is the
@@ -65,6 +66,13 @@ luajit tools/test_loader.lua
 git add -A
 git commit -m "Update sylvanas_mage"
 git push
+```
+
+Or use the publishing helper, which performs that sequence and stops before a
+commit or push if synchronization or loader tests fail:
+
+```powershell
+pwsh tools/publish.ps1 -Only sylvanas_mage -Message "Update sylvanas_mage"
 ```
 
 The script finds the newest `_v<version>` folder for versioned projects, so a
