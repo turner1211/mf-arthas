@@ -288,8 +288,10 @@ local function nav_client_available(client)
  if type(client)~="table" then return false end
  local move_ok,move_method=pcall(function() return client.move_to end)
  if not move_ok or type(move_method)~="function" then return false end
- if type(client.is_server_available)~="function" then return true end
- local ok,available=pcall(client.is_server_available,client)
+ local server_ok,server_method=pcall(function() return client.is_server_available end)
+ if not server_ok then return false end
+ if type(server_method)~="function" then return true end
+ local ok,available=pcall(server_method,client)
  return ok and available==true
 end
 local function nav()
@@ -332,15 +334,16 @@ local function navigation_ready()
   nav_health_pending=false;nav_health_state="probe_timeout";nav_health_next=now
   debugger:add("navigation","health_check_timeout",now)
  end
- if not nav_health_pending and now>=nav_health_next and type(n.health_check)=="function" then
+ local health_method_ok,health_method=pcall(function() return n.health_check end)
+ if not nav_health_pending and now>=nav_health_next and health_method_ok and type(health_method)=="function" then
   nav_health_pending=true;nav_health_started=now;nav_health_next=now+5;nav_health_state="probing"
-  local dispatched=pcall(function() n:health_check(function(result)
+  local dispatched=pcall(function() health_method(n,function(result)
    nav_health_pending=false
    nav_health_state=result==true and "reconnected" or "probe_failed"
    if result==true then debugger:add("navigation","health_check_reconnected",core.time()) end
   end) end)
   if not dispatched then nav_health_pending=false;nav_health_state="probe_dispatch_failed" end
- elseif type(n.health_check)~="function" then nav_health_state="health_check_missing"
+ elseif not health_method_ok or type(health_method)~="function" then nav_health_state="health_check_missing"
  end
  return false
 end
@@ -718,9 +721,15 @@ local api={
  navigation_corridor_widths=function() return nav_telemetry:read(nav(),"get_corridor_widths") end,
  navigation_progress=function() return nav_telemetry:read(nav(),"get_progress") end,
  navigation_destination=function() return nav_telemetry:read(nav(),"get_destination") end,
- replan=function(reason) local n=nav();if n and n.replan then n:replan(reason) end end,
+ replan=function(reason)
+  local n=nav();if not n then return false end
+  local found,method=pcall(function() return n.replan end)
+  if not found or type(method)~="function" then return false end
+  local ok,result=pcall(method,n,reason);return ok and result~=false
+ end,
  escape_direction=function(direction)
-  local n=nav();local movement=n and n.movement
+  local n=nav();local read,movement=pcall(function() return n and n.movement end)
+  movement=read and movement or nil
   -- A directional recovery is a manual driver. Stop the current path before
   -- starting it so provider steering cannot cancel or fight the strafe.
   if direction~=nil then navigation:stop() end

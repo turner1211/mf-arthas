@@ -1,4 +1,11 @@
-SYLVANAS BATTLEGROUND COMMAND - v1.101.0 - October 16, 2026
+SYLVANAS BATTLEGROUND COMMAND - v1.102.0 - October 16, 2026
+
+Version 1.102.0 contains ArthasNav provider faults at the adapter boundary.
+Provider discovery, server capability lookup, health-check lookup, optional
+SimpleMovement access, replan dispatch, and diagnostic callbacks can no longer
+escape into the controller-wide recovery circuit. Discovery failures now become
+ordinary navigation-unavailable results, while optional failures stay bounded
+to the feature that requested them.
 
 Version 1.101.0 closes two movement-state gaps found by the follow-up deep
 audit. A crowd-control hold now releases authored direct steering immediately,

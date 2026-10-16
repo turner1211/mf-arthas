@@ -4,6 +4,13 @@ function N.new(get_nav,report,direct_start,direct_stop,skip_height_probe)
  return setmetatable({get_nav=get_nav,report=report,direct_start=direct_start,direct_stop=direct_stop,
   skip_height_probe=skip_height_probe,generation=0,direct_active=false,paused={},height_probe_disabled=false},N)
 end
+function N:client()
+ local ok,value=pcall(self.get_nav)
+ return ok and value or nil
+end
+function N:note(event,goal)
+ if type(self.report)=="function" then pcall(self.report,event,goal) end
+end
 function N:stop()
  self.generation=self.generation+1
  self:stop_direct()
@@ -14,7 +21,7 @@ function N:stop()
   end
   self.paused[reason]=nil
  end
- local n=self.get_nav();if n then
+ local n=self:client();if n then
   local found,stop=pcall(function() return n.stop end)
   if found and type(stop)=="function" then pcall(stop,n) end
  end
@@ -37,7 +44,7 @@ function N:pause(reason)
   self.paused[reason]=DIRECT_HOLD
   return true
  end
- local n=self.get_nav();if not n then return false end
+ local n=self:client();if not n then return false end
  local found,pause=pcall(function() return n.pause end)
  if not found or type(pause)~="function" then return false end
  local ok,result=pcall(pause,n,reason)
@@ -67,13 +74,13 @@ function N:move(point,cb,direct,skip_height)
   if callback_done or generation~=self.generation or not cb then return end
   callback_done=true
   local called,callback_error=pcall(cb,ok,err)
-  if not called and self.report then self.report("navigation_callback_error:"..tostring(callback_error),goal) end
+  if not called then self:note("navigation_callback_error:"..tostring(callback_error),goal) end
  end
  -- Authored direct corridors use local input steering specifically so spawn
  -- rooms, ships and other off-mesh exits remain usable during a Sentinel
  -- outage. Try that adapter before requiring a navigation client.
  if direct and type(self.direct_start)=="function" then
-  local current=self.get_nav()
+  local current=self:client()
   if current then
    local found,stop=pcall(function() return current.stop end)
    if found and type(stop)=="function" then pcall(stop,current) end
@@ -82,7 +89,7 @@ function N:move(point,cb,direct,skip_height)
   if ok and result~=false then self.direct_active=true;return end
   done(false,ok and "direct_movement_unavailable" or tostring(result));return
  end
- local n=self.get_nav()
+ local n=self:client()
  if not n then done(false,"navigation_unavailable");return end
  local function call(method,...)
   local found,fn=pcall(function() return n[method] end)
@@ -108,10 +115,10 @@ function N:move(point,cb,direct,skip_height)
  local function move_validated()
   if not has("validate_destination") then completed=true;submit_move("move_to");return end
   local dispatched,dispatch_error=call("validate_destination",goal,function(reachable,reason)
-   if completed or generation~=self.generation or self.get_nav()~=n then return end
+   if completed or generation~=self.generation or self:client()~=n then return end
    if reachable~=true then
     completed=true
-    if self.report then self.report("destination_validation_rejected",goal) end
+    self:note("destination_validation_rejected",goal)
     done(false,"destination_unreachable:"..tostring(reason or "unknown"));return
    end
    completed=true;submit_move("move_to")
@@ -119,7 +126,7 @@ function N:move(point,cb,direct,skip_height)
   if not dispatched and not completed then completed=true;done(false,"validate_destination_error:"..tostring(dispatch_error)) end
  end
  local function projected(first,second)
-  if completed or generation~=self.generation or self.get_nav()~=n then return end
+  if completed or generation~=self.generation or self:client()~=n then return end
   -- ArthasNav query callbacks use (ok, z); older compatible clients supplied
   -- z directly. Accept both contracts without mistaking `true` for a height.
   local height=first==true and type(second)=="number" and second or first
@@ -129,16 +136,16 @@ function N:move(point,cb,direct,skip_height)
   -- destination in that case instead of snapping the request through the
   -- floor. Keep the same bounded guard before ArthasNav validation.
   if type(height)=="number" and height==height and height<goal.z-8 then
-   if self.report then self.report("height_projection_platform_preserved",goal) end
+   self:note("height_projection_platform_preserved",goal)
    move_validated();return
   elseif type(height)=="number" and height==height and math.abs(height-goal.z)<=6 then
    goal.z=height
   elseif type(height)=="number" and height==height then
    completed=true
-   if self.report then self.report("height_projection_conflict",goal) end
+   self:note("height_projection_conflict",goal)
    done(false,"height_projection_conflict");return
   else
-   if self.report then self.report("height_projection_rejected",goal) end
+   self:note("height_projection_rejected",goal)
    -- Match the proven 1-90 navigation adapter: a missing optional height
    -- query must not prevent Sentinel from receiving an otherwise valid XYZ
    -- destination. Sentinel's own validation/move callback stays authoritative.
@@ -158,12 +165,12 @@ function N:move(point,cb,direct,skip_height)
   environmental_skip=ok and value==true
  end
  if skip_height or environmental_skip or self.height_probe_disabled then
-  if environmental_skip and self.report then self.report("height_projection_skipped_swimming",goal) end
+  if environmental_skip then self:note("height_projection_skipped_swimming",goal) end
   move_validated();return
  end
  if has("get_all_heights") then
   local dispatched,dispatch_error=call("get_all_heights",goal,function(values)
-   if completed or generation~=self.generation or self.get_nav()~=n then return end
+   if completed or generation~=self.generation or self:client()~=n then return end
    local best,best_delta
    for _,value in pairs(type(values)=="table" and values or {}) do
     local height=type(value)=="number" and value or type(value)=="table" and (value.z or value.height)
@@ -176,7 +183,7 @@ function N:move(point,cb,direct,skip_height)
   end)
   if not dispatched and not completed then
    self.height_probe_disabled=true
-   if self.report then self.report("height_projection_provider_disabled:"..tostring(dispatch_error),goal) end
+   self:note("height_projection_provider_disabled:"..tostring(dispatch_error),goal)
    -- Height projection is optional. A provider packaging/configuration fault
    -- must not take movement down with it; preserve the live XYZ and submit the
    -- route through the provider's core move contract.
@@ -186,7 +193,7 @@ function N:move(point,cb,direct,skip_height)
   local dispatched,dispatch_error=call("get_height",goal,projected)
   if not dispatched and not completed then
    self.height_probe_disabled=true
-   if self.report then self.report("height_projection_provider_disabled:"..tostring(dispatch_error),goal) end
+   self:note("height_projection_provider_disabled:"..tostring(dispatch_error),goal)
    move_validated()
   end
  end
