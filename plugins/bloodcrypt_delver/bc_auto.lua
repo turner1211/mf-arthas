@@ -4,6 +4,7 @@ local Rewards=require("bc_rewards")
 local Learning=require("bc_learning")
 local NemesisRuntime=require("bc_nemesis_runtime")
 local RunMemory=require("bc_run_memory")
+local LevelProfile=require("bc_level_profile")
 local M={};M.__index=M
 local function finite(n) return type(n)=="number" and n==n and math.abs(n)<1000000 end
 local function family(name) return tostring(name or "objective"):lower():gsub("[^%w]","_"):sub(1,120) end
@@ -23,7 +24,7 @@ local function remember(self,kind,guid)
  return true
 end
 function M.new(api)
- return setmetatable({api=api,enabled=false,state="Stopped",index=0,runs=0,log={},options={repeat_run=true,max_runs=0,auto_exit=true,combat_hold=true,auto_loot=true,spend_key=false,tier=8,key_reserve=1,max_pull=5,recover_death=true,learning=true,auto_mount=true,prefer_flying=true},epoch=0,blocked={},nemesis=NemesisRuntime.new()},M)
+ return setmetatable({api=api,enabled=false,state="Stopped",index=0,runs=0,log={},options={repeat_run=true,max_runs=0,auto_exit=true,combat_hold=true,auto_level=true,auto_loot=true,spend_key=false,tier=8,key_reserve=1,max_pull=5,recover_death=true,learning=true,auto_mount=true,prefer_flying=true},epoch=0,blocked={},nemesis=NemesisRuntime.new()},M)
 end
 function M:note(s)
  if self.state==s then return end
@@ -85,8 +86,9 @@ function M:move(p,label,block_key,frontier_distance,request)
  if self.options.hazard_avoidance~=false and self.api.goal_safe then local safe,why=self.api.goal_safe(p);if safe==false then if block_key then self.blocked[block_key]=self.api.now()+20 end;self:note(why or "Unsafe navigation destination");if self.logger then self.logger.record(self.api.now(),"move_rejected_hazard",{label=label or "Navigating",x=p.x,y=p.y,z=p.z,reason=why or "unsafe"}) end;return false end end
  local snap=self.api.snapshot();local dist
  if snap.position then local dx,dy,dz=p.x-snap.position.x,p.y-snap.position.y,p.z-snap.position.z;dist=math.sqrt(dx*dx+dy*dy+dz*dz) end
- if self.options.auto_mount and not snap.dead and dist and dist>35 and self.api.prepare_mount then
-  local ready,status=self.api.prepare_mount(dist,self.options.prefer_flying)
+ local level=self.level_profile
+ if self.options.auto_mount and (not level or level.mount) and not snap.dead and dist and dist>35 and self.api.prepare_mount then
+  local ready,status=self.api.prepare_mount(dist,self.options.prefer_flying and (not level or level.flying))
   if ready~=true then self.state=status or "Preparing mount";return ready~=false end
  end
  local epoch=self.epoch;self.moving=true;self.goal=p;self.goal_block_key=block_key;self.move_started=self.api.now();self.last_motion_position=nil;self.last_motion_at=self.move_started;self:note(label or "Navigating")
@@ -122,6 +124,10 @@ end
 function M:tick()
  if not self.enabled then return end
  local a=self.api;local now=a.now();local snap=a.snapshot();local delve=Catalog[self.selected]
+ local character=a.character and a.character() or {};local profile=LevelProfile.get(character,self.options)
+ if self.options.auto_level==false then profile.max_pull=self.options.max_pull or 5;profile.approach_range=4.5;profile.mount=true;profile.flying=true end
+ self.level_profile=profile
+ _G.BloodcryptCombatContext={level=profile.level,bracket=profile.name,role=profile.role,spec_id=profile.spec_id,rotation=profile.rotation,approach_range=profile.approach_range,max_pull=profile.max_pull,delve=self.selected,story=self.variant,state=self.state,updated_at=now}
  local detected,label=self.options.auto_story~=false and a.detect_story and a.detect_story(delve)
  if detected and detected~=self.variant then self.variant=detected;self:note("Detected story: "..tostring(label)) end
  if not snap.ready then self.loading_since=self.loading_since or now;if now-self.loading_since>90 then self:stop("Character/loading timeout") else self.state="Loading: preserving verified run state" end;return else self.loading_since=nil end
@@ -149,7 +155,7 @@ function M:tick()
   if threat and not escape then
    if self.moving and self.combat_move_guid~=threat.guid then self:clear_motion() end
    if a.target and self.combat_target_guid~=threat.guid then local targeted,why=a.target(threat.object);if targeted then self.combat_target_guid=threat.guid elseif self.logger then self.logger.record(now,"combat_target_refused",{guid=threat.guid,reason=why or "refused"}) end end
-   if self.options.combat_approach~=false and threat.distance>4.5 then
+    if self.options.combat_approach~=false and threat.distance>profile.approach_range then
     if not self.moving then self.combat_move_guid=threat.guid;self.combat_last_position={x=threat.position.x,y=threat.position.y,z=threat.position.z};self.arrived=false;self:move(threat.position,"Combat approach: "..threat.name,threat.guid,nil,{track_guid=threat.guid}) end
     return
    end
@@ -257,7 +263,7 @@ function M:tick()
   end
   table.sort(filtered,function(x,y) if x.local_score==y.local_score then return tostring(x.guid)<tostring(y.guid) end;return x.local_score>y.local_score end)
   for _,row in ipairs(filtered) do
-   if (self.blocked[row.guid] or 0)<=now and not (row.enemy and (row.pack or 1)>(self.options.max_pull or 5)) then
+    if (self.blocked[row.guid] or 0)<=now and not (row.enemy and (row.pack or 1)>profile.max_pull) then
     local logged_at=self.candidate_log_at and self.candidate_log_at[row.guid] or -100
     if self.logger and now-logged_at>=5 then self.candidate_log_at[row.guid]=now;self.logger.record(now,"local_candidate",{name=row.name or "",id=row.id or 0,guid=row.guid or "",distance=row.distance,usable=row.usable==true,enemy=row.enemy==true,pack=row.pack or 0,score=row.local_score}) end
     local use_range=row.usable and 2.5 or 4
@@ -323,7 +329,7 @@ function M:tick()
  table.sort(objects,function(x,y) return x.score>y.score end)
  for _,row in ipairs(objects) do
   if (self.blocked[row.guid] or 0)<=now then
-   local oversized=row.enemy and (row.pack or 1)>(self.options.max_pull or 5)
+    local oversized=row.enemy and (row.pack or 1)>profile.max_pull
    if oversized then self.blocked[row.guid]=now+20
    else
     if row.distance>4 then self.arrived=false;self:move(row.position,"Approaching "..(row.name or "objective"),row.guid,nil,{valid_guid=row.guid,expires_in=45});return end

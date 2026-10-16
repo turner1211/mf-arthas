@@ -22,10 +22,11 @@ function M:event(event,args)
  local f=fields(s);local passive=f[3]=="push";if not passive and f[3]~=self.token then return false end
  self.last_message_at=self.api.now()
  local kind=f[2];local seq=integer(f[4]);if not seq then return false end
- if kind=="I" and #f==9 then
+ if kind=="I" and (#f==9 or #f==10) then
   local class,spec=integer(f[5],100),integer(f[6],100000)
-  if not class or not spec or class<1 or spec<1 or (f[7]~="TANK" and f[7]~="HEALER" and f[7]~="DAMAGER" and f[7]~="NONE") then return false end
-  self.character={class_id=class,spec_id=spec,role=f[7],class=f[8],spec=f[9],at=self.api.now()};return true
+  local level=#f==10 and integer(f[10],1000) or nil
+  if not class or not spec or class<1 or spec<1 or (#f==10 and (not level or level<1)) or (f[7]~="TANK" and f[7]~="HEALER" and f[7]~="DAMAGER" and f[7]~="NONE") then return false end
+  self.character={class_id=class,spec_id=spec,role=f[7],class=f[8],spec=f[9],level=level,at=self.api.now()};return true
  elseif kind=="W" and #f==8 then
   local count=integer(f[7]);if not count then return false end
   self.wigs={bigwigs=f[5]=="1",littlewigs=f[6]=="1",events=count,last_event=f[8],at=self.api.now()};return true

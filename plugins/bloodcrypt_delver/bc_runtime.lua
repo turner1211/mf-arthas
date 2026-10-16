@@ -55,13 +55,14 @@ function M.poll_bridge()
 end
 function M.character()
  local now=core.time();if character_cache.value and now-character_cache.at<1 then return character_cache.value end
- local ok,p,class,spec=pcall(function() local o=player();if not o or not o:is_valid() then return nil end;return o,o.get_class and o:get_class() or 0,o.get_specialization_id and o:get_specialization_id() or 0 end)
+ local ok,p,class,spec,level=pcall(function() local o=player();if not o or not o:is_valid() then return nil end;return o,o.get_class and o:get_class() or 0,o.get_specialization_id and o:get_specialization_id() or 0,o.get_level and o:get_level() or 0 end)
  if not ok or not p then character_cache={at=now,value={label="Character unavailable"}};return character_cache.value end
  local live=M.bridge.character
  if live and live.class_id==class and live.spec_id==spec and core.time()-live.at<=30 then
-  character_cache={at=now,value={class_id=class,spec_id=spec,class=live.class,spec=live.spec,role=live.role,label=live.class.." / "..live.spec.." / "..live.role}};return character_cache.value
+  level=tonumber(level) and level>0 and level or live.level
+  character_cache={at=now,value={class_id=class,spec_id=spec,level=level,class=live.class,spec=live.spec,role=live.role,label=live.class.." / "..live.spec.." / "..live.role.." / Level "..tostring(level or "?")}};return character_cache.value
  end
- character_cache={at=now,value={class_id=class,spec_id=spec,role="UNKNOWN",label="Class "..class.." / Spec "..spec.." / waiting for role"}};return character_cache.value
+ character_cache={at=now,value={class_id=class,spec_id=spec,level=level,role="UNKNOWN",label="Class "..class.." / Spec "..spec.." / Level "..tostring(level or "?").." / waiting for role"}};return character_cache.value
 end
 function M.prepare_entry(instance,tier)
  local ok,why=M.local_control();if not ok then return false,why end

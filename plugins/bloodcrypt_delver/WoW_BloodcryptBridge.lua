@@ -56,7 +56,8 @@ local function capture(token,expected)
  local specIndex=getSpec and getSpec()
  if specIndex and getInfo then
   local specID,specName,_,_,role=getInfo(specIndex)
-  enqueue("I",token,classID or 0,specID or 0,role or "NONE",className,specName)
+  local level=type(UnitLevel)=="function" and UnitLevel("player") or 1
+  enqueue("I",token,classID or 0,specID or 0,role or "NONE",className,specName,level or 1)
  end
  local loaded=C_AddOns and C_AddOns.IsAddOnLoaded or IsAddOnLoaded
  enqueue("W",token,BigWigsLoader and 1 or 0,loaded and loaded("LittleWigs") and 1 or 0,B.bigwigs_events,B.last_bigwigs_event or "")

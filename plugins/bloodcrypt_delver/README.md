@@ -1,4 +1,6 @@
-# Bloodcrypt Delver — development build 0.6.29
+# Bloodcrypt Delver — development build 0.6.30
+
+Build 0.6.30 auto-detects character level through both the Sylvanas player object and the WoW bridge. A level/spec/role profile now caps pull size, selects melee/ranged/healer engagement distance, gates mount and flying requests for low-level characters, appears in the Combat panel, and is published as `BloodcryptCombatContext` for external rotation plugins. Bloodcrypt still leaves spell selection and rotations to the dedicated combat plugin.
 
 Build 0.6.29 replaces the compact panel with a 1240x760 Bloodcrypt command console patterned after the supplied reference: ornate embedded crypt artwork, large sidebar pages, themed icon buttons, per-delve colors and guidance, switches, steppers, and configurable action hotkeys. The artwork remains embedded in Lua, preserving the Lua/Markdown-only package rule.
 

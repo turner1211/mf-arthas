@@ -7,8 +7,8 @@ local Settings=require("bc_settings")
 local Debug=require("bc_debug")
 local Learning=require("bc_learning")
 local bot=Auto.new(Runtime);bot.options=Settings.load()
-Learning.load("0.6.29")
-bot.logger=Debug;Debug.start(core.time(),"0.6.29")
+Learning.load("0.6.30")
+bot.logger=Debug;Debug.start(core.time(),"0.6.30")
 local selected,variant=1,1
 local notice="Verified adaptive routing ready"
 local pending={};local nav_status="Checking navigation";local capabilities={}
@@ -38,6 +38,7 @@ local function action(key,value)
  elseif key=="mount" then bot.options.auto_mount=not bot.options.auto_mount
  elseif key=="fly" then bot.options.prefer_flying=not bot.options.prefer_flying
  elseif key=="combat" then bot.options.combat_hold=not bot.options.combat_hold
+ elseif key=="autolevel" then bot.options.auto_level=not bot.options.auto_level
  elseif key=="approach" then bot.options.combat_approach=not bot.options.combat_approach
  elseif key=="face" then bot.options.auto_face=not bot.options.auto_face
  elseif key=="recover" then bot.options.recover_death=not bot.options.recover_death
@@ -60,7 +61,7 @@ local function action(key,value)
    if Catalog[selected].nemesis then bot.options.tier=tier>=11 and 11 or 8 else bot.options.tier=math.max(1,math.min(11,math.floor(tier))) end
   end
  end
- local persistent={["repeat"]=true,exit=true,limit=true,loot=true,key=true,mount=true,fly=true,tier=true,combat=true,approach=true,face=true,recover=true,learning=true,memory=true,hazards=true,storydetect=true,reserve=true,pull=true,hotkeys=true,hk_master=true,hk_loot=true,hk_key=true,hk_combat=true,hk_recovery=true,hk_travel=true}
+ local persistent={["repeat"]=true,exit=true,limit=true,loot=true,key=true,mount=true,fly=true,tier=true,combat=true,autolevel=true,approach=true,face=true,recover=true,learning=true,memory=true,hazards=true,storydetect=true,reserve=true,pull=true,hotkeys=true,hk_master=true,hk_loot=true,hk_key=true,hk_combat=true,hk_recovery=true,hk_travel=true}
  if persistent[key] and not Settings.save(bot.options) then notice="Settings could not be saved" end
 end
 _G.BloodcryptDelver={stop=function() pending[#pending+1]={"stop"} end,start=function(id) pending[#pending+1]={"select",id or selected};pending[#pending+1]={"start"} end,show=function() open:set(true) end,status=function() return bot.state end}
@@ -120,7 +121,7 @@ core.register_on_update_callback(function()
 end)
 core.register_on_render_menu_callback(function()
  menu_root:render("Bloodcrypt Delver",function()
-  core.menu.text("MIDNIGHT / DELVE EXPEDITIONS / v0.6.29")
+  core.menu.text("MIDNIGHT / DELVE EXPEDITIONS / v0.6.30")
   open:render("Open Bloodcrypt command panel","F9 shows or hides the crypt panel; Start and Stop control the expedition.")
   core.menu.text("F9: panel open / close")
  end)
