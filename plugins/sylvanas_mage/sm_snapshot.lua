@@ -182,6 +182,10 @@ function N.build(player,identity,mode,settings,engine)
      c.casts[#c.casts+1]=cast
      if U.same(cast.target,player) and cast.left<=2 then
       if cast.school==1 then c.physical=true elseif cast.school and cast.school>1 then c.magic=true end
+      -- WoW spell-school masks: Fire=4 and Frost=16. Composite schools retain
+      -- those bits, allowing wards to react without another object scan.
+      if cast.school and math.floor(cast.school/4)%2==1 then c.fire_magic=true end
+      if cast.school and math.floor(cast.school/16)%2==1 then c.frost_magic=true end
       if cast.school and cast.school>1 then c.reflect=cast end
      end
     end
@@ -244,6 +248,13 @@ function N.build(player,identity,mode,settings,engine)
  c.buff=function(id) if S.aura_allowed(id,c.spec)then return A.read(player,id)end end
  c.stacks=function(id,debuff)if not S.aura_allowed(id,c.spec)then return 0 end;local active,_,n=A.read(debuff and c.target or player,id,debuff,debuff and player or nil);return active==true and (n or 1) or 0 end
  c.debuff=function(id) if S.aura_allowed(id,c.spec)then return A.read(c.target,id,true,player)end end
+ c.row_debuff=function(key)
+  local row=S.rows[key];if not row or not S.allowed(key,c.spec)then return false end
+  local best=false
+  for _,id in ipairs(row.ranks or{row.id})do local active,left=A.read(c.target,id,true,player);if active==true and(left==nil or best==false or left>best)then best=left or math.huge end end
+  return best
+ end
+ c.target_frozen=c.target_valid and S.freeze_auras and A.any(c.target,S.freeze_auras,true)or false
  c.known=function(key)
   local row=S.rows[key]
   return row and S.allowed(key,c.spec) and engine:learned(row,row.id,c.spec) or false

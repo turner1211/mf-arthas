@@ -28,10 +28,12 @@ function K.permitted(c)
  -- Polymorph creates pressure independently of major cooldown availability. It
  -- may set up a burst window, stop healing, or remove an off-target DPS.
  if not c.hp or math.min(c.hp,c.predicted_hp or c.hp)<=c.settings.low_hp then return blocked(c,'setup unavailable: health unsafe') end
- if c.moving then return blocked(c,'setup held: moving') end
+ local forever=c.identity and c.identity.client_family=='forever';local instant=forever and c.buff(S.aura.presence)==true
+ local pom_available=forever and c.known('presence')and c.cd('presence')<=0.05
+ if c.moving and not instant and not pom_available then return blocked(c,'setup held: moving without Presence of Mind') end
  local precog,precog_left=N.precognition(c.player)
  local precog_cast=precog and(not precog_left or precog_left>=1.65)
- if (c.melee_attackers or 0)>0 and not precog_cast then return blocked(c,'setup held: melee pressure prevents hardcast') end
+ if (c.melee_attackers or 0)>0 and not precog_cast and not instant and not pom_available then return blocked(c,'setup held: melee pressure prevents hardcast') end
  local offensive_active=c.buff(S.aura.surge)==true or c.buff(S.aura.combustion)==true or c.debuff(S.aura.touch)==true
  c.cc_status=precog_cast and'setup permitted: protected by active Precognition'
   or offensive_active and'setup permitted: extend control through active offensive window'
@@ -82,6 +84,11 @@ end
 function K.run(c,e)
  if not K.permitted(c) then return end
  if c.now-(e.history.polymorph or -math.huge)<1.5 then c.cc_status='setup held: recent Polymorph confirmation';return end
+ local forever=c.identity and c.identity.client_family=='forever'
+ local pom_needed=forever and c.known('presence')and c.buff(S.aura.presence)~=true and ((c.melee_attackers or 0)>0 or c.moving or c.burst)
+ if pom_needed and (c.arena_healer and not U.same(c.arena_healer,c.target)or c.defensive_poly_target)then
+  local pom=c.pick('presence','Forever Presence of Mind reserved for immediate Polymorph control');if pom then return pom end
+ end
  -- Prefer the enemy healer. If the healer is the kill target or temporarily
  -- unsafe, control a clean off-target instead of abandoning Arena CC.
  if c.known('dragon_breath')and c.arena_healer and not U.same(c.arena_healer,c.target)

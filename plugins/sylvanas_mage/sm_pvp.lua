@@ -212,6 +212,14 @@ function P.run(c,e)
  if c.spec==64 and P.target_root_safe(c,8,pressure.unit,e) and c.now-(e.history.ice_nova or -math.huge)>8 then
   local a=c.pick('ice_nova','automatic melee peel: targeted DR-safe root',pressure.unit);if a then return a end
  end
+ -- At healthy pressure levels, Forever Frost can turn Cold Snap into the
+ -- documented second Nova. Keep it for survival during enemy burst and only
+ -- reset when the same live immunity/DR checks already approve another root.
+ local forever=c.identity and c.identity.client_family=='forever'
+ if forever and c.spec==64 and c.settings.frost_cold_snap and (c.hp or 0)>=70 and not c.enemy_burst
+  and c.cd('frost_nova')>1 and P.root_safe(c,e) and c.now-(e.history.cold_snap or-math.huge)>30 then
+  local a=c.pick('cold_snap','Forever Frost healthy-pressure reset for a second DR-safe Frost Nova');if a then return a end
+ end
  local H=require('sm_snapshot').Pvp
  local flags=H and (H.cc_flags or require('common/enums').cc_flags)
  local slow_flag=flags and flags.SLOW

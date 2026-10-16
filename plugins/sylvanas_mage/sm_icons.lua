@@ -11,8 +11,10 @@ function I.draw(kind,w,x,y,size,accent,spec)
   local atlas=atlases[spec]
   if atlas then
    local cell=cells[kind]or 0;local cx,cy=cell%3,math.floor(cell/3);local origin=w.get_position and w:get_position()or V.new(70,70)
-   local ok=pcall(g.draw_texture_rect,atlas,V.new(origin.x+x,origin.y+y),size,size,cx/3,cy/3,(cx+1)/3,(cy+1)/3,C.new(255,255,255,255),true)
-   if ok then if w.render_rect then w:render_rect(V.new(x,y),V.new(x+size,y+size),accent,4,1)end;return true end
+   local dark=C.new(5,12,18,245);local metal=spec==62 and C.new(193,157,237,220)or spec==63 and C.new(236,151,65,220)or C.new(145,220,248,220)
+   if w.render_rect_filled then w:render_rect_filled(V.new(x+2,y+3),V.new(x+size+2,y+size+3),C.new(0,0,0,145),5);w:render_rect_filled(V.new(x,y),V.new(x+size,y+size),dark,5)end
+   local pad=3;local ok=pcall(g.draw_texture_rect,atlas,V.new(origin.x+x+pad,origin.y+y+pad),size-pad*2,size-pad*2,cx/3,cy/3,(cx+1)/3,(cy+1)/3,C.new(255,255,255,255),true)
+   if ok then if w.render_rect then w:render_rect(V.new(x,y),V.new(x+size,y+size),metal,5,2);w:render_rect(V.new(x+2,y+2),V.new(x+size-2,y+size-2),accent,3,1)end;return true end
   end
  end
  local function v(a,b)return V.new(x+a*k,y+b*k)end

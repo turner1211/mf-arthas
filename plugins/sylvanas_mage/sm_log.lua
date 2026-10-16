@@ -1,7 +1,8 @@
 local U=require('sm_util')
 local L={rows={},queue={},last={},seq=0,enabled=true,ready=false,initialized=false,last_flush=-math.huge,last_checkpoint=-math.huge,
  last_sample=-math.huge,max_rows=500,status='Starting logger',version=require('sm_version')}
-local folder='sylvanas_mage'
+local family=require('sm_client').detect()or'unknown'
+local folder='sylvanas_mage_'..family
 local essential={startup=true,error=true,scope=true,world_leave=true,logout=true,disconnect=true,death=true,hold=true,marker=true}
 local immediate={attempt=true,requested=true,confirmed=true,failed=true,manual_hold=true,profile=true}
 local function call(f,...)
@@ -92,7 +93,7 @@ function L.emit(kind,c,detail)
  if not L.enabled and not essential[kind]then return end
  L.ensure();L.seq=L.seq+1
  local now=U.fn(core.time) or 0;local utc=U.number(U.fn(core.get_server_time)) or 0
- local row=string.format('%d|t=%.3f|utc=%d|%s|spec=%s|mode=%s|role=%s|%s',L.seq,now,utc,clean(kind,40),
+ local row=string.format('%d|t=%.3f|utc=%d|%s|client=%s|spec=%s|mode=%s|role=%s|%s',L.seq,now,utc,clean(kind,40),family,
   clean(c and c.spec,20),clean(c and c.mode,30),clean(c and c.identity and c.identity.role,20),clean(detail,1600))
  L.rows[#L.rows+1]=row;while #L.rows>L.max_rows do table.remove(L.rows,1)end
  L.queue[#L.queue+1]=row..'\n';while #L.queue>L.max_rows do table.remove(L.queue,1)end

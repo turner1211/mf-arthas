@@ -1,5 +1,6 @@
 local Modes,U=require('sm_modes'),require('sm_util')
-local C={cells={},status='Mage ready',hotkey_down={},hotkey_status='Hotkeys ready'}
+local C={cells={},status='Mage ready',hotkey_down={},hotkey_status='Hotkeys ready',is_mage=false}
+local family=require('sm_client').detect();local tag_root=family=='forever'and'sm_forever_'or'sm_'
 local specs={{62,'Arcane'},{63,'Fire'},{64,'Frost'}}
 C.labels={pause='Pause Mage',themed_gui='Mage command window',boss_guide='DPS overlay and boss coach',logging='Detailed combat logs',burst='PvP burst permission',hotkeys_enabled='Enable option hotkeys',dummy_test='Training dummy testing',arcane_images='Refractive Images defense',enabled='Enable this profile',damage='Damage rotation',defensives='Defensive abilities',interrupts='Counterspell interrupts',priority_interrupts='Save interrupts for dangerous casts',
  cooldowns='Offensive cooldowns',aoe='Safe area damage',automatic_burst='Automatic PvP kill windows',arena_control='Arena healer Polymorph',
@@ -7,6 +8,7 @@ C.labels={pause='Pause Mage',themed_gui='Mage command window',boss_guide='DPS ov
  temporal_defense='Safe ranged Alter Time defense',
  invisibility_defense='Greater Invisibility emergency defense',
  purge='Confirmed Spellsteal',remove_curse='Remove confirmed curses',intellect='Arcane Intellect upkeep',
+ forever_mana_shield='Situational Forever Mana Shield',forever_wards='Automatic Forever elemental wards',forever_recovery='Forever low-mana Evocation',
  timer_defensives='Boss timer barrier preparation',low_hp='Barrier health %',turtle_hp='Emergency immunity health %',heal_hp='Refractive Images health %',
  interrupt_percent='Interrupt progress %',cooldown_min_ttd='Minimum target life for burst',cooldown_min_enemies='Mythic+ burst pack size',
  arcane_salvo='Salvo-aware Barrage',arcane_prismatic='Prismatic Bolt procs',arcane_missiles='Clearcasting Missiles',arcane_recovery='Safe mana recovery',arcane_reserve='Conserve below mana %',
@@ -14,10 +16,16 @@ C.labels={pause='Pause Mage',themed_gui='Mage command window',boss_guide='DPS ov
  frost_freezing='Freezing stack spending',frost_orb='Safe Frozen Orb',frost_blizzard='Safe Blizzard',frost_spike='Glacial Spike procs',frost_ray='Ray of Frost channels',
  frost_ice_nova='Cone of Frost Ice Nova',frost_cone='Cone of Frost directional damage',frost_cold_snap='Emergency Cold Snap recovery'}
 C.order={'enabled','damage','cooldowns','aoe','automatic_burst','defensives','temporal_defense','invisibility_defense','arcane_images','heal_hp','low_hp','turtle_hp','timer_defensives',
- 'interrupts','interrupt_percent','priority_interrupts','arena_control','automatic_peeling','defensive_control','pvp_target_lines','pvp_roots','pvp_slow','purge','remove_curse','intellect','cooldown_min_ttd','cooldown_min_enemies'}
+ 'interrupts','interrupt_percent','priority_interrupts','arena_control','automatic_peeling','defensive_control','pvp_target_lines','pvp_roots','pvp_slow','purge','remove_curse','intellect','forever_mana_shield','forever_wards','forever_recovery','cooldown_min_ttd','cooldown_min_enemies'}
 C.spec_order={[62]={'arcane_salvo','arcane_prismatic','arcane_missiles','arcane_recovery','arcane_reserve'},
  [63]={'fire_hot_streak','fire_blast','fire_pyroclasm','fire_meteor','fire_flamestrike'},
  [64]={'frost_freezing','frost_orb','frost_blizzard','frost_spike','frost_ray','frost_ice_nova','frost_cone','frost_cold_snap'}}
+if family=='forever'then
+ C.spec_order={[62]={'arcane_missiles','arcane_recovery','arcane_reserve'},[63]={'fire_hot_streak','fire_flamestrike'},[64]={'frost_freezing','frost_blizzard','frost_cold_snap'}}
+ C.labels.arcane_missiles='Missile Barrage spending';C.labels.arcane_recovery='Evocation mana recovery';C.labels.arcane_reserve='Arcane Blast conserve mana %'
+ C.labels.fire_hot_streak='Adaptive Heating Up Pyroblast';C.labels.fire_flamestrike='Forever area target count'
+ C.labels.frost_freezing='Fingers of Frost Ice Lance';C.labels.frost_blizzard='Forever Blizzard target count';C.labels.frost_cold_snap='Cold Snap emergency reset'
+end
 function C.available(spec,mode,key)
  for owner,list in pairs(C.spec_order)do for _,specific in ipairs(list)do if specific==key then return owner==spec end end end
  if key=='heal_hp' or key=='arcane_images' then return spec==62 end
@@ -25,10 +33,11 @@ function C.available(spec,mode,key)
  if key=='automatic_peeling' then return Modes.pvp[mode]==true end
  if key=='defensive_control' then return Modes.pvp[mode]==true end
  if key=='pvp_target_lines' then return Modes.pvp[mode]==true end
- if key=='temporal_defense' then return Modes.pvp[mode]==true end
- if key=='invisibility_defense' then return Modes.pvp[mode]==true end
+ if key=='temporal_defense' then return family~='forever'and Modes.pvp[mode]==true end
+ if key=='invisibility_defense' then return family~='forever'and Modes.pvp[mode]==true end
  if key=='pvp_roots' then return Modes.pvp[mode]==true end
- if key=='pvp_slow' then return spec==62 and Modes.pvp[mode]==true end
+ if key=='pvp_slow' then return family~='forever'and spec==62 and Modes.pvp[mode]==true end
+ if key=='forever_mana_shield' or key=='forever_wards' or key=='forever_recovery' then return family=='forever' end
  if key=='automatic_burst' then return Modes.pvp[mode]==true end
  if key=='timer_defensives' or key=='cooldown_min_ttd' then return not Modes.pvp[mode] end
  if key=='cooldown_min_enemies' then return mode=='mythic_plus' end
@@ -42,7 +51,7 @@ function C.gui_groups(spec,mode,page)
   [3]={'interrupts','priority_interrupts','interrupt_percent','arena_control','defensive_control'},
   [4]={'automatic_peeling','pvp_roots','pvp_slow','pvp_target_lines'},
   [5]={'defensives','temporal_defense','invisibility_defense','arcane_images','heal_hp','low_hp','turtle_hp','timer_defensives'},
-  [6]={'purge','remove_curse','intellect'},
+  [6]={'purge','remove_curse','intellect','forever_mana_shield','forever_wards','forever_recovery'},
  }
  local list=page==7 and C.spec_order[spec] or groups[page] or {};local out={}
  for _,key in ipairs(list)do if C.available(spec,mode,key)then out[#out+1]=key end end;return out
@@ -50,32 +59,32 @@ end
 function C.defaults(spec,mode)
  local pvp=Modes.pvp[mode]==true
  local out={enabled=true,damage=true,defensives=true,interrupts=true,priority_interrupts=true,cooldowns=true,aoe=true,
- automatic_burst=true,arena_control=true,automatic_peeling=pvp,defensive_control=pvp,pvp_target_lines=pvp,temporal_defense=pvp,invisibility_defense=pvp,pvp_roots=pvp,pvp_slow=pvp and spec==62,purge=true,remove_curse=true,intellect=true,timer_defensives=not pvp,
+ automatic_burst=true,arena_control=true,automatic_peeling=pvp,defensive_control=pvp,pvp_target_lines=pvp,temporal_defense=pvp,invisibility_defense=pvp,pvp_roots=pvp,pvp_slow=pvp and spec==62,purge=true,remove_curse=true,intellect=true,forever_mana_shield=family=='forever',forever_wards=family=='forever',forever_recovery=family=='forever',timer_defensives=not pvp,
  low_hp=75,turtle_hp=18,heal_hp=40,interrupt_percent=pvp and 35 or 55,
  cooldown_min_ttd=mode=='mythic_plus' and 10 or 5,cooldown_min_enemies=mode=='mythic_plus' and 3 or 1}
  for _,key in ipairs(C.spec_order[spec])do out[key]=true end
  if spec~=62 then out.heal_hp=nil end
- if spec==62 then out.arcane_images=true;out.arcane_reserve=20 elseif spec==63 then out.fire_flamestrike=3 end
+ if spec==62 then out.arcane_images=family~='forever';out.arcane_reserve=family=='forever'and 40 or 20 elseif spec==63 then out.fire_flamestrike=3 end
  return out
 end
 function C.init()
  C.root=core.menu.tree_node();C.spec_nodes={};C.global_hotkeys={}
  for _,k in ipairs({'enabled','pause','themed_gui','boss_guide','logging','burst','dummy_test'})do
- C[k]=core.menu.checkbox(k~='pause','sm_global_'..k..'_v1') end
- C.hotkeys_enabled=core.menu.checkbox(true,'sm_global_hotkeys_enabled_v1')
+ C[k]=core.menu.checkbox(k~='pause',tag_root..'global_'..k..'_v1') end
+ C.hotkeys_enabled=core.menu.checkbox(true,tag_root..'global_hotkeys_enabled_v1')
  for _,key in ipairs({'enabled','pause','themed_gui','boss_guide','logging','burst','dummy_test'})do
-  C.global_hotkeys[key]={enabled=core.menu.checkbox(false,'sm_global_hk_enabled_'..key..'_v1'),code=core.menu.slider_int(0,255,0,'sm_global_hk_code_'..key..'_v1')}
+  C.global_hotkeys[key]={enabled=core.menu.checkbox(false,tag_root..'global_hk_enabled_'..key..'_v1'),code=core.menu.slider_int(0,255,0,tag_root..'global_hk_code_'..key..'_v1')}
  end
  for _,s in ipairs(specs)do
  C.spec_nodes[s[1]]=core.menu.tree_node();C.cells[s[1]]={}
  for _,mode in ipairs(Modes.order)do local cell={node=core.menu.tree_node(),controls={},hotkeys={}}
- for key,v in pairs(C.defaults(s[1],mode))do local tag='sm_'..s[1]..'_'..mode..'_'..key..'_v1'
+ for key,v in pairs(C.defaults(s[1],mode))do local tag=tag_root..s[1]..'_'..mode..'_'..key..'_v1'
  cell.controls[key]=type(v)=='boolean' and core.menu.checkbox(v,tag) or core.menu.slider_int(0,100,v,tag)
  if type(v)=='boolean'then cell.hotkeys[key]={enabled=core.menu.checkbox(false,tag..'_hk_enabled_v1'),code=core.menu.slider_int(0,255,0,tag..'_hk_code_v1')}end end
  C.cells[s[1]][mode]=cell end end
  -- Apply the user's enable-all request once, including existing saved profiles.
  -- This marker is persisted; subsequent user choices remain untouched.
- C.enable_all_migration=core.menu.checkbox(false,'sm_enable_all_migration_v2')
+ C.enable_all_migration=core.menu.checkbox(false,tag_root..'enable_all_migration_v2')
  if not C.enable_all_migration:get_state()then
   for _,key in ipairs({'enabled','themed_gui','boss_guide','logging','burst','dummy_test'})do C[key]:set(true)end
   for _,entry in ipairs(specs)do for _,mode in ipairs(Modes.order)do
@@ -149,8 +158,7 @@ function C.value(spec,mode,key)local x=C.control(spec,mode,key);if x then if x.g
 function C.set(spec,mode,key,v)local x=C.control(spec,mode,key);if x and x.set then x:set(v)end end
 function C.get(spec,mode)if not C.cells[spec] or not C.cells[spec][mode]then return end;local out={};for k in pairs(C.cells[spec][mode].controls)do out[k]=C.value(spec,mode,k)end;return out end
 function C.render()
- local player=core and core.object_manager and U.fn(core.object_manager.get_local_player)
- if not U.valid(player) or U.number(U.call(player,'get_class'))~=8 then return end
+ if C.is_mage~=true then return end
  C.root:render('Mage: Arcane / Fire / Frost',function()
  C.enabled:render('Enable Mage',C.status);C.pause:render('Pause Mage');C.themed_gui:render('Mage command window')
  C.boss_guide:render('DPS overlay and boss coach');C.burst:render('Allow PvP burst');C.logging:render('Detailed combat logs');C.dummy_test:render('Training dummy testing')

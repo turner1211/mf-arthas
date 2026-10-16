@@ -46,12 +46,17 @@ function E:target_life(c)
  if r.samples>=3 and r.rate>=0.75 then return c.target_hp/r.rate end
 end
 function E:resolve(row)
+ if type(row.ranks)=='table'then
+  for i=#row.ranks,1,-1 do if U.fn(core.spell_book.is_spell_known,row.ranks[i])==true then return row.ranks[i]end end
+ end
  local override=U.number(U.fn(core.spell_book.get_override_spell_id,row.id))
  return override and override>0 and override or row.id
 end
+local function is_rank(row,id)if type(row.ranks)~='table'then return false end;for _,rank in ipairs(row.ranks)do if rank==id then return true end end;return false end
 function E:learned(row,id,spec)
  if not row or not row.specs[spec] or not S.id_allowed(id,spec)then return false end
  if U.fn(core.spell_book.is_spell_known,row.id)==true or U.fn(core.spell_book.is_spell_known,id)==true then return true end
+ if type(row.ranks)=='table'then for _,rank in ipairs(row.ranks)do if rank==id or U.fn(core.spell_book.is_spell_known,rank)==true then return true end end end
  for origin,aliases in pairs(S.overrides)do
   local base=S.rows[origin]
   if base.specs[spec] and aliases[id] and self:resolve(base)==id and U.fn(core.spell_book.is_spell_known,base.id)==true then return true end
@@ -88,7 +93,7 @@ function E:ready(c,key,target)
  local peel_control=c.pvp and c.recent_damage and(key=='frost_nova'or key=='ice_nova'or key=='dragon_breath'or key=='slow'or key=='blink'or key=='shimmer')
  if not r.utility and not r.defensive and not r.maintenance and (not c.target_valid or not c.target_engaged) then return false end
  local id=self:resolve(r)
- if id~=r.id then
+ if id~=r.id and not is_rank(r,id)then
   local alias=S.overrides[key] and S.overrides[key][id]
   if not alias or not S.allowed(alias,c.spec) then return false end
   r=S.rows[alias]
@@ -101,7 +106,10 @@ function E:ready(c,key,target)
  if r.utility and not c.settings.interrupts and r.interrupt then return false end
  if not r.defensive and not r.utility and not r.maintenance and not r.heal and not c.settings.damage then return false end
  if r.aoe and r.key~='frost_nova'and r.key~='ice_nova'and r.key~='dragon_breath'and not c.aoe_safe or r.splash and not c.aoe_clear then return false end
- local instant=(r.key=='pyroblast' or (r.key=='flamestrike' or r.key=='flamestrike_target')) and (c.buff(S.aura.hot_streak)==true or c.buff(S.aura.hyperthermia)==true)
+ local forever=c.identity and c.identity.client_family=='forever'
+ -- Forever Heating Up reduces Pyroblast cast time by 25% per stack; even at
+ -- three stacks it is not the instant Hot Streak used by Midnight.
+ local instant=(r.key=='pyroblast' or (r.key=='flamestrike' or r.key=='flamestrike_target')) and not forever and (c.buff(S.aura.hot_streak)==true or c.buff(S.aura.hyperthermia)==true)
    or r.key=='frostfire_bolt' and c.buff(S.aura.frostfire_empowerment)==true
    or r.key=='arcane_blast' and c.buff(S.aura.presence)==true
    or (r.key=='blizzard' or r.key=='blizzard_target') and c.buff(S.aura.freezing_rain)==true
@@ -254,7 +262,7 @@ function E:cast(c,action)
  if not identity or identity.id~=c.spec or identity.player~=c.identity.player
   or identity.assigned~=c.identity.assigned or identity.role_conflict or mode~=c.mode then return false,'identity_changed' end
  local row=S.rows[action.key]
- if id~=row.id then row=S.rows[S.overrides[action.key][id]] end
+ if id~=row.id and not is_rank(row,id)then row=S.rows[S.overrides[action.key][id]] end
  if not action.target and (row.kind=='enemy' or row.kind=='ground')
   and not U.same(U.call(me,'get_target'),c.target) then return false,'target_changed' end
  if c.now<self.manual_until or c.now<(self.transition_until or 0) then return false,'manual_or_transition_hold' end
@@ -262,7 +270,7 @@ function E:cast(c,action)
   retry_key=tostring(id)..':'..(U.guid(unit) or '?'),game_request=U.number(U.fn(core.game_time))}
  if not weave or not self.pending then self.pending=p end;self.recent[id]=c.now
  L.emit('attempt',c,action.key..' id='..id..' hp='..tostring(c.hp)..' mana='..tostring(c.mana_pct)..' reason='..action.why)
- if (action.key=='evocation' and c.spec==62 or action.key=='ray' and c.spec==64 and id==S.rows.ray.id) and not c.pvp then
+ if (action.key=='evocation' or action.key=='ray' and c.spec==64 and id==S.rows.ray.id) and not c.pvp then
   self.owned_channel={request=p,key=action.key,id=id,epoch=self.epoch,scope=self.scope,
    game_request=p.game_request,confirmed=false,accepted=false}
  end
@@ -284,7 +292,8 @@ end
 function E:channel_update(c)
  local owned=self.owned_channel
  if not owned then return false end
- local evocation=owned.key=='evocation' and c.spec==62 and c.settings.arcane_recovery
+ local forever=c.identity and c.identity.client_family=='forever'
+ local evocation=owned.key=='evocation' and (forever and c.settings.forever_recovery or c.spec==62 and c.settings.arcane_recovery)
  local ray=owned.key=='ray' and c.spec==64 and c.settings.frost_ray
  if owned.epoch~=self.epoch or owned.scope~=self.scope or c.pvp or not (evocation or ray)
   or not c.settings.enabled or not c.settings.damage then

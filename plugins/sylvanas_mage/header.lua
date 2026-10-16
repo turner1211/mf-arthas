@@ -5,7 +5,10 @@ local p={name='Sylvanas Mage — Arcane / Fire / Frost',version=require('sm_vers
 if core then
  local version
  if type(core.get_game_version)=='function'then local ok,value=pcall(core.get_game_version);if ok then version=value end end
- if version and version~='Midnight'then p.load=false end
+ if version then
+  local v=tostring(version):lower()
+  if v~='midnight' and not v:find('forever',1,true) and not v:find('1.60.',1,true)and not v:find('classic',1,true)then p.load=false end
+ end
  local manager=core.object_manager;local me
  if manager and type(manager.get_local_player)=='function'then local ok,value=pcall(manager.get_local_player);if ok then me=value end end
  if me and type(me.get_class)=='function'then local ok,class=pcall(me.get_class,me);if ok and class and class~=8 then p.load=false end end

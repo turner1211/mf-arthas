@@ -1,12 +1,14 @@
 # Sylvanas Mage 1.1.77 — offline release candidate
 
-Arcane, Fire and Frost for the Project Sylvanas Midnight client. Each spec has independent profiles for World PvE, Delves, Dungeons, Mythic+, Raids, Arena, Battlegrounds and World PvP: 24 profiles total.
+Arcane, Fire and Frost for Project Sylvanas on both Midnight and WoW Forever 1.60.x. Each detected build has independent profiles for World PvE, Delves, Dungeons, Mythic+, Raids, Arena, Battlegrounds and World PvP: 24 profiles per client family.
+
+The client boundary is strict. Midnight loads only Midnight spell and rotation modules. Forever loads only Forever spell and rotation modules, uses the complete Forever Mage talent-tree identifiers to select the dominant Arcane, Fire, or Frost tree, and keeps learned cross-tree abilities available for hybrid builds. A tied or unreadable Forever build pauses instead of selecting a tree by guesswork. The two clients also use separate saved-setting tags and separate crash-recovery log folders.
 
 ## Install and start
 
 1. Extract the ZIP and place the entire `sylvanas_mage` folder in your Sylvanas Lua plugin directory, alongside your existing plugins. Keep all modules together; `header.lua` and `main.lua` are the entry points.
    This archive is the standalone Mage plugin. It does not include, require or control Sylvanas Universal UI. If `sylvanas_universal_ui` is also installed, it remains a separate plugin and must be disabled or removed separately when you do not want its window.
-2. Reload the plugin loader on a Mage running the Midnight client. The client must provide the documented Sylvanas `core` API and `common/enums`.
+2. Reload the plugin loader on a Mage running Midnight or WoW Forever. The client must provide the documented Sylvanas `core` API and `common/enums`.
 3. Open the Mage menu. Global **Enable Mage** starts ON, as requested. Disable any other rotation controller for the same character before running Mage; use Pause when reviewing options.
 4. The command window follows the detected spec. Selecting an activity to edit changes its settings, not the detected live activity. Use Pause to stop actions.
 5. Every applicable feature starts enabled, including training dummy testing, automatic PvP kill windows and Arena healer Polymorph. Existing saved feature switches are enabled once by this update; subsequent OFF choices stay saved. Pause starts OFF. Manual PvP burst permission remains a temporary live override and clears on a spec/activity change.

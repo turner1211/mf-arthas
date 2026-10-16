@@ -11,7 +11,23 @@ function Q.cursed(u,game_now)
  return false
 end
 function Q.maintenance(c,e)
- if c.settings.intellect and c.buff(S.aura.intellect)~=true and c.now-(e.history.intellect or -math.huge)>30 then return c.pick('intellect','maintain Arcane Intellect')end
+ local forever=c.identity and c.identity.client_family=='forever'
+ local intellect_up=forever and S.rows.intellect and A.any(c.player,S.rows.intellect.ranks or{S.aura.intellect})or c.buff(S.aura.intellect)==true
+ if c.settings.intellect and not intellect_up and c.now-(e.history.intellect or -math.huge)>30 then return c.pick('intellect','maintain Arcane Intellect')end
+ if forever then
+  local armor_up=false
+  for _,key in ipairs({'mage_armor','ice_armor','frost_armor'})do local row=S.rows[key];if row and A.any(c.player,row.ranks or{row.id})then armor_up=true;break end end
+  if not armor_up then
+   local physical=c.pvp or c.physical or(c.melee_attackers or 0)>0
+   local armor_key=physical and(c.known('ice_armor')and'ice_armor'or'frost_armor')or(c.known('mage_armor')and'mage_armor'or'frost_armor')
+   if c.now-(e.history[armor_key]or-math.huge)>30 then
+    local reason=armor_key=='mage_armor'and'maintain Forever Mage Armor for casting mana regeneration'
+     or armor_key=='ice_armor'and'maintain Forever Ice Armor against physical and PvP pressure'
+     or'maintain learned Forever Frost Armor until a higher armor is trained'
+    local a=c.pick(armor_key,reason);if a then return a end
+   end
+  end
+ end
  if c.mode=='arena'and not c.combat and c.settings.defensives and c.settings.invisibility_defense
   and c.now-(e.history.greater_invisibility or-math.huge)>150 then
   local a=c.pick('greater_invisibility','Arena pre-gate stealth for protected opening control');if a then return a end
@@ -39,9 +55,23 @@ function Q.run(c,e)
    and cast.left<=0.65 then healer_threat_cast=cast end
  end end
  if c.buff(S.aura.ice_block)==true then return end
+ local forever=c.identity and c.identity.client_family=='forever'
+ if forever and c.settings.forever_recovery and c.mana_pct and c.mana_pct<15 and not c.moving
+  and (not c.ttd or c.ttd>20) and (not c.pvp or (c.attackers or 0)==0)then
+  a=c.pick('evocation','Forever shared mana recovery below fifteen percent');if a then return a end
+ end
  local altering=c.buff(S.aura.alter_time)==true
  if not altering then e.temporal=nil end
  if c.settings.defensives then
+  if forever and c.settings.forever_wards then
+   if c.fire_magic and not A.any(c.player,S.rows.fire_ward.ranks)then a=c.pick('fire_ward','Forever Fire Ward against confirmed incoming Fire cast');if a then return a end end
+   if c.frost_magic and S.rows.frost_ward and not A.any(c.player,S.rows.frost_ward.ranks)then a=c.pick('frost_ward','Forever Frost Ward against confirmed incoming Frost cast');if a then return a end end
+  end
+  if forever and c.settings.forever_mana_shield and (c.mana_pct or 0)>=35
+   and ((c.melee_attackers or 0)>0 and health<=80 or c.enemy_burst and health<=90)
+   and not A.any(c.player,S.rows.mana_shield.ranks)then
+   a=c.pick('mana_shield','situational Forever Mana Shield under melee burst');if a then return a end
+  end
   -- Cauterize has already preserved Fire from fatal damage when this debuff
   -- is visible.  Preserve Ice Block while the escape is succeeding, but use
   -- it before the six-second burn finishes if enemy pressure is continuing.
@@ -67,12 +97,13 @@ function Q.run(c,e)
    and health<=math.max(25,(c.settings.turtle_hp or 18)+7) and temporal.hp-health>=25 then
    a=c.pick('alter_time','emergency Alter Time return after severe health loss');if a then return a end
   end
-  local key=barriers[c.spec]
+  local key=not forever and barriers[c.spec]or forever and c.known('ice_barrier')and'ice_barrier'or nil
   -- Patch 12.1 Improved Barrier can provide a second charge.  Keep only a
   -- short anti-repeat guard in PvP so a broken first shield does not strand
   -- the second valid charge during sustained pressure.
   local barrier_guard=c.pvp and 1.5 or 8
-  if (health<=c.settings.low_hp or c.pvp and c.attackers>0 or c.enemy_burst and health<=90 or c.upcoming and c.upcoming.remaining<=1.5) and c.buff(S.aura[key])~=true and c.now-(e.history[key] or -math.huge)>barrier_guard then
+  local barrier_row=key and S.rows[key];local barrier_up=barrier_row and barrier_row.ranks and A.any(c.player,barrier_row.ranks)or key and c.buff(S.aura[key])==true
+  if key and (health<=c.settings.low_hp or c.pvp and c.attackers>0 or c.enemy_burst and health<=90 or c.upcoming and c.upcoming.remaining<=1.5) and not barrier_up and c.now-(e.history[key] or -math.huge)>barrier_guard then
    a=c.pick(key,'current pressure or confirmed boss timer');if a then return a end
   end
   if c.pvp and c.settings.invisibility_defense
