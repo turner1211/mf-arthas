@@ -50,6 +50,7 @@ local Routes=require("bg_routes")
 local Darkspear=require("bg_darkspear")
 local ForeverRecovery=require("bg_forever_recovery")
 local LevelPolicy=require("bg_level_policy")
+local ForeverLevelRules=require("bg_forever_level_rules")
 local MountSelection=require("bg_mount_selection")
 local Navigation=require("bg_navigation")
 local MountRecovery=require("bg_mount_recovery")
@@ -426,6 +427,15 @@ local api={
  queue_allowed=function(player)
   local allowed,reason=Safety.queue_allowed(player)
   if not allowed then return false,reason end
+  if Client:is_forever() then
+   local level=LevelPolicy.read(player)
+   -- Login/loading transitions can briefly hide the level API. Preserve the
+   -- established live queue path until a valid level is observable.
+   if level then
+    local eligible,level_reason=ForeverLevelRules.queue_eligible(effective_queue_id(),level)
+    if not eligible then return false,level_reason end
+   end
+  end
   -- The bundled local reader only certifies the current Random/Epic catalog.
   if Compat.uses_local_queue_reader() then
    local id,can_queue=LocalLink.queues:catalog(selected_mode().key,core.time())

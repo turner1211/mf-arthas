@@ -1,6 +1,7 @@
 -- Forever-only recovery consumables. Discovery is by live bag contents so
 -- unknown lower-rank item IDs remain supported without guessing IDs.
 local R={}
+local ForeverRules=require("bg_forever_level_rules")
 R.known_items={[272055]="ration",[272057]="bandage"}
 R.names={
  ["darkspear islands field ration"]="ration",
@@ -14,7 +15,7 @@ local function item_value(item,name)
  local ok,value=pcall(function() return type(item[name])=="function" and item[name](item) end)
  return ok and value or nil
 end
-function R.find(wanted)
+function R.find(wanted,level)
  local ok,helper=pcall(require,"common/utility/inventory_helper")
  if not ok or type(helper)~="table" or type(helper.get_character_bag_slots)~="function" then return nil end
  local read,slots=pcall(function() return helper:get_character_bag_slots() end)
@@ -27,7 +28,8 @@ function R.find(wanted)
    local id=tonumber(item_value(item,"get_item_id"))
    local name=tostring(item_value(item,"get_name") or ""):lower():gsub("%s+"," "):gsub("^%s+",""):gsub("%s+$","")
    local kind=id and R.known_items[id] or R.names[name]
-   if kind and (not wanted or kind==wanted) then
+   local level_ok=kind~="bandage" or ForeverRules.bandage_eligible(name,level)
+   if kind and level_ok and (not wanted or kind==wanted) then
     local rank=name:find("enriched",1,true) and 3 or name:find("runecloth",1,true) and 3 or
      name:find("iron",1,true) and 2 or name:find("mageweave",1,true) and 2 or 1
     if id and (not best or rank>best.rank) then
@@ -55,7 +57,7 @@ function R.choose(snapshot)
  -- Bandages restore health faster and preserve rations. Prefer one only for a
  -- true health emergency; mana starvation still requires a ration.
  if health and health<=.35 and not (mana and mana<=.15) then
-  local bandage=R.find("bandage");if bandage then return bandage end
+  local bandage=R.find("bandage",snapshot.player_level);if bandage then return bandage end
  end
  return R.find("ration")
 end

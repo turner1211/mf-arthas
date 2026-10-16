@@ -1,4 +1,12 @@
-SYLVANAS BATTLEGROUND COMMAND - v1.92.0 - October 15, 2026
+SYLVANAS BATTLEGROUND COMMAND - v1.93.0 - October 15, 2026
+
+Version 1.93.0 applies published WoW Forever level gates before queue dispatch:
+Warsong Gulch 10+, Arathi Basin 20+, Darkspear Islands 30+, and Alterac Valley
+51+, with Forever's level-60 cap. Known battlemaster queues fail closed when the
+character is ineligible; unknown live queue IDs remain catalog-authoritative
+after the global level-10 gate. The automatic level policy now exposes eligible
+maps and the next unlock. Darkspear First Aid also respects its item requirements:
+Silk 25, Mageweave 35, and Runecloth 45.
 
 Version 1.92.0 automatically detects the character level and selects a starter,
 developing, established, veteran, or maximum-level battleground policy. Lower

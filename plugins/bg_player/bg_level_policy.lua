@@ -2,6 +2,7 @@
 -- rotations. It never assumes that a spell or talent exists: the combat
 -- plugin remains responsible for checking the live spellbook before casting.
 local L={}
+local ForeverRules=require("bg_forever_level_rules")
 
 local function number(value)
  value=tonumber(value)
@@ -48,10 +49,16 @@ function L.for_level(level,is_forever,role,damage_style)
   veteran="use the complete learned PvP rotation; coordinate control and offensive cooldowns",
   maximum="use the complete learned PvP rotation and full utility package",
  }
+ local eligible,next_profile,next_level
+ if is_forever then
+  eligible=ForeverRules.eligible_profiles(level)
+  next_profile,next_level=ForeverRules.next_unlock(level)
+ end
  return {level=level,source="detected",cap=cap,band=name,tier=tier,
   rotation_profile=name.."_"..style,rotation_directive=directives[name],
   aggression_adjustment=row.aggression,solo_assault_penalty=row.solo,
-  outnumber_tolerance=row.outnumber,retreat_health=row.retreat,group_priority=row.group}
+  outnumber_tolerance=row.outnumber,retreat_health=row.retreat,group_priority=row.group,
+  eligible_battlegrounds=eligible,next_battleground_unlock=next_profile,next_unlock_level=next_level}
 end
 
 function L.detect(player,is_forever,role,damage_style)
