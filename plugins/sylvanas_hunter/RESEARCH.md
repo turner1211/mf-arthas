@@ -916,7 +916,7 @@ Sources:
 - https://foreverdb.net/spell/19885
 - https://foreverdb.net/sim/hunter/marksmanship
 
-# 1.6.8 WoW Forever early-level control pass — 2026-10-15
+# 1.6.9 WoW Forever early-level control pass — 2026-10-15
 
 The current leveling guide teaches Aspect of the Monkey at level 4 for enemies
 that reach the Hunter, then Concussive Shot at level 8 so approaching targets

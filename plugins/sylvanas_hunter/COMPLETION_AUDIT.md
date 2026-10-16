@@ -142,4 +142,4 @@ Version 1.6.6 adds native character-level detection and explicit Forever unlock 
 
 Version 1.6.7 adds level-gated Track Hidden, Scare Beast pet control, guarded healer-peel Distracting Shot, level-scaled mana floors, short-target Sting suppression, and breakable-fear protection without changing Midnight modules.
 
-Version 1.6.8 adds early-level Monkey aspect transitions, level-8 solo Concussive Shot approach control, and explicit unlock checks for defensive, pet, trap, and kiting utility. Offline tests cover both sides of each new level boundary; live Forever testing remains necessary to tune timing against server latency and current NPC behavior.
+Version 1.6.9 adds early-level Monkey aspect transitions, level-8 solo Concussive Shot approach control, and explicit unlock checks for defensive, pet, trap, and kiting utility. Offline tests cover both sides of each new level boundary; live Forever testing remains necessary to tune timing against server latency and current NPC behavior.

@@ -1,9 +1,9 @@
 # Sylvanas Hunter test report
 
-## 1.6.8
+## 1.6.9
 
-- Added boundary checks for WoW Forever level-band mana reserves, Serpent Sting target-life floors, and Multi-Shot thresholds.
-- Compiled all 41 published Hunter Lua files and verified every manifest size and SHA-256 entry.
+- Revalidated the concurrent level-band mana policy together with early-level Monkey transitions, solo Concussive Shot kiting, and explicit utility unlock boundaries.
+- WoW Forever focused validation passed 32 decisions covering runtime and spell-table isolation, character levels, all three specialization rotations, Hawk cap, Sniper gating, and shared cooldown choice.
 
 42 Lua files compiled.
 
@@ -17,5 +17,3 @@ BM regressions cover non-execute Black Arrow, real Kill Shot gating, Barbed burs
 
 These are offline tests. Live client casting, PvP prediction, latency, native rendering fidelity and DPS performance remain unverified.
 Additional checks: MM PvE priorities across five activities; Survival hidden/absent Tip preparation across eight activities; native Focus-cost variants; hostile player-owned world pet routing; persistent log writes/retries, retained sessions, rotation and GUI clipboard controls.
-
-WoW Forever focused validation passed 32 decisions covering runtime and spell-table isolation, character-level boundaries, solo Concussive Shot kiting, melee aspect transitions, Hawk cap, Sniper gating, shared cooldown choice, and all three specialization rotations.
