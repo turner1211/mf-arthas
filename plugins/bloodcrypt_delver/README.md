@@ -1,4 +1,6 @@
-# Bloodcrypt Delver — development build 0.6.37
+# Bloodcrypt Delver — development build 0.6.38
+
+Build 0.6.38 applies the repository's established `core.get_game_version()` client-family signal. Bloodcrypt Delver loads on Retail and remains disabled on WoW Forever across its Normal, PvP, Roleplaying and Hardcore rulesets, because Forever has dungeons and raids but no Retail Delves system. This prevents Retail scenario, bridge, navigation and hotkey callbacks from running in the shared scripts folder on an incompatible client. Forever questing remains owned by the separate Forever-aware auto-leveler.
 
 Build 0.6.37 improves Retail Season 2 routing across standard, Bountiful, Tier 11, Nemesis, and Labyrinth runs. Optional content—Mislaid Curiosities, Shrines of Abundance, Venom-Crazed rares, Heavy Trunks, and Nemesis Strongboxes—no longer steals the active story route. Hostile optional rares remain covered by combat-defense logic, and eligible reward containers remain handled by the dedicated post-completion collector. Pull budgets now become more conservative at tiers 9–11, where the run has fewer revives, and the external combat context receives the tier, starting revive budget, and risk class.
 
