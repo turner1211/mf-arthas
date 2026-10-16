@@ -1,4 +1,18 @@
-# Arthas Druid Suite — Retail + Forever — v8.9.0
+# Arthas Druid Suite — Retail + Forever — v8.10.0
+
+## Startup and Forever decision audit (8.10.0)
+
+The suite now waits for both a valid local Druid and a conclusive client-family
+result before loading a runtime. An empty login-time player handle can no longer
+permanently suppress the plugin, and empty version telemetry is retried instead
+of being cached as Retail. The bootstrap still loads exactly one client branch,
+and all prior callbacks are invalidated before it waits.
+
+Forever callbacks now revalidate the Druid class as well as the generation and
+client family. Duration-aware Cat, Bear, and Balance choices use a GUID-scoped
+smoothed health-loss estimate when the optional native time-to-die result is
+missing. The estimate resets after healing, maximum-health changes, stale
+samples, and world transitions.
 
 ## Attached audit fixes (8.9.0)
 
@@ -159,7 +173,7 @@ Version 8.0.1 prevents Forever startup from touching Retail specialization DB2 r
 
 ## WoW Forever and Retail separation
 
-The package supports Retail/Midnight and WoW Forever from one folder. `druid_client.lua` selects exactly one boot path. A Forever session loads only `forever_*` modules; a Retail/Midnight session loads only the four existing Retail specialization runtimes. If version telemetry is missing, the safe default is Retail rather than guessing Forever.
+The package supports Retail/Midnight and WoW Forever from one folder. `druid_client.lua` selects exactly one boot path. A Forever session loads only `forever_*` modules; a Retail/Midnight session loads only the four existing Retail specialization runtimes. If version telemetry is temporarily missing, startup waits and retries rather than selecting the wrong client family.
 
 Forever has its own settings prefix, window identity, logger directory, runtime state, spell tables, mode detector and rotation engine. Its profile selector offers Auto, Balance, Feral Cat, Feral Bear and Restoration. Auto selection checks active form and group role first, then learned Forever signature talents. Manual selection supports hybrid builds.
 

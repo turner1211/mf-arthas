@@ -527,3 +527,22 @@ https://www.method.gg/guides/guardian-druid/playstyle-and-rotation
 API source checked:
 scripts/.api/core.lua — core.world.get_active_challenge_map_id
 
+# 8.10.0 — startup boundary and Forever TTD audit
+
+- Startup now waits for a valid local Druid and conclusive client telemetry.
+  Empty login-time handles and version strings are retried instead of silently
+  disabling the suite or caching the wrong client family.
+- The Forever runtime revalidates class, client, and generation at every
+  callback boundary, preserving client isolation after reloads.
+- Forever duration-aware cooldown and finisher rules now have a local,
+  GUID-scoped health-loss estimator when native time-to-die is unavailable.
+- The October 16 Forever build 1.60.1.70425 changes several Druid spell effects,
+  including Bear Form, Dire Bear Form, Faerie Fire, and Moonkin Aura. The audit
+  found no verified spell-ID or unlock change that justified speculative
+  rotation-table edits.
+
+Sources checked October 16, 2026:
+https://foreverdb.net/changelog/1.60.1.70425
+https://foreverdb.net/class/Druid
+https://www.method.gg/guides/guardian-druid
+

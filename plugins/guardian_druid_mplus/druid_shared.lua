@@ -1,4 +1,5 @@
 local M={}
+local ttd_samples={}
 function M.call(fn,...)
     if type(fn)~="function" then return nil end
     local ok,a,b,c=pcall(fn,...); if ok then return a,b,c end
@@ -41,6 +42,27 @@ function M.hp(unit)
     if not current or not maximum or maximum<=0 then return nil end
     return math.max(0,math.min(100,current*100/maximum))
 end
+function M.ttd(unit)
+    local native=tonumber(M.call(unit and unit.get_time_to_die,unit))
+    if native and native>0 and native<3600 then return native end
+    if not M.valid(unit)then return nil end
+    local health=tonumber(M.call(unit.get_health,unit));local maximum=tonumber(M.call(unit.get_max_health,unit))
+    if not health or not maximum or maximum<=0 then return nil end
+    local key=M.guid(unit);if not key then return nil end
+    local now=tonumber(M.call(core.time))or tonumber(M.call(core.game_time))or 0
+    local sample=ttd_samples[key]
+    if not sample or sample.maximum~=maximum or now-sample.time>4 or health>sample.health then
+        ttd_samples[key]={health=health,maximum=maximum,time=now,rate=sample and sample.rate or 0};return nil
+    end
+    local elapsed=now-sample.time
+    if elapsed>=0.25 then
+        local rate=math.max(0,(sample.health-health)/elapsed)
+        sample.rate=sample.rate>0 and(sample.rate*0.7+rate*0.3)or rate
+        sample.health=health;sample.time=now
+    end
+    return sample.rate>0 and health/sample.rate or nil
+end
+function M.reset_ttd()ttd_samples={}end
 function M.power(unit,kind)
     return tonumber(M.call(unit and unit.get_power,unit,kind)) or 0
 end

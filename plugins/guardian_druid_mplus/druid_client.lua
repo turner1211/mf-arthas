@@ -1,20 +1,30 @@
 local M={}
-local function read(name)
-    local fn=core and core[name]
+local function read(name,owner)
+    owner=owner or core
+    local fn=owner and owner[name]
     if type(fn)~="function" then return "" end
-    local ok,value=pcall(fn)
-    return ok and type(value)=="string" and value or ""
+    local ok,a,b,c
+    if owner==core then ok,a,b,c=pcall(fn)else ok,a,b,c=pcall(fn,owner)end
+    if not ok then return "" end
+    local out={}
+    for _,value in pairs({a,b,c})do
+        if type(value)=="string"or type(value)=="number"then out[#out+1]=tostring(value)end
+    end
+    return table.concat(out," ")
 end
 function M.version() return read("get_game_version") end
 function M.exact_version() return read("get_exact_game_version") end
-local forever_cache=nil
-function M.is_forever()
-    if forever_cache~=nil then return forever_cache end
-    local name=M.version():lower();local exact=M.exact_version():lower()
-    forever_cache=name=="forever" or name:find("forever",1,true)~=nil or exact:match("^1%.60%.")~=nil
-    return forever_cache
+local family_cache=nil
+function M.family()
+    if family_cache then return family_cache end
+    local values={M.version(),M.exact_version(),read("get_client_version"),read("get_build_info"),read("get_version",core and core.game)}
+    local text=table.concat(values," "):lower()
+    if text=="    "or not text:find("%S")then return nil end
+    if text:find("forever",1,true)or text:match("1%.60%.[%d%.]+")then family_cache="forever"else family_cache="retail"end
+    return family_cache
 end
-function M.edition() return M.is_forever() and "forever" or "retail" end
+function M.is_forever() return M.family()=="forever" end
+function M.edition() return M.family() end
 function M.level(player)
     local probes={
         function() return player and player.get_level and player:get_level() end,
