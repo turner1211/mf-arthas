@@ -477,24 +477,34 @@ local function charges(id)
     return current, maximum
 end
 local function safe_bubble(player)
-    if not known(S.final_stand) or has_buff(player, S.forbearance) then return false end
+    if has_buff(player, S.forbearance) then return nil end
     local origin = player:get_position()
-    if not origin then return false end
+    if not origin then return nil end
+    local final_stand=known(S.final_stand)
+    local single,count=nil,0
     for _, unit in pairs(Runtime.objects()) do
-        local ok, outside = pcall(function()
+        local ok, state = pcall(function()
             if not valid(unit) or not unit:is_unit() or not player:can_attack(unit)
-                or not engaged_enemy(player, unit) then return false end
+                or not engaged_enemy(player, unit) then return nil end
             local victim = unit:get_target()
             local threat = player:get_threat_situation(unit)
-            if not Threat.same(victim, player)
-                and not (type(threat)=="table" and threat.is_tanking == true) then return false end
+            local tanking=Threat.same(victim,player)
+                or (type(threat)=="table" and threat.is_tanking==true)
+            if not tanking then return "unsafe" end
             local point = unit:get_position()
-            return not point or (origin.x-point.x)^2 + (origin.y-point.y)^2
-                + (origin.z-point.z)^2 > 15*15
+            if final_stand and (not point or (origin.x-point.x)^2 + (origin.y-point.y)^2
+                + (origin.z-point.z)^2 > 15*15) then return "unsafe" end
+            return "tanked"
         end)
-        if not ok or outside then return false end
+        if not ok or state=="unsafe" then return nil end
+        if state=="tanked" then count=count+1;single=unit end
     end
-    return true
+    if final_stand then return "final_stand" end
+    local clock=core.time()
+    if count==1 and Runtime.bubble_taunt_target==single
+        and clock<(Runtime.bubble_taunt_until or 0) then return "taunted",single end
+    if count==1 and ready(S.hand_reckoning,single,player)~=nil then return "needs_taunt",single end
+    return nil
 end
 local function is_protection_paladin(player)
     -- Callbacks may fire before the object manager has a local player or while
@@ -736,8 +746,19 @@ local function update()
         end
     end
     if not dummy_mode and health <= Settings.value("bubble_hp") and Settings.value("bubble_hp") > 0
-        and not bubble_active and (not major_active or lethal) and safe_bubble(player)
-        and cast_defensive(S.divine_shield, player, lethal) then return end
+        and not bubble_active and (not major_active or lethal) then
+        local bubble_mode,bubble_target=safe_bubble(player)
+        if bubble_mode=="needs_taunt" and cast(S.hand_reckoning,bubble_target,player) then
+            Runtime.bubble_taunt_target=bubble_target
+            Runtime.bubble_taunt_until=core.time()+2.5
+            Settings.status="Taunt secured • Divine Shield next"
+            return
+        end
+        if bubble_mode and bubble_mode~="needs_taunt"
+            and cast_defensive(S.divine_shield,player,lethal) then
+            Runtime.bubble_taunt_target=nil;Runtime.bubble_taunt_until=nil;return
+        end
+    end
     if not dummy_mode and health <= Settings.value("guardian_hp") and not has_buff(player, S.guardian_kings)
         and not bubble_active and (not ardent_active or lethal)
         and cast_defensive(S.guardian_kings, player, lethal) then return end

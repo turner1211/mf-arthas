@@ -1,4 +1,4 @@
-# Paladin Trinity Suite 1.2.8
+# Paladin Trinity Suite 1.2.9
 
 One Project Sylvanas plugin containing Holy Paladin 4.71.0, Retribution Paladin
 1.64.0, and Protection Paladin 6.15.0.
@@ -31,6 +31,14 @@ cast stops, and resistance-aura prediction now share that probe. Profile startup
 failures use an exponential retry delay capped at 30 seconds, preventing a bad
 or temporarily unavailable runtime from logging and rewriting status four times
 per second while still recovering automatically when the host becomes ready.
+
+Version 1.2.9 follows the current 12.1.5 and Forever Paladin guidance. Retail
+Protection can secure its sole tanked enemy with Hand of Reckoning before an
+emergency Divine Shield when Final Stand is unavailable; multi-target immunity
+still requires Final Stand and its full 15-yard safety check. Forever Holy now
+remembers the ally marked by Light's Vigil and directs Holy Shock back to that
+same ally, ensuring the prepared party heal is released instead of being lost
+when lowest-health targeting changes between updates.
 
 The Retail/Midnight side preserves every specialization's existing artwork and theme while
 expanding customer navigation. Holy gains dedicated Cooldowns and Support tabs,

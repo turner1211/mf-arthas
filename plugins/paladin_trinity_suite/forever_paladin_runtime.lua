@@ -375,6 +375,18 @@ local function common(instance,me)
 end
 
 local function holy(instance,me)
+    -- Light's Vigil only releases its party heal when Holy Shock lands on the
+    -- same marked unit.  Keep that pairing stable even if another ally becomes
+    -- the lowest-health target between the setup cast and the next update.
+    local vigil=instance.vigil_target
+    if vigil and valid(vigil) and not dead(vigil)
+        and (tonumber(call(core,"time")) or 0)<(instance.vigil_until or 0)
+        and aura(vigil,"LIGHTS_VIGIL") and cast("HOLY_SHOCK",vigil,instance) then
+        instance.vigil_target=nil;instance.vigil_until=nil;return true
+    elseif vigil and ((tonumber(call(core,"time")) or 0)>=(instance.vigil_until or 0)
+        or not valid(vigil) or dead(vigil)) then
+        instance.vigil_target=nil;instance.vigil_until=nil
+    end
     local ally,health=lowest(instance);if not ally then return false end
     if health<=value(instance.config.emergency,25) and cast("LAY_HANDS",ally,instance) then return true end
     if health<=value(instance.config.heal,82) then
@@ -387,7 +399,11 @@ local function holy(instance,me)
             and not aura(me,"FORBEARANCE") and cast("AVENGING_WRATH",me,instance) then return true end
         if value(instance.config.cooldowns,true) and (health<=42 or pressured>=3)
             and mana(me)>=35 and not group_has_aura("LIGHTS_VIGIL")
-            and cast("LIGHTS_VIGIL",ally,instance) then return true end
+            and cast("LIGHTS_VIGIL",ally,instance) then
+            instance.vigil_target=ally
+            instance.vigil_until=(tonumber(call(core,"time")) or 0)+30
+            return true
+        end
         if health<=38 and cast("DIVINE_FAVOR",me,instance) then return true end
         -- Forever Infusion shortens Holy Light after a Holy Shock or Flash of
         -- Light critical. Spend it before another Holy Shock can overwrite it.
