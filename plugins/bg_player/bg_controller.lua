@@ -209,9 +209,13 @@ function C:tick()
   local ignored_invitation
   local infos={};local nonempty=0
   for i=1,queue_count do
-   local status=a.queue_status(i)
+   local status_ok,status=pcall(a.queue_status,i)
+   if not status_ok then status=nil end
    self.observations.queues[i]=status
-   infos[i]=a.queue_info and a.queue_info(i)
+   if a.queue_info then
+    local info_ok,info=pcall(a.queue_info,i)
+    if info_ok then infos[i]=info end
+   end
    if status and status~="none" then nonempty=nonempty+1 end
   end
   -- Deserter can arrive several seconds after an unexpected server removal.
@@ -227,13 +231,22 @@ function C:tick()
    local status=self.observations.queues[i]
    if status~="none" and status~="queued" and status~="active" and status~="confirm" then unknown=true end
    if status=="confirm" then
-    if a.accept_allowed then
-     local allowed,reason=a.accept_allowed(player)
-     if not allowed then self:status(reason or "invitation_blocked");return end
+    local verified,invitation_reason=Queue.invitation(infos[i],now,self.settings.queue_id(),
+     self.settings.queue_mode and self.settings.queue_mode())
+    local owned=self.owned_queue
+    local owned_continuity=self.confirmable_slots[i]==true or owned and nonempty==1 and
+     now>=owned.joined_at and now-owned.joined_at<=7200 and owned.id==self.settings.queue_id() and
+     (not self.settings.queue_mode or owned.mode==self.settings.queue_mode())
+    if verified or owned_continuity then
+     if a.accept_allowed then
+      local allowed,reason=a.accept_allowed(player)
+      if not allowed then self:status(reason or "invitation_blocked");return end
+     end
+     self:status("accepting")
+     if now>=(self.next_accept or 0) then self.next_accept=now+3;a.accept(i) end
+     return
     end
-    self:status("accepting")
-    if now>=(self.next_accept or 0) then self.next_accept=now+3;a.accept(i) end
-    return
+    ignored_invitation=invitation_reason or "invitation_identity_unverified"
    elseif status=="queued" or status=="active" then
     queued=true
     local verified=Queue.invitation(infos[i],now,self.settings.queue_id(),self.settings.queue_mode and self.settings.queue_mode())==true
@@ -245,6 +258,7 @@ function C:tick()
   end
   if queued then self:status("queued");return end
   if unknown then self:status("queue_status_unavailable");return end
+  if ignored_invitation then self:status(ignored_invitation);return end
   if a.queue_allowed then
    local allowed,reason=a.queue_allowed(player)
    if not allowed then self:status(reason or "queue_blocked");return end

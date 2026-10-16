@@ -1,4 +1,13 @@
-SYLVANAS BATTLEGROUND COMMAND - v1.97.0 - October 16, 2026
+SYLVANAS BATTLEGROUND COMMAND - v1.98.0 - October 16, 2026
+
+Version 1.98.0 closes an unattended queue-acceptance gap. A confirmation is
+accepted only when fresh metadata identifies the selected battleground mode or
+when the exact single-slot queue was dispatched and continuously observed by
+this controller. Arena, suspended, mismatched, stale, and unidentified
+confirmations remain untouched and receive an explicit diagnostic state.
+Exceptions from queue-status or metadata readers are now contained as a
+temporary unavailable observation and recover automatically on the next valid
+poll instead of invoking global runtime recovery.
 
 Version 1.97.0 completes the missing live Darkspear turn-in strategy. When a
 validated objective snapshot proves base ownership but does not preselect a
