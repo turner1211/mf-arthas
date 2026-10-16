@@ -46,10 +46,12 @@ local function compact(v,n)
 end
 local function button(label,x1,y1,x2,y2,action,active,icon)
  local over=hovered(x1,y1,x2,y2)
- rect(x1,y1,x2,y2,active and c(104,222,216,250) or (over and c(18,79,88,242) or c(5,35,48,225)),6)
+ rect(x1+2,y1+3,x2+2,y2+3,c(0,5,8,180),7)
+ rect(x1,y1,x2,y2,active and c(104,222,216,250) or (over and c(18,79,88,250) or c(5,35,48,245)),7)
+ rect(x1+3,y1+3,x2-3,y1+6,active and c(190,255,235,155) or c(123,164,163,90),3)
  if icon then image(icon,x1+5,y1+4,27);outline(x1+4,y1+3,x1+33,y1+32,c(151,244,239,190),4) end
  text(label,x1+(icon and 39 or 12),y1+10,fonts.FONT_SMALL or 0,active and c(2,18,25) or c(237,247,248))
- if over then outline(x1,y1,x2,y2,c(151,244,239,235),6,1) end
+ outline(x1,y1,x2,y2,active and c(221,255,220,245) or (over and c(151,244,239,235) or c(55,94,90,210)),7,over and 2 or 1)
  if clicked(x1,y1,x2,y2) then action() end
 end
 local function wheel_delta()
@@ -154,69 +156,73 @@ function M.render()
    rect(275,210,282,490,c(61,45,34,255),3);rect(268,200,289,226,c(202,166,88,255),6);rect(274,183,283,205,c(49,211,202,255),4)
    rect(164,272,220,300,c(105,153,125,255),8);rect(172,294,212,320,c(16,29,35,255),6)
    text("WATER",28,58,fonts.FONT_SMALL or 0,c(151,244,239,210));text("EARTH",28,82,fonts.FONT_SMALL or 0,c(202,166,88,210));text("SPIRIT",28,106,fonts.FONT_SMALL or 0,c(187,143,255,210))
-   text("RESTORATION",64,365,fonts.FONT_SEMI_BIG or 0,c(151,244,239,255));text("SHAMAN",90,397,fonts.FONT_BIG or 0,c(239,250,250,255))
+   text("ALL SPECS",76,365,fonts.FONT_SEMI_BIG or 0,c(151,244,239,255));text("SHAMAN",90,397,fonts.FONT_BIG or 0,c(239,250,250,255))
    end
-   rect(398,8,990,88,c(3,25,43,242),8);outline(398,8,990,88,c(49,211,202,235),8,2)
-   text("SHAMAN TOOLS",430,18,fonts.FONT_BIG or 0,c(239,250,250))
-   text("ELEMENTS IN BALANCE",431,49,fonts.FONT_SMALL or 0,c(151,244,239))
-   text("F1 OPEN/CLOSE  |  CLICK CONTROLS  |  DRAG HEADER",431,70,fonts.FONT_SMALL or 0,c(205,225,229))
-   rect(398,96,978,164,c(3,23,36,242),8)
-   text("State: "..compact(C.status,24),415,105,fonts.FONT_SMALL or 0,c(244,250,250));text("Build: "..require("rs_talents").hero(),415,134,fonts.FONT_SMALL or 0,c(151,244,239))
-   text("Content: "..compact(C.content or "Detecting",22),645,105,fonts.FONT_SMALL or 0,c(244,250,250));text("Last: "..compact(C.last,25),645,134,fonts.FONT_SMALL or 0,c(177,205,211))
-   button(C.get("enabled") and "ON" or "PAUSED",875,109,968,151,function()C.set_setting("enabled",not C.get("enabled"))end,C.get("enabled"),"core")
-   rect(18,172,982,260,c(2,26,39,180),8)
-   local gap,tabw=5,154
+   -- Customer-facing suite layout: persistent mode navigation on the left and
+   -- one focused, element-themed settings page on the right.
+   local theme_values={{49,211,202},{202,166,88},{105,198,126},{92,170,235},{70,218,238},{255,143,73},{211,165,82},{187,143,255},{229,105,94},{227,91,112},{255,207,80},{174,205,220}}
+   local tv=theme_values[page] or theme_values[1];local accent=c(tv[1],tv[2],tv[3])
+   rect(14,10,250,746,c(2,18,25,247),10);outline(14,10,250,746,c(79,91,65,230),10,2)
+   rect(262,10,986,102,c(2,24,31,247),10);outline(262,10,986,102,accent,10,2)
+   image("totem",278,24,58);text("TIDAL COMMAND",350,19,fonts.FONT_BIG or 0,c(239,230,193))
+   text("SHAMAN SUITE  •  RETAIL + WOW FOREVER  •  v5.4.0",350,52,fonts.FONT_SMALL or 0,accent)
+   text("F1 OPEN/CLOSE  •  DRAG HEADER  •  F7 BOSS GUIDE",350,75,fonts.FONT_SMALL or 0,c(205,225,229))
+   rect(754,24,850,56,c(7,47,44,245),7);text(compact(C.content or "Detecting",12),766,33,fonts.FONT_SMALL or 0,c(225,244,229))
+   button(C.get("enabled") and "PROFILE ON" or "PAUSED",858,24,972,65,function()C.set_setting("enabled",not C.get("enabled"))end,C.get("enabled"),"core")
+   text(require("rs_branch").label().."  •  "..compact(C.status,25),690,75,fonts.FONT_VERY_SMALL or 0,c(177,205,211))
+   text("SHAMAN",67,27,fonts.FONT_BIG or 0,c(239,230,193));text("ELEMENTS",75,57,fonts.FONT_SMALL or 0,c(151,244,239))
    for i=1,C.group_count() do
-    local label=C.group_title(i);local row=math.floor((i-1)/6);local col=(i-1)%6;local x1=22+col*(tabw+gap);local y1=178+row*40
-    button(compact(label,17),x1,y1,x1+tabw,y1+35,function()page=i;scroll=0;C.set_notice(label.." tab opened")end,page==i,Icons.tab(i))
+    local label=C.group_title(i);local y1=92+(i-1)*48;local active=page==i;local v=theme_values[i] or theme_values[1]
+    local over=hovered(25,y1,239,y1+42);rect(25,y1,239,y1+42,active and c(v[1],v[2],v[3],235) or (over and c(18,60,59,245) or c(5,34,38,238)),7)
+    outline(25,y1,239,y1+42,active and c(220,244,203) or c(57,91,84),7,active and 2 or 1)
+    image(Icons.tab(i),32,y1+6,30);text(compact(label,19),72,y1+12,fonts.FONT_SMALL or 0,active and c(3,24,24) or c(239,230,193))
+    if clicked(25,y1,239,y1+42) then page=i;scroll=0;C.set_notice(label.." opened") end
    end
-   local shortcuts={{"wave","Healing",2},{"hex","PvP",6},{"purify","PvE",5},{"wind","Movement",8},{"fish","Gathering",10},{"lightning","Hotkeys",11},{"scroll","Logs",12}}
-   for i,s in ipairs(shortcuts) do
-    local ix=20+(i-1)*51;rect(ix,665,ix+44,709,c(3,28,42,235),5);outline(ix,665,ix+44,709,hovered(ix,665,ix+44,709) and c(151,244,239) or c(49,211,202,175),5)
-    image(s[1],ix+5,670,34);if hovered(ix,665,ix+44,709) then text(s[2],20,720,fonts.FONT_SMALL or 0,c(244,250,250)) end
-    if clicked(ix,665,ix+44,709) then page=s[3];scroll=0;C.set_notice(s[2].." settings opened") end
-   end
-   rect(398,270,978,690,c(2,20,32,242),9);image(Icons.tab(page),414,279,34);text(C.group_title(page),458,280,fonts.FONT_SEMI_BIG or 0,c(105,239,226));text(compact(C.group_help(page),34),458,303,fonts.FONT_VERY_SMALL or 0,c(177,205,211))
+   text("WATER  •  EARTH  •  SPIRIT",34,687,fonts.FONT_VERY_SMALL or 0,c(151,244,239));text("HEAL  •  PROTECT  •  ADAPT",34,711,fonts.FONT_VERY_SMALL or 0,c(202,166,88))
+   rect(262,112,986,696,c(2,20,27,247),10);outline(262,112,986,696,c(tv[1],tv[2],tv[3],185),10,2)
+   image(Icons.tab(page),280,127,42);text(C.group_title(page).." CUSTOMIZATION",336,128,fonts.FONT_SEMI_BIG or 0,c(239,230,193));text(compact(C.group_help(page),58),336,155,fonts.FONT_SMALL or 0,accent)
+   text(compact("State: "..C.status.."  |  Last: "..C.last,68),280,181,fonts.FONT_VERY_SMALL or 0,c(177,205,211))
    local keys=C.group_keys(page);local hotkeys=C.is_hotkey_group(page);local visible_rows=hotkeys and 5 or 6
    local max_scroll=math.max(0,#keys-visible_rows);scroll=math.max(0,math.min(scroll,max_scroll))
-   button("UP",780,278,865,313,function()scroll=math.max(0,scroll-1)end,false);button("DOWN",875,278,960,313,function()scroll=math.min(max_scroll,scroll+1)end,false)
-   local wheel=hovered(398,315,978,685) and wheel_delta() or 0;if wheel~=0 then scroll=math.max(0,math.min(max_scroll,scroll+(wheel<0 and 1 or -1))) end
+   button("UP",806,126,878,164,function()scroll=math.max(0,scroll-1)end,false);button("DOWN",888,126,970,164,function()scroll=math.min(max_scroll,scroll+1)end,false)
+   local wheel=hovered(262,198,986,690) and wheel_delta() or 0;if wheel~=0 then scroll=math.max(0,math.min(max_scroll,scroll+(wheel<0 and 1 or -1))) end
    if hotkeys then
-    local enabled=C.get("hotkeys");rect(416,322,960,365,c(6,35,48,238),5);image("lightning",423,327,32)
-    text("ENABLE CUSTOMER HOTKEYS",467,335,fonts.FONT_SMALL or 0,c(239,247,248));rect(710,330,810,356,c(62,36,45),6);text("CLEAR ALL",724,336,fonts.FONT_SMALL or 0,c(255,190,190));if clicked(700,322,820,365) then C.clear_hotkeys() end
-    rect(870,330,944,356,enabled and c(105,239,156) or c(67,49,59),7)
-    text(enabled and "ON" or "OFF",892,336,fonts.FONT_SMALL or 0,enabled and c(5,30,25) or c(239,247,248));if clicked(416,322,960,365) then C.set_setting("hotkeys",not enabled) end
+    local enabled=C.get("hotkeys");rect(280,205,968,248,c(6,35,48,245),5);image("lightning",287,210,32)
+    text("ENABLE CUSTOMER HOTKEYS",331,218,fonts.FONT_SMALL or 0,c(239,247,248));rect(700,213,810,240,c(62,36,45),6);text("CLEAR ALL",715,220,fonts.FONT_SMALL or 0,c(255,190,190));if clicked(690,205,820,248) then C.clear_hotkeys() end
+    rect(870,213,950,240,enabled and c(105,239,156) or c(67,49,59),7)
+    text(enabled and "ON" or "OFF",894,220,fonts.FONT_SMALL or 0,enabled and c(5,30,25) or c(239,247,248));if clicked(830,205,968,248) then C.set_setting("hotkeys",not enabled) end
     for i=1,5 do
      local key=keys[scroll+i]
      if key then
-      local d=C.definition(key);local y=375+(i-1)*53;local binding=C.hotkey_binding()==key;local over=hovered(416,y,960,y+46)
-      rect(416,y,960,y+46,over and c(14,66,74,245) or c(6,35,48,238),5);outline(416,y,960,y+46,binding and c(255,207,80) or c(38,100,111,175),5,binding and 2 or 1)
-      image(Icons.for_setting(key),423,y+6,34);text(compact(d[2],35),467,y+14,fonts.FONT_SMALL or 0,c(239,247,248))
-      local bind_label=binding and "PRESS KEY" or C.hotkey_name(C.hotkey_code(key));rect(820,y+8,944,y+38,binding and c(111,75,24) or c(4,47,61),6)
-      text(compact(bind_label,15),832,y+16,fonts.FONT_SMALL or 0,binding and c(255,228,156) or c(151,244,239))
-      if clicked(805,y,960,y+46) then C.begin_hotkey_capture(key) end
+      local d=C.definition(key);local y=258+(i-1)*66;local binding=C.hotkey_binding()==key;local over=hovered(280,y,968,y+58)
+      rect(280,y,968,y+58,over and c(14,66,74,245) or c(6,35,48,245),6);outline(280,y,968,y+58,binding and c(255,207,80) or c(38,100,111,175),6,binding and 2 or 1)
+      image(Icons.for_setting(key),289,y+10,36);text(compact(d[2],42),340,y+19,fonts.FONT_SMALL or 0,c(239,247,248))
+      local bind_label=binding and "PRESS KEY" or C.hotkey_name(C.hotkey_code(key));rect(815,y+12,950,y+46,binding and c(111,75,24) or c(4,47,61),6)
+      text(compact(bind_label,15),832,y+21,fonts.FONT_SMALL or 0,binding and c(255,228,156) or c(151,244,239))
+      if clicked(800,y,968,y+58) then C.begin_hotkey_capture(key) end
      end
     end
-    text("Click a binding, then press a key. Escape clears it. F1 and F7 stay reserved.",425,650,fonts.FONT_SMALL or 0,c(177,205,211))
+    text("Click a binding, press a key. Escape clears it. F1 and F7 remain reserved.",290,664,fonts.FONT_SMALL or 0,c(177,205,211))
    else
    for i=1,6 do
     local key=keys[scroll+i]
     if key then
-     local d=C.definition(key);local value=C.get(key);local y=322+(i-1)*53;local over=hovered(416,y,960,y+46)
-     rect(416,y,960,y+46,over and c(14,66,74,245) or c(6,35,48,238),5)
-     outline(416,y,960,y+46,over and c(151,244,239,235) or c(38,100,111,175),5,over and 2 or 1)
-     image(Icons.for_setting(key),423,y+6,34)
+     local d=C.definition(key);local value=C.get(key);local y=205+(i-1)*70;local over=hovered(280,y,968,y+61)
+     rect(280,y,968,y+61,over and c(14,66,74,245) or c(6,35,48,245),6)
+     outline(280,y,968,y+61,over and accent or c(38,100,111,175),6,over and 2 or 1)
+     image(Icons.for_setting(key),289,y+12,36)
      if type(d[3])=="boolean" then
-      text(compact(d[2],38),467,y+14,fonts.FONT_SMALL or 0,c(239,247,248));rect(870,y+10,944,y+36,value and c(105,239,156) or c(67,49,59),7)
-      outline(870,y+10,944,y+36,value and c(151,255,203) or c(121,87,101),7,1)
-      text(value and "ON" or "OFF",892,y+16,fonts.FONT_SMALL or 0,value and c(5,30,25) or c(239,247,248));if clicked(416,y,960,y+46) then C.set_setting(key,not value) end
+      text(compact(d[2],34),340,y+20,fonts.FONT_SMALL or 0,c(239,247,248))
+      local binding=C.hotkey_binding()==key;local hk=binding and "PRESS KEY" or C.hotkey_name(C.hotkey_code(key));rect(735,y+13,835,y+47,binding and c(111,75,24) or c(4,47,61),6);text(compact(hk,11),751,y+22,fonts.FONT_SMALL or 0,binding and c(255,228,156) or accent)
+      rect(858,y+13,950,y+47,value and c(105,239,156) or c(67,49,59),17);outline(858,y+13,950,y+47,value and c(151,255,203) or c(121,87,101),17,1);text(value and "ON" or "OFF",887,y+22,fonts.FONT_SMALL or 0,value and c(5,30,25) or c(239,247,248))
+      if clicked(725,y,845,y+61) then C.begin_hotkey_capture(key) elseif clicked(280,y,724,y+61) or clicked(846,y,968,y+61) then C.set_setting(key,not value) end
      else
-      text(compact(d[2],29),467,y+7,fonts.FONT_SMALL or 0,c(239,247,248));local bx1,bx2=670,880;rect(bx1,y+29,bx2,y+36,c(166,194,201),2)
-      local ratio=(value-d[4])/math.max(1,d[5]-d[4]);rect(bx1,y+29,bx1+(bx2-bx1)*ratio,y+36,c(49,211,202),2);text(C.value_label(key,value),894,y+18,fonts.FONT_SMALL or 0,c(151,244,239))
-      for step=0,39 do local sx1=bx1+(bx2-bx1)*step/40;local sx2=bx1+(bx2-bx1)*(step+1)/40;if clicked(sx1,y+15,sx2,y+44) then C.set_setting(key,d[4]+(d[5]-d[4])*(step+1)/40) end end
+      text(compact(d[2],35),340,y+10,fonts.FONT_SMALL or 0,c(239,247,248));local bx1,bx2=565,865;rect(bx1,y+39,bx2,y+47,c(166,194,201),3)
+      local ratio=(value-d[4])/math.max(1,d[5]-d[4]);rect(bx1,y+39,bx1+(bx2-bx1)*ratio,y+47,accent,3);text(C.value_label(key,value),885,y+29,fonts.FONT_SMALL or 0,accent)
+      for step=0,39 do local sx1=bx1+(bx2-bx1)*step/40;local sx2=bx1+(bx2-bx1)*(step+1)/40;if clicked(sx1,y+24,sx2,y+58) then C.set_setting(key,d[4]+(d[5]-d[4])*(step+1)/40) end end
       local local_x=cursor and (cursor.x-win_x)/draw_scale or -1
       local local_y=cursor and (cursor.y-win_y)/draw_scale or -1
-      if mouse_pressed and local_x>=bx1 and local_x<=bx2 and local_y>=y+15 and local_y<=y+44 then
+      if mouse_pressed and local_x>=bx1 and local_x<=bx2 and local_y>=y+24 and local_y<=y+58 then
        slider_drag=key;if core.graphics and core.graphics.capture_next_mouse_input then pcall(core.graphics.capture_next_mouse_input) end
       end
       if mouse and slider_drag==key and cursor then
@@ -230,16 +236,16 @@ function M.render()
    end
    if C.group_title(page)=="DISPLAY & LOGS" then
     local T=require("rs_telemetry")
-    button("COPY PATH",416,500,585,534,function()if window.copy_to_clipboard then window:copy_to_clipboard(T.path());C.set_notice("Log path copied") end end,false)
-    button("COPY THIS RUN",595,500,775,534,function()if window.copy_to_clipboard then window:copy_to_clipboard(T.current_run());C.set_notice("Current encounter copied") end end,false)
-    button("COPY SAVED LOG",785,500,960,534,function()if window.copy_to_clipboard then window:copy_to_clipboard(T.saved_history());C.set_notice("Saved log copied") end end,false)
-    button("CLEAR LOG",416,545,585,579,function()C.set_notice(T.clear() and "Saved logs cleared; recording continues" or "Log clear failed")end,false)
-    button("COPY DEBUG",595,545,775,579,function()if window.copy_to_clipboard then window:copy_to_clipboard(T.debug_text());C.set_notice("GUI and runtime debug copied") end end,false)
-    button("CLEAR DEBUG",785,545,960,579,function()T.clear_debug();C.set_notice("Debugger cleared")end,false)
-    button("RESET DISPLAY",416,590,960,624,function()win_x,win_y=C.reset_display() end,false)
+    button("COPY PATH",280,430,490,467,function()if window.copy_to_clipboard then window:copy_to_clipboard(T.path());C.set_notice("Log path copied") end end,false)
+    button("COPY THIS RUN",501,430,720,467,function()if window.copy_to_clipboard then window:copy_to_clipboard(T.current_run());C.set_notice("Current encounter copied") end end,false)
+    button("COPY SAVED LOG",731,430,968,467,function()if window.copy_to_clipboard then window:copy_to_clipboard(T.saved_history());C.set_notice("Saved log copied") end end,false)
+    button("CLEAR LOG",280,478,490,515,function()C.set_notice(T.clear() and "Saved logs cleared; recording continues" or "Log clear failed")end,false)
+    button("COPY DEBUG",501,478,720,515,function()if window.copy_to_clipboard then window:copy_to_clipboard(T.debug_text());C.set_notice("GUI and runtime debug copied") end end,false)
+    button("CLEAR DEBUG",731,478,968,515,function()T.clear_debug();C.set_notice("Debugger cleared")end,false)
+    button("RESET DISPLAY",280,526,968,563,function()win_x,win_y=C.reset_display() end,false)
    end
-   rect(398,702,978,746,c(3,25,38,232),6);rect(20,703,120,746,c(105,239,226),6);text("F1  HIDE",35,717,fonts.FONT_SMALL or 0,c(3,24,28))
-   text("STATUS: "..compact(C.notice(),46),415,717,fonts.FONT_SMALL or 0,c(244,250,250));rect(884,708,968,740,c(105,239,226),6);text("v4.5.1",900,717,fonts.FONT_SMALL or 0,c(3,24,28));outline(1,1,998,758,c(49,211,202),10,2)
+   rect(262,704,986,746,c(3,25,38,245),6);rect(25,704,132,742,c(105,239,226),6);text("F1  HIDE",45,715,fonts.FONT_SMALL or 0,c(3,24,28))
+   text("STATUS: "..compact(C.notice(),54),280,716,fonts.FONT_SMALL or 0,c(244,250,250));rect(884,710,968,740,accent,6);text("v5.4.0",899,718,fonts.FONT_SMALL or 0,c(3,24,28));outline(1,1,998,758,accent,10,2)
    if not render_reported then render_reported=true;require("rs_telemetry").debug("GUI_READY","native window rendered at "..math.floor(win_x)..","..math.floor(win_y).." scale="..string.format("%.2f",draw_scale)) end
   end)
  end)

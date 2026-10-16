@@ -2,6 +2,41 @@ local M = {status = "Ready", timer = "No timer", last = "None", link_status="Wai
 local root = core.menu.tree_node()
 local definitions = {
     {"enabled", "Enable routine", true},
+    {"dps_cooldowns", "Elemental / Enhancement automatic cooldowns", true},
+    {"dps_defensives", "Elemental / Enhancement automatic defensives", true},
+    {"dps_self_heal", "Elemental / Enhancement emergency self-healing", true},
+    {"dps_self_heal_hp", "DPS self-heal health %", 55, 20, 90},
+    {"dps_interrupts", "DPS Wind Shear and stop logic", true},
+    {"dps_purge", "DPS safe-window Purge", true},
+    {"dps_aoe", "DPS automatic area rotation", true},
+    {"dps_aoe_count", "DPS area rotation enemy count", 3, 2, 8},
+    {"forever_auto_detect", "Automatically detect WoW Forever 1.60.x", true},
+    {"forever_tree", "Forever tree fallback: 0 auto, 1 Elemental, 2 Enhancement, 3 Restoration", 0, 0, 3},
+    {"forever_totem_sets", "Forever automatic configured totem set", true},
+    {"forever_recall", "Forever Totemic Recall after combat", true},
+    {"forever_projection", "Forever Totemic Projection repositioning", true},
+    {"forever_mana", "Forever mana-conservation rules", true},
+    {"forever_downrank", "Forever rank-aware mana-efficient healing", true},
+    {"forever_five_second", "Forever five-second-rule recovery windows", true},
+    {"forever_shock_reserve", "Forever reserve Shock cooldown for interrupts", true},
+    {"forever_support_totems", "Forever group and survival support totems", true},
+    {"forever_healer_damage", "Forever Restoration safe-window damage", true},
+    {"forever_projected_triage", "Forever incoming-damage and incoming-heal triage", true},
+    {"forever_cancel_heals", "Forever cancel recovered or obsolete healing casts", true},
+    {"forever_prepull_calls", "Forever configured totem sets before group pulls", true},
+    {"forever_auto_resurrect", "Forever resurrect reachable group members after combat", true},
+    {"forever_aoe_cc_safe", "Forever prevent area damage near crowd control", true},
+    {"forever_damage_downrank", "Forever downrank damage fillers while conserving mana", true},
+    {"forever_enhance_mana_floor", "Forever Enhancement mana floor %", 30, 10, 60},
+    {"forever_rage_burst_only", "Forever save Rage of the Farseer for meaningful fights", true},
+    {"world_mode", "Enable open-world profile", true},
+    {"dungeon_mode", "Enable normal-dungeon profile", true},
+    {"mythic_mode", "Enable Mythic+ profile", true},
+    {"raid_mode", "Enable raid profile", true},
+    {"delve_mode", "Enable delve profile", true},
+    {"arena_mode", "Enable arena profile", true},
+    {"battleground_mode", "Enable battleground profile", true},
+    {"world_pvp_mode", "Enable world-PvP profile", true},
     {"damage", "Damage during safe healing downtime", true},
     {"training_dummy", "City damage and healing dummy testing", true},
     {"dummy_damage", "Practice damage rotation on selected city dummies", true},
@@ -250,7 +285,7 @@ function M.text(k)
 end
 function M.render()
     if modern then return end
-    root:render("Resto Shaman M+", function()
+    root:render("Shaman Suite", function()
         for _, d in ipairs(definitions) do M.controls[d[1]]:render(d[2]) end
         M.party_bars:render("Party damage bar labels (; separated)", "Exact BigWigs text. Only these timers permit proactive healing cooldowns.")
         M.self_bars:render("Personal damage bar labels (; separated)", "Exact labels of mechanics that definitely hit you. Enables proactive Astral Shift.")
@@ -281,30 +316,30 @@ local hotkey_map={}
 local hotkey_map_at=-math.huge
 local function runtime_time() return type(core.time)=="function" and core.time() or 0 end
 local groups={
-    {"CORE",{"enabled","prediction","adaptive_velocity","cooldowns","defensives","elemental","resurrection","training_dummy"}},
-    {"HEALING",{"emergency","delve_emergency","spot","heal","group","personal","overheal_cancel","link","link_hp"}},
-    {"MANA & DAMAGE",{"mana_management","mana_conserve","mana_critical","damage","training_dummy","dummy_damage","dummy_healing","dummy_aoe","damage_aoe","damage_hp","damage_mana"}},
-    {"TOTEMS",{"totemic_prediction","totemic_projection","poison_cleansing","pvp_counterstrike","preheal","pve_stun_interrupt"}},
-    {"PVE & DUNGEONS",{"bigwigs","profiles","lead","dispels","pve_purge","boss_guide","boss_helper","boss_guide_lead"}},
-    {"PVP HEALING",{"pvp_emergency","pvp_burst","pvp_link","dampening_logic","anti_kick","arena_lines","pvp_damage","pvp_damage_instant_only"}},
-    {"PVP CONTROL",{"pvp_peel","pvp_peel_hp","pvp_cc","pvp_lasso","pvp_purge","interrupts","pvp_interrupt_at","pvp_ground_cc_first","pvp_ancient_lore"}},
-    {"MOVEMENT",{"movement","ghost_wolf","ghost_wolf_delay","avoidance","danger_zones","danger_radius","boss_arrows"}},
-    {"ITEMS & UTILITY",{"pve_trinkets","pvp_trinkets","trinket_13_mode","trinket_14_mode","trinket_heal_hp","trinket_defensive_hp"}},
-    {"GATHERING",{"looting","skinning","fishing","fishing_recast","gather_range"}},
+    {"DASHBOARD",{"enabled","forever_auto_detect","forever_tree","forever_totem_sets","forever_recall","forever_projection","forever_mana","forever_downrank","forever_five_second","forever_shock_reserve","forever_support_totems","forever_healer_damage","forever_projected_triage","forever_cancel_heals","forever_prepull_calls","forever_auto_resurrect","forever_aoe_cc_safe","forever_damage_downrank","forever_enhance_mana_floor","forever_rage_burst_only","dps_cooldowns","dps_defensives","dps_self_heal","dps_self_heal_hp","dps_aoe","dps_aoe_count"}},
+    {"PLAYER",{"personal","elemental","resurrection","movement","ghost_wolf","ghost_wolf_delay","dps_interrupts","dps_purge","pve_trinkets","trinket_defensive_hp"}},
+    {"OPEN WORLD",{"world_mode","training_dummy","dummy_damage","dummy_healing","dummy_aoe","damage","looting","skinning","fishing","fishing_recast","gather_range"}},
+    {"DUNGEONS",{"dungeon_mode","dispels","poison_cleansing","interrupts","pve_stun_interrupt","pve_purge","bigwigs","boss_guide","boss_helper"}},
+    {"MYTHIC+",{"mythic_mode","profiles","prediction","preheal","totemic_prediction","totemic_projection","avoidance","danger_zones","boss_arrows","damage","damage_mana"}},
+    {"RAID",{"raid_mode","group","cooldowns","link","link_hp","totemic_prediction","totemic_projection","dispels","poison_cleansing","mana_management"}},
+    {"DELVES",{"delve_mode","delve_emergency","heal","spot","damage","pve_purge","totemic_prediction","totemic_projection","movement","ghost_wolf"}},
+    {"ARENA",{"arena_mode","pvp_emergency","pvp_burst","pvp_link","dampening_logic","anti_kick","arena_lines","pvp_cc","pvp_peel","pvp_purge","interrupts","pvp_damage"}},
+    {"BATTLEGROUNDS",{"battleground_mode","pvp_emergency","pvp_burst","pvp_link","pvp_peel","pvp_counterstrike","pvp_cc","pvp_purge","interrupts","pvp_trinkets","pvp_damage"}},
+    {"WORLD PVP",{"world_pvp_mode","pvp_emergency","pvp_peel","pvp_cc","pvp_lasso","pvp_purge","interrupts","pvp_trinkets","ghost_wolf","pvp_damage"}},
     {"HOTKEYS",bindable_keys},
     {"DISPLAY & LOGS",{"gui_scale","font_scale","debug_log"}},
 }
 local group_help={
-    CORE="Master behavior, prediction, recovery and survival.",
-    HEALING="Emergency, direct-heal, group-heal and Spirit Link thresholds.",
-    ["MANA & DAMAGE"]="Choose conservation floors and safe damage limits.",
-    TOTEMS="Predictive placement, projection, cleansing and control totems.",
-    ["PVE & DUNGEONS"]="BigWigs, dispels, boss guidance and dungeon behavior.",
-    ["PVP HEALING"]="Arena, battleground and world-PvP healing response.",
-    ["PVP CONTROL"]="Peels, Hex, interrupts, Purge and enemy counters.",
-    MOVEMENT="Ghost Wolf, casting movement, hazards and position guidance.",
-    ["ITEMS & UTILITY"]="PvE and PvP trinket behavior and thresholds.",
-    GATHERING="Optional out-of-combat loot, skinning and fishing helpers.",
+    DASHBOARD="Client, specialization, rotation, area damage and survival controls.",
+    PLAYER="Personal defensives, recovery, interrupts, purges and equipment.",
+    ["OPEN WORLD"]="Questing, city practice dummies and gathering tools.",
+    DUNGEONS="Normal-dungeon healing, cures, interrupts and boss guidance.",
+    ["MYTHIC+"]="Predictive keys, totems, hazards and safe damage.",
+    RAID="Group throughput, healing cooldowns and raid totem control.",
+    DELVES="Solo and companion healing, movement and efficient damage.",
+    ARENA="Dampening-aware healing, control, peeling and partner support.",
+    BATTLEGROUNDS="Large-team triage, objective pressure and PvP utility.",
+    ["WORLD PVP"]="Escapes, control, trinkets and open-world pressure.",
     HOTKEYS="Click a feature, then press the key that should toggle it.",
     ["DISPLAY & LOGS"]="Window size, text size, recording and copy tools.",
 }
@@ -428,6 +463,12 @@ function M.group_title(index) return groups[index] and groups[index][1] or "SETT
 function M.group_help(index) return group_help[M.group_title(index)] or "Customize this feature group." end
 function M.group_keys(index) return groups[index] and groups[index][2] or groups[1][2] end
 function M.is_hotkey_group(index) return groups[index] and groups[index][1]=="HOTKEYS" or false end
+function M.mode_enabled(mode)
+    local key=({world="world_mode",dungeon="dungeon_mode",mythic_plus="mythic_mode",
+        raid="raid_mode",delve="delve_mode",arena="arena_mode",
+        battleground="battleground_mode",pvp="world_pvp_mode"})[mode]
+    return not key or M.get(key)
+end
 function M.definition(key) return by_key[key] end
 function M.set_setting(key,value)
     local control=M.controls[key]
@@ -465,10 +506,10 @@ function M.render_native_page(index,window)
         local d=by_key[key]
         M.controls[key]:render(d[2],"")
     end
-    if index==5 then
+    if index==4 or index==5 then
         M.party_bars:render("Party damage bar labels (; separated)","Exact BigWigs labels")
         M.self_bars:render("Personal damage bar labels (; separated)","Exact BigWigs labels")
-    elseif index==7 then
+    elseif index==12 then
         local telemetry=require("rs_telemetry")
         if type(log_path_input.set_buffer)=="function" then log_path_input:set_buffer(telemetry.path()) end
         log_path_input:render("Session log file — select and copy","Saved continuously while Detailed combat log is enabled")
@@ -486,9 +527,9 @@ function M.render_native_page(index,window)
     end
 end
 function M.render_native()
-    core.menu.text("RESTORATION SHAMAN  •  TIDAL COMMAND  •  v4.5.1")
+    core.menu.text("SHAMAN SUITE  •  ALL THREE SPECIALIZATIONS  •  v5.4.0")
     core.menu.text("F1 closes or opens this window. Drag the title bar to move; drag the corner to resize.")
-    core.menu.text("State: "..M.status.."  |  Content: "..(M.content or "Detecting").."  |  Build: "..require("rs_talents").hero())
+    core.menu.text("State: "..M.status.."  |  Content: "..(M.content or "Detecting").."  |  "..require("rs_branch").label())
     core.menu.text("Last: "..M.last.."  |  BigWigs: "..M.timer)
     if type(core.menu.separator)=="function" then core.menu.separator() end
     for i,g in ipairs(groups) do
@@ -497,7 +538,7 @@ function M.render_native()
                 local d=by_key[key]
                 M.controls[key]:render(d[2], "")
             end
-            if i==5 then
+            if i==4 or i==5 then
                 M.party_bars:render("Party damage bar labels (; separated)", "Exact BigWigs labels")
                 M.self_bars:render("Personal damage bar labels (; separated)", "Exact BigWigs labels")
             end
@@ -547,8 +588,8 @@ function M.render_overlay()
         end
         local function px(n)return x+n*scale end
         local function py(n)return y+n*scale end
-        text("RESTORATION SHAMAN",px(24),py(18),21,water)
-        text("TIDAL COMMAND  •  v4.5.1  •  DRAG THIS HEADER TO MOVE",px(24),py(48),12,teal)
+        text("SHAMAN SUITE",px(24),py(18),21,water)
+        text("ELEMENTS IN BALANCE  •  v5.4.0  •  DRAG THIS HEADER TO MOVE",px(24),py(48),12,teal)
         if type(core.graphics.rect_2d_filled)=="function" then
             for i,c in ipairs({water,earth,air,fire}) do
                 core.graphics.rect_2d_filled(vec2.new(px(570+(i-1)*24),py(25)),14*scale,14*scale,c,7)

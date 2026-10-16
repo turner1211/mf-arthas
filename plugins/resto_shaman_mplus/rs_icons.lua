@@ -3,10 +3,13 @@ local M={}
 local V=require("common/geometry/vector_2")
 local C=require("common/color")
 local Art=require("rs_icon_art")
+local NavArt=require("rs_nav_art")
 local textures,attempted={},{}
 local function col(r,g,b,a)return C.new(r,g,b,a or 255)end
 local map={
- enabled="core",prediction="eye",adaptive_velocity="eye",totemic_prediction="totem",
+ enabled="core",world_mode="earth",dungeon_mode="dungeon",mythic_mode="lightning",
+ raid_mode="heal",delve_mode="earth",arena_mode="hex",battleground_mode="shield",
+ world_pvp_mode="danger",prediction="eye",adaptive_velocity="eye",totemic_prediction="totem",
  totemic_projection="totem",cooldowns="lightning",defensives="shield",elemental="earth",
  link="link",link_hp="link",mana_management="water",emergency="heal",
  delve_emergency="heal",spot="heal",heal="wave",group="chain",personal="shield",
@@ -26,18 +29,19 @@ local map={
  boss_helper="dungeon",
  fishing="fish",fishing_recast="fish",gather_range="bag",gui_scale="display",font_scale="display",debug_log="scroll",hotkeys="lightning"
 }
-local tabs={"core","heal","water","totem","dungeon","shield","hex","wind","trinket","fish","lightning","scroll"}
+local tabs={"nav_1","nav_2","nav_3","nav_4","nav_5","nav_6","nav_7","nav_8","nav_9","nav_10","nav_11","nav_12"}
 function M.for_setting(key)return map[key] or "totem" end
 function M.tab(index)return tabs[index] or "totem" end
 local fallback={eye="water",ancestral="link",trinket="core",wolf="wind",danger="lightning",
  display="scroll",dummy="core",bag="scroll",knife="earth"}
 local function texture(kind)
- kind=Art[kind] and kind or fallback[kind] or "totem"
+ local source=NavArt[kind] and NavArt or Art
+ if source~=NavArt then kind=Art[kind] and kind or fallback[kind] or "totem" end
  if textures[kind] then return textures[kind] end
  if attempted[kind] then return nil end
  attempted[kind]=true
- if core.graphics and type(core.graphics.load_texture)=="function" and Art[kind] then
-  local ok,value=pcall(core.graphics.load_texture,Art[kind])
+ if core.graphics and type(core.graphics.load_texture)=="function" and source[kind] then
+  local ok,value=pcall(core.graphics.load_texture,source[kind])
   if ok then textures[kind]=value end
  end
  return textures[kind]

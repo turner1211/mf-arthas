@@ -18,6 +18,8 @@ function M.has(id,name)
         or (id and core.spell_book.is_spell_known(id)==true) or false
 end
 function M.hero()
+    local ok,identity=pcall(function() return require("rs_branch").last or require("rs_branch").detect() end)
+    if ok and identity and identity.family=="forever" then return "WoW Forever • "..identity.spec:gsub("^%l",string.upper) end
     if M.has(444995,"Surging Totem") then return "Totemic" end
     if M.has(443454,"Ancestral Swiftness") or M.has(443450,"Call of the Ancestors") then return "Farseer" end
     return "Base Restoration / hero tree not detected"
