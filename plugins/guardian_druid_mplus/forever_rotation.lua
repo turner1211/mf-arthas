@@ -39,9 +39,9 @@ local function bear(c)
  if not U.valid(t)or not cfg.damage then return end
  local d=U.distance(p,t);if d>=8 and d<=25 then local id=available("feral_charge");if id then return act("Feral Charge gap close",id,t,nil,true)end end
  local id;if not S.has(t,"demo",true,p)then id=available("demo");if id then return act("Demoralizing Roar",id,p)end end
+ id=available("primal_bite");if id then return act("Primal Bite",id,t)end
  if not S.has(t,"faerie_fire",true,p)then id=available("faerie_fire");if id then return act("Faerie Fire",id,t)end end
  if cfg.cooldowns and power(p,"RAGE")>=35 and(c.boss or c.enemy_count>=2 and(not c.target_ttd or c.target_ttd>=10))then id=available("berserk");if id then return act("Berserk",id,p)end end
- id=available("primal_bite");if id then return act("Primal Bite",id,t)end
  local active,remain,stacks=dot(t,"lacerate",p);local durable=c.boss or c.target_ttd and c.target_ttd>=8 or not c.target_ttd and(c.target_hp or 100)>35;local stack_goal=c.boss and 5 or 3
  if c.boss and durable and(not active or(stacks or 0)<stack_goal or remain and remain<=3)then id=available("lacerate");if id then return act("Boss Lacerate",id,t)end end
  if cfg.aoe and c.aoe_safe~=false and c.enemy_count>=2 then id=available("swipe");if id then return act("Swipe",id,p)end end

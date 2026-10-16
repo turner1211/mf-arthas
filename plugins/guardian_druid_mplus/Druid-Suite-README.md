@@ -1,4 +1,19 @@
-# Arthas Druid Suite — Retail + Forever — v8.11.0
+# Arthas Druid Suite — Retail + Forever — v8.12.0
+
+## Four-spec live-guide audit (8.12.0)
+
+Retail Balance now opens cooldown sequences with Force of Nature and Fury of
+Elune before Celestial Alignment or Incarnation, and long cooldowns wait for a
+boss, elite, sustained measured target, large pack, PvP kill window, or training
+dummy. This prevents world, delve, and dungeon targets near death from consuming
+major burst.
+
+Retail Feral removes the obsolete Midnight Thrash and Brutal Slash paths, treats
+two targets as AoE, maintains pandemic-range Rake on secondary PvE targets, and
+keeps Tiger's Fury and Feral Frenzy rolling independently of held long burst.
+Restoration consumes Clearcasting with Regrowth and anchors PvE Lifebloom on the
+tank when one is available. Forever Bear now uses Primal Bite before lower-value
+maintenance and long-cooldown actions, preserving its verified threat priority.
 
 ## Cross-spec performance and lifecycle audit (8.11.0)
 

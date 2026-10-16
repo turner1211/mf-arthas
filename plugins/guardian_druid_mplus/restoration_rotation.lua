@@ -5,7 +5,7 @@ local S={rejuvenation=774,lifebloom=33763,regrowth=8936,swiftmend=18562,wild_gro
     barkskin=22812,solar_beam=78675,cyclone=33786,bash=5211,roots=339,soothe=2908,bear=5487,renewal=108238,thorns=467,
     ancient=473909,blossom=473919,mass_bloom=474149,hibernate=2637,prowl=5215}
 local A={rejuvenation=774,germination=155777,germination_talent=155675,lifebloom=33763,regrowth=8936,soul=114108,
-    moonfire=164812,sunfire=164815,ancient=473909,natures_swiftness=132158}
+    moonfire=164812,sunfire=164815,ancient=473909,natures_swiftness=132158,clearcasting=16870}
 local M={spells=S}
 local function act(key,id,target,delay,off) return {key=key,id=id,target=target,delay=delay,off=off} end
 local function due(unit,id,harmful,p,seconds)
@@ -60,10 +60,13 @@ function M.decide(c)
         if U.available(S.swiftmend) and not due(lowest,A.rejuvenation,false,p,0) then return act("Swiftmend",S.swiftmend,lowest) end
         return act("Emergency Regrowth",S.regrowth,lowest)
     end
+    if hp<95 and U.aura(p,A.clearcasting) and U.available(S.regrowth) then
+        return act("Clearcasting Regrowth",S.regrowth,lowest)
+    end
     if c.pvp and hp<90 and U.available(S.cenarion) then return act("Cenarion Ward",S.cenarion,lowest) end
     if c.pvp and c.team_danger and hp<=85 and U.available(S.grove) then return act("Grove Guardian",S.grove,lowest) end
     if cfg.cooldowns and (c.mana or 100)<=75 and U.available(S.innervate) then return act("Innervate",S.innervate,p) end
-    local bloom_target=c.pvp and lowest or p
+    local bloom_target=c.pvp and lowest or c.tank or p
     if due(bloom_target,A.lifebloom,false,p,4.5) then return act("Lifebloom",S.lifebloom,bloom_target) end
     if c.pvp and U.aura(p,A.soul) and (hp<95 or c.team_danger or c.enemy_burst) and U.available(S.rejuvenation) then
         return act("Soul of the Forest Rejuvenation",S.rejuvenation,lowest)

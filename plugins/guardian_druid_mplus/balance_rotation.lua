@@ -41,10 +41,10 @@ function M.decide(c)
     if c.pvp and U.aura(p,S.bear) and (c.self_attackers or 0)>0 and c.hp<80 then return nil end
     if not U.aura(p,S.moonkin) and U.available(S.moonkin) then return act("Moonkin Form",S.moonkin,p) end
     if c.pvp and c.kill_window and c.healer_vulnerable and cfg.cooldowns then
-        if U.available(S.incarnation) then return act("Incarnation",S.incarnation,p) end
-        if U.available(S.alignment) then return act("Celestial Alignment",S.alignment,p) end
         if U.available(S.force) then return act("Force of Nature",S.force,t) end
         if U.available(S.fury) then return act("Fury of Elune",S.fury,t) end
+        if U.available(S.incarnation) then return act("Incarnation",S.incarnation,p) end
+        if U.available(S.alignment) then return act("Celestial Alignment",S.alignment,p) end
         if U.available(S.convoke) then return act("Convoke the Spirits",S.convoke,t,4) end
     end
     if not U.aura(t,A.moonfire,true,p) then return act("Moonfire",S.moonfire,t) end
@@ -65,11 +65,11 @@ function M.decide(c)
         and U.distance(p,c.control)<=5 and U.available(S.bash) then return act("Mighty Bash healer setup",S.bash,c.control) end
     if c.pvp and cfg.utility and c.kill_window and c.enemy_healer and U.aura(c.enemy_healer,S.roots,true,p)
         and U.available(S.solar_beam) then return act("Solar Beam rooted healer",S.solar_beam,c.enemy_healer,nil,true) end
-    if cfg.cooldowns and (not c.pvp or c.kill_window and c.healer_vulnerable) then
-        if U.available(S.incarnation) then return act("Incarnation",S.incarnation,p) end
-        if U.available(S.alignment) then return act("Celestial Alignment",S.alignment,p) end
+    if cfg.cooldowns and (not c.pvp and c.durable or c.pvp and c.kill_window and c.healer_vulnerable) then
         if U.available(S.force) then return act("Force of Nature",S.force,t) end
         if U.available(S.fury) then return act("Fury of Elune",S.fury,t) end
+        if U.available(S.incarnation) then return act("Incarnation",S.incarnation,p) end
+        if U.available(S.alignment) then return act("Celestial Alignment",S.alignment,p) end
         if U.available(S.convoke) then return act("Convoke the Spirits",S.convoke,t,4) end
     end
     if c.pvp and cfg.utility and c.control and c.control_open and (c.setup_window or c.kill_window) and (not c.enemy_healer_cc or c.enemy_healer_cc_expiring)

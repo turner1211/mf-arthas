@@ -1,5 +1,25 @@
 # Guardian improvement audit — 6.32.0
 
+## 8.12.0 — Retail four-spec and Forever priority research
+
+- Balance aligns Force of Nature and Fury of Elune before Alignment/Incarnation
+  and reserves major PvE cooldowns for targets or packs that can use them.
+- Feral removes Retail buttons deleted in Midnight, uses its current two-target
+  AoE boundary, spreads Rake in PvE within the documented target cap, and keeps
+  30-second Tiger's Fury/Feral Frenzy separate from held long burst.
+- Restoration spends Clearcasting on Regrowth and maintains PvE Lifebloom on
+  the assigned tank instead of always defaulting to self.
+- Forever Bear gives Primal Bite its verified top single-target threat position
+  after Demoralizing Roar and before Faerie Fire or Berserk.
+
+Sources checked October 16, 2026:
+https://www.method.gg/guides/balance-druid/playstyle-and-rotation
+https://www.method.gg/guides/feral-druid/playstyle-and-rotation
+https://www.method.gg/guides/restoration-druid/playstyle-and-rotation
+https://www.method.gg/guides/guardian-druid/playstyle-and-rotation
+https://foreverdb.net/class/Druid/pve
+https://foreverdb.net/changelog
+
 ## 8.11.0 — cross-spec callback and shared-scan audit
 
 - Guardian route, boss, BigWigs, repair, and gathering callbacks now stop before

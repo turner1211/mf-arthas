@@ -71,8 +71,14 @@ local function build_context(spec,player,mode,settings)
         end
     end
     local hp=U.hp(player) or 100
+    local target_hp=U.hp(target)or 100
+    local target_ttd=U.ttd(target)
+    local boss=U.call(target and target.is_boss,target)==true
+    local classification=tostring(U.call(target and target.get_classification,target)or""):lower()
+    local durable=boss or classification:find("elite",1,true)~=nil or(target_ttd and target_ttd>=12)or#enemies>=3
     return Pvp.enrich({spec=spec,player=player,target=target,mode=mode,pvp=Modes.pvp[mode]==true,settings=settings,combat=U.call(player.is_in_combat,player)==true,
-        hp=hp,mana=U.power_pct(player,require("common/enums").power_type.MANA),members=members,lowest=lowest,lowest_hp=lowest_hp,tank=tank,dead=dead,injured=injured,dispel=dispel,dispel_urgent=dispel_urgent,interrupt=interrupt,
+        hp=hp,mana=U.power_pct(player,require("common/enums").power_type.MANA),target_hp=target_hp,target_ttd=target_ttd,boss=boss,durable=durable,
+        members=members,lowest=lowest,lowest_hp=lowest_hp,tank=tank,dead=dead,injured=injured,dispel=dispel,dispel_urgent=dispel_urgent,interrupt=interrupt,
         enemies=pvp_enemies,damage_enemies=enemies,enemy_count=#enemies,aoe_safe=U.aoe_safe(player,12,mode),control=control,enrage=enrage,
         incoming_cc=incoming_cc,incoming_healer_cc=incoming_healer_cc,healer_cc_caster=healer_cc_caster,
         kill_window=U.hp(target) and U.hp(target)<=30 or false,group_safe=lowest_hp>=85,
@@ -118,6 +124,7 @@ function Factory.start(spec,key)
         local context=build_context(spec,player,mode,cfg)
         if practice then
             context.practice=true;context.combat=true;context.pvp=false;context.mode="world_pve"
+            context.durable=true
             if spec==4 and Dummy.is_healing(selected) then
                 local hp=U.hp(selected) or 1;context.target=nil;context.lowest=selected;context.lowest_hp=hp
                 context.members[#context.members+1]={unit=selected,role="DAMAGER",hp=hp};context.injured=context.injured+1;context.group_safe=false
