@@ -1012,7 +1012,7 @@ local function render_custom_gui()
     if rendered == false then error(err or "GUI render failed") end
 end
 
-local route_guide_state = {
+runtime_debug.route_guide_state = {
     message = "Off",
     route_name = nil,
     pull_index = 0,
@@ -1042,7 +1042,7 @@ core.register_on_render_menu_callback(function()
         gui.pve_danger_radius:render("Danger-zone aura radius", "Visual ground-circle radius in yards. This is a status aura around your character, not a claim about the encounter spell's exact ground radius.")
         gui.s2_boss_guide:render("Season 2 boss encounter guide", "Detect all 28 Season 2 dungeon bosses, your group role, live casts and BigWigs/LittleWigs timers. Shows your current mechanic job and reliable boss/stack guidance overlays.")
         gui.boss_helper_hud:render("Small dungeon boss helper GUI", "Show a separate compact movable window in supported dungeons. It auto-detects class, specialization, role, boss mechanics and danger type.")
-        core.menu.text("Route guide status: " .. route_guide_state.message)
+        core.menu.text("Route guide status: " .. runtime_debug.route_guide_state.message)
         gui.enabled:render("Combat routine enabled", "Turn the Retribution combat routine on or off.")
         gui.fishing:render("Auto fishing", "Automatically start Fishing, watch your bobber, and loot the catch while you are out of combat.")
         gui.skinning:render("Auto skinning", "Target nearby harvestable corpses, move into range, and skin them while you are out of combat.")
@@ -1671,7 +1671,11 @@ local function run_auto_move()
     -- continue while approaching on subsequent updates.
     local casting, channeling = false, false
     if player.is_casting_spell then local ok, value = pcall(player.is_casting_spell, player); casting = ok and value == true end
-    if player.is_channeling_spell then local ok, value = pcall(player.is_channeling_spell, player); channeling = ok and value == true end
+    if player.is_channelling_spell then
+        local ok, value = pcall(player.is_channelling_spell, player); channeling = ok and value == true
+    elseif player.is_channeling_spell then
+        local ok, value = pcall(player.is_channeling_spell, player); channeling = ok and value == true
+    end
     if casting or channeling then
         stop_auto_move()
         return
@@ -1775,12 +1779,12 @@ local function clear_route_guide(message)
     diagnostic_transition("route_state", message, "INFO", "ROUTE", "route_state_changed", {
         detail = message,
     })
-    route_guide_state.message = message
-    route_guide_state.route_name = nil
-    route_guide_state.pull_index = 0
-    route_guide_state.pull_count = 0
-    route_guide_state.targets = {}
-    route_guide_state.pull_centers = {}
+    runtime_debug.route_guide_state.message = message
+    runtime_debug.route_guide_state.route_name = nil
+    runtime_debug.route_guide_state.pull_index = 0
+    runtime_debug.route_guide_state.pull_count = 0
+    runtime_debug.route_guide_state.targets = {}
+    runtime_debug.route_guide_state.pull_centers = {}
 end
 
 local function get_route_npc_set(guide)
@@ -1936,22 +1940,22 @@ local function update_route_guide()
         end
     end
     local next_pack = pull_centers[1]
-    route_guide_state.route_name = route_guide.name
-    route_guide_state.pull_count = #route_guide.pulls
-    route_guide_state.pull_index = next_pack and next_pack.pull_index or 0
-    route_guide_state.targets = next_pack and next_pack.targets or {}
-    route_guide_state.pull_centers = pull_centers
+    runtime_debug.route_guide_state.route_name = route_guide.name
+    runtime_debug.route_guide_state.pull_count = #route_guide.pulls
+    runtime_debug.route_guide_state.pull_index = next_pack and next_pack.pull_index or 0
+    runtime_debug.route_guide_state.targets = next_pack and next_pack.targets or {}
+    runtime_debug.route_guide_state.pull_centers = pull_centers
     if not next_pack then
-        route_guide_state.message = route_guide.name .. " • route auto-loaded • looking for a matching pack"
+        runtime_debug.route_guide_state.message = route_guide.name .. " • route auto-loaded • looking for a matching pack"
     else
-        route_guide_state.message = route_guide.name .. " • next pack "
+        runtime_debug.route_guide_state.message = route_guide.name .. " • next pack "
             .. tostring(next_pack.pull_index) .. "/" .. tostring(#route_guide.pulls)
             .. " • " .. tostring(#next_pack.targets) .. " enemies"
     end
-    diagnostic_transition("route_state", route_guide_state.message, "INFO", "ROUTE",
+    diagnostic_transition("route_state", runtime_debug.route_guide_state.message, "INFO", "ROUTE",
         "route_state_changed", {
-            dungeon = route_guide.name, pull = route_guide_state.pull_index,
-            pulls = route_guide_state.pull_count, targets = #route_guide_state.targets,
+            dungeon = route_guide.name, pull = runtime_debug.route_guide_state.pull_index,
+            pulls = runtime_debug.route_guide_state.pull_count, targets = #runtime_debug.route_guide_state.targets,
         })
 end
 
@@ -1966,7 +1970,7 @@ local function normalized_map_point(world_position)
 end
 
 local function draw_route_overview(player_pos)
-    if not route_guide_state.route_name then return end
+    if not runtime_debug.route_guide_state.route_name then return end
     local size_ok, screen_size = pcall(core.graphics.get_screen_size)
     if not size_ok or not screen_size or type(screen_size.x) ~= "number"
         or type(screen_size.y) ~= "number" or screen_size.x < 300 or screen_size.y < 250 then return end
@@ -1974,18 +1978,18 @@ local function draw_route_overview(player_pos)
     local panel_width, panel_height = 248, 286
     local panel_x, panel_y = screen_size.x - panel_width - 24, 90
     core.graphics.rect_2d(make_route_map_vec2(panel_x, panel_y), panel_width, panel_height, green, 2, 4)
-    core.graphics.text_2d(route_guide_state.route_name,
+    core.graphics.text_2d(runtime_debug.route_guide_state.route_name,
         make_route_map_vec2(panel_x + 10, panel_y + 12), 13, green, false)
-    core.graphics.text_2d(route_guide_state.message,
+    core.graphics.text_2d(runtime_debug.route_guide_state.message,
         make_route_map_vec2(panel_x + 10, panel_y + 32), 10, route_map_color, false)
 
     local points, player_point = {}, normalized_map_point(player_pos)
     if player_point then table.insert(points, { pull_index = 0, x = player_point.x, y = player_point.y, is_player = true }) end
-    for _, pack in ipairs(route_guide_state.pull_centers) do
+    for _, pack in ipairs(runtime_debug.route_guide_state.pull_centers) do
         local point = normalized_map_point(pack.center)
         if point then table.insert(points, { pull_index = pack.pull_index, x = point.x, y = point.y }) end
     end
-    if #route_guide_state.pull_centers == 0 then
+    if #runtime_debug.route_guide_state.pull_centers == 0 then
         core.graphics.text_2d("Waiting for a live pack to load.",
             make_route_map_vec2(panel_x + 10, panel_y + 72), 10, green, false)
         return
@@ -2012,11 +2016,11 @@ local function draw_route_overview(player_pos)
 
     local previous_point = player_point and make_route_map_vec2(
         offset_x + (player_point.x - min_x) * scale, offset_y + (max_y - player_point.y) * scale) or nil
-    for _, pack in ipairs(route_guide_state.pull_centers) do
+    for _, pack in ipairs(runtime_debug.route_guide_state.pull_centers) do
         local point = screen_points[pack.pull_index]
         if point then
             if previous_point then core.graphics.line_2d(previous_point, point, route_map_color, 2) end
-            local active = pack.pull_index == route_guide_state.pull_index
+            local active = pack.pull_index == runtime_debug.route_guide_state.pull_index
             local color = active and route_map_color or green
             core.graphics.circle_2d_filled(point, active and 7 or 4, color)
             core.graphics.text_2d(tostring(pack.pull_index),
@@ -2055,11 +2059,11 @@ local function draw_route_map_markers(player_pos)
     local player_point = to_screen_point(player_pos)
     if not player_point then return end
     local previous_point = player_point
-    for _, pack in ipairs(route_guide_state.pull_centers) do
+    for _, pack in ipairs(runtime_debug.route_guide_state.pull_centers) do
         local point = to_screen_point(pack.center)
         if point then
             core.graphics.line_2d(previous_point, point, route_map_color, 3)
-            local active = pack.pull_index == route_guide_state.pull_index
+            local active = pack.pull_index == runtime_debug.route_guide_state.pull_index
             local color = active and route_map_color or green
             core.graphics.circle_2d_filled(point, active and 8 or 5, color)
             core.graphics.text_2d("Pull " .. tostring(pack.pull_index),
@@ -2067,7 +2071,7 @@ local function draw_route_map_markers(player_pos)
             previous_point = point
         end
     end
-    for _, target in ipairs(route_guide_state.targets) do
+    for _, target in ipairs(runtime_debug.route_guide_state.targets) do
         local point = to_screen_point(target.position)
         if point then core.graphics.circle_2d(point, 8, route_map_color, 2) end
     end
@@ -2246,11 +2250,11 @@ core.register_on_render_callback(function()
         end
     end
 
-    if not gui.route_map:get_state() or not route_guide_state.route_name then return end
+    if not gui.route_map:get_state() or not runtime_debug.route_guide_state.route_name then return end
     pcall(draw_route_overview, player_pos)
     local previous_position = player_pos
-    for _, pack in ipairs(route_guide_state.pull_centers) do
-        local is_next = pack.pull_index == route_guide_state.pull_index
+    for _, pack in ipairs(runtime_debug.route_guide_state.pull_centers) do
+        local is_next = pack.pull_index == runtime_debug.route_guide_state.pull_index
         pcall(core.graphics.line_3d, previous_position, pack.center, route_map_color, 3, 0, false)
         pcall(core.graphics.circle_3d, pack.center, is_next and pack.radius or 2.0,
             is_next and route_map_color or green, is_next and 3 or 1, 2.5)
@@ -2258,10 +2262,10 @@ core.register_on_render_callback(function()
             is_next and 14 or 10, is_next and route_map_color or green, true)
         previous_position = pack.center
     end
-    for _, target_info in ipairs(route_guide_state.targets) do
+    for _, target_info in ipairs(runtime_debug.route_guide_state.targets) do
         pcall(core.graphics.circle_3d, target_info.position, 2.5, route_map_color, 3, 2.5)
     end
-    if route_guide_state.pull_index > 0 then pcall(draw_route_map_markers, player_pos) end
+    if runtime_debug.route_guide_state.pull_index > 0 then pcall(draw_route_map_markers, player_pos) end
 end)
 
 local function get_threshold(slider)
@@ -2969,21 +2973,21 @@ end
 
 -- Short rolling health histories make decisions from observed damage without
 -- inventing protected aura durations or encounter timers.
-local health_history = {}
-local last_history_cleanup = -math.huge
+runtime_debug.health_history = {}
+runtime_debug.last_history_cleanup = -math.huge
 local function cleanup_adaptive_history(force)
     local now = core.time()
-    if not force and now - last_history_cleanup < 10 then return end
-    last_history_cleanup = now
-    for guid, row in pairs(health_history) do
-        if force or now - (row.last_t or 0) > 20 then health_history[guid] = nil end
+    if not force and now - runtime_debug.last_history_cleanup < 10 then return end
+    runtime_debug.last_history_cleanup = now
+    for guid, row in pairs(runtime_debug.health_history) do
+        if force or now - (row.last_t or 0) > 20 then runtime_debug.health_history[guid] = nil end
     end
 end
 local function health_trend(unit)
     local guid, hp = unit_guid(unit), unit_health_percent(unit)
     if not guid or not hp then return 0, math.huge end
     local now = core.time()
-    local row = health_history[guid] or { first_t = now, first_hp = hp, last_t = now, last_hp = hp, samples = 0 }
+    local row = runtime_debug.health_history[guid] or { first_t = now, first_hp = hp, last_t = now, last_hp = hp, samples = 0 }
     if now - row.first_t > SMART.health_window or hp > row.last_hp + 8 then
         row.first_t, row.first_hp, row.samples = now, hp, 0
     end
@@ -2991,7 +2995,7 @@ local function health_trend(unit)
         row.samples = math.min(100, (row.samples or 0) + 1)
     end
     row.last_t, row.last_hp = now, hp
-    health_history[guid] = row
+    runtime_debug.health_history[guid] = row
     cleanup_adaptive_history(false)
     local elapsed = now - row.first_t
     local loss_per_second = elapsed > 0.35 and math.max(0, (row.first_hp - hp) / elapsed) or 0
@@ -3118,14 +3122,14 @@ local function is_hostile_unit(player, unit)
         or safe_unit_call(unit, "is_enemy_with", player) == true
 end
 
-local object_cache, object_cache_at = {}, -math.huge
+runtime_debug.object_cache, runtime_debug.object_cache_at = {}, -math.huge
 local function object_list()
     local now = core.time()
-    if now - object_cache_at < 0.10 then return object_cache end
+    if now - runtime_debug.object_cache_at < 0.10 then return runtime_debug.object_cache end
     local ok, objects = pcall(core.object_manager.get_all_objects)
-    object_cache = ok and type(objects) == "table" and objects or {}
-    object_cache_at = now
-    return object_cache
+    runtime_debug.object_cache = ok and type(objects) == "table" and objects or {}
+    runtime_debug.object_cache_at = now
+    return runtime_debug.object_cache
 end
 
 -- These helper queries work even when IZI's optional object extensions have
@@ -3579,33 +3583,34 @@ local function pressure_for(unit, pressure)
     return guid and pressure and pressure[guid] or nil
 end
 
-local last_target_swap = -math.huge
-local pending_target_swap = nil
+runtime_debug.last_target_swap = -math.huge
+runtime_debug.pending_target_swap = nil
 local function maybe_swap_pvp_target(player, mode, profile, pressure)
     if not profile.swap_target or not is_pvp_mode(mode)
         or not core.input or type(core.input.set_target) ~= "function" then return false end
     local now = core.time()
-    if pending_target_swap then
+    if runtime_debug.pending_target_swap then
         local actual_guid = unit_guid(safe_unit_call(player, "get_target"))
-        if actual_guid == pending_target_swap.guid then
+        if actual_guid == runtime_debug.pending_target_swap.guid then
             diagnostic_transition("pvp_target_swap_confirmed", actual_guid,
-                "DEBUG", "TARGET", "target_swap_confirmed", { target = pending_target_swap.name })
-            pending_target_swap = nil
-        elseif (now - pending_target_swap.requested_at) * 1000
+                "DEBUG", "TARGET", "target_swap_confirmed", { target = runtime_debug.pending_target_swap.name })
+            runtime_debug.pending_target_swap = nil
+        elseif (now - runtime_debug.pending_target_swap.requested_at) * 1000
             >= smart_setting(gui.pvp_swap_confirm_ms, 400) then
             diagnostic_event("WARN", "TARGET", "target_swap_not_confirmed", {
-                requested = pending_target_swap.name, requested_guid = pending_target_swap.guid,
+                requested = runtime_debug.pending_target_swap.name, requested_guid = runtime_debug.pending_target_swap.guid,
                 actual_guid = actual_guid or "none",
             })
-            pending_target_swap = nil
-            last_target_swap = -math.huge
+            runtime_debug.pending_target_swap = nil
+            runtime_debug.last_target_swap = -math.huge
         else
             return false
         end
     end
     if now < runtime_debug.manual_target_lock_until then return false end
-    if now - last_target_swap < smart_setting(gui.target_swap_lock, 3) then return false end
+    if now - runtime_debug.last_target_swap < smart_setting(gui.target_swap_lock, 3) then return false end
     if safe_unit_call(player, "is_casting_spell") == true
+        or safe_unit_call(player, "is_channelling_spell") == true
         or safe_unit_call(player, "is_channeling_spell") == true then return false end
     local allies = collect_allies(player, mode)
     local best, best_score = nil, math.huge
@@ -3750,10 +3755,10 @@ local function maybe_swap_pvp_target(player, mode, profile, pressure)
     end
     local ok, accepted = pcall(core.input.set_target, best)
     if ok and accepted == true then
-        last_target_swap = now
+        runtime_debug.last_target_swap = now
         runtime_debug.auto_target_guid = unit_guid(best)
         local best_guid = unit_guid(best)
-        pending_target_swap = best_guid and { guid = best_guid, requested_at = now,
+        runtime_debug.pending_target_swap = best_guid and { guid = best_guid, requested_at = now,
             name = safe_unit_call(best, "get_name") or "enemy" } or nil
         combat_stats.swaps = combat_stats.swaps + 1
         last_action = "Target swap → " .. tostring(safe_unit_call(best, "get_name") or "enemy")
@@ -3791,8 +3796,9 @@ local function maybe_swap_pve_target(player, mode, profile)
         or not core.input or type(core.input.set_target) ~= "function" then return false end
     local now = core.time()
     if now < runtime_debug.manual_target_lock_until then return false end
-    if now - last_target_swap < smart_setting(gui.target_swap_lock, 3) then return false end
+    if now - runtime_debug.last_target_swap < smart_setting(gui.target_swap_lock, 3) then return false end
     if safe_unit_call(player, "is_casting_spell") == true
+        or safe_unit_call(player, "is_channelling_spell") == true
         or safe_unit_call(player, "is_channeling_spell") == true then return false end
     local current = safe_unit_call(player, "get_target")
     local current_valid = is_hostile_unit(player, current) and not target_is_protected(current)
@@ -3817,7 +3823,7 @@ local function maybe_swap_pve_target(player, mode, profile)
     end
     local ok, accepted = pcall(core.input.set_target, best)
     if ok and accepted == true then
-        last_target_swap = now
+        runtime_debug.last_target_swap = now
         runtime_debug.auto_target_guid = unit_guid(best)
         combat_stats.swaps = combat_stats.swaps + 1
         diagnostic_event("ACTION", "TARGET", "pve_priority_target_swap", {
@@ -3842,12 +3848,12 @@ end
 -- Midnight 12.1 PvP stun DR resets after 20 seconds and reaches immunity after
 -- two applications. Keep a conservative local request lockout when the engine
 -- cannot provide a reliable DR value.
-local pvp_stun_requests = {}
-local pvp_disorient_requests = {}
-local pvp_healer_lockouts = {}
+runtime_debug.pvp_stun_requests = {}
+runtime_debug.pvp_disorient_requests = {}
+runtime_debug.pvp_healer_lockouts = {}
 local function stun_dr_ready(target)
     local guid = unit_guid(target) or tostring(target)
-    local requested_at = pvp_stun_requests[guid]
+    local requested_at = runtime_debug.pvp_stun_requests[guid]
     if requested_at and core.time() - requested_at < runtime_debug.pvp_dr_fallback_seconds then return false end
     local dr = safe_unit_call(target, "get_dr", "stun", 0)
     if type(dr) ~= "number" and pvp_helper and pvp_helper.cc_flags
@@ -3865,8 +3871,8 @@ end
 
 local function disorient_dr_ready(target)
     local guid = unit_guid(target) or tostring(target)
-    if pvp_disorient_requests[guid]
-        and core.time() - pvp_disorient_requests[guid] < runtime_debug.pvp_dr_fallback_seconds then return false end
+    if runtime_debug.pvp_disorient_requests[guid]
+        and core.time() - runtime_debug.pvp_disorient_requests[guid] < runtime_debug.pvp_dr_fallback_seconds then return false end
     local flags = pvp_helper and pvp_helper.cc_flags
     if flags and flags.DISORIENT and type(pvp_helper.get_unit_dr) == "function" then
         local ok, value = pcall(pvp_helper.get_unit_dr, pvp_helper, target, flags.DISORIENT, 0)
@@ -3999,7 +4005,7 @@ local function run_pvp_utility(player, target, mode, profile, pressure, allies)
         if healer_ready and cast(SPELL.BLINDING_LIGHT, player, player) then
             for _, enemy in pairs(object_list()) do
                 if is_enemy_player(player, enemy) and unit_distance(player, enemy) <= 10 then
-                    pvp_disorient_requests[unit_guid(enemy) or tostring(enemy)] = core.time()
+                    runtime_debug.pvp_disorient_requests[unit_guid(enemy) or tostring(enemy)] = core.time()
                 end
             end
             diagnostic_event("ACTION", "INTERRUPT", "arena_offtarget_healer_blind", {
@@ -4017,7 +4023,7 @@ local function run_pvp_utility(player, target, mode, profile, pressure, allies)
         and cast(SPELL.BLINDING_LIGHT, player, player) then
         for _, enemy in pairs(object_list()) do
             if is_enemy_player(player, enemy) and unit_distance(player, enemy) <= 10 then
-                pvp_disorient_requests[unit_guid(enemy) or tostring(enemy)] = core.time()
+                runtime_debug.pvp_disorient_requests[unit_guid(enemy) or tostring(enemy)] = core.time()
             end
         end
         diagnostic_event("ACTION", "INTERRUPT", "multi_attacker_peel", {
@@ -4069,7 +4075,7 @@ local function run_pvp_utility(player, target, mode, profile, pressure, allies)
         end
     end
     if stun_intent and cast(SPELL.HAMMER_OF_JUSTICE, cc_target, player) then
-        pvp_stun_requests[unit_guid(cc_target) or tostring(cc_target)] = core.time()
+        runtime_debug.pvp_stun_requests[unit_guid(cc_target) or tostring(cc_target)] = core.time()
         diagnostic_event("ACTION", "INTERRUPT", "pvp_stun_committed", {
             target = safe_unit_call(cc_target, "get_name") or "unknown",
             dr_lockout_seconds = runtime_debug.pvp_dr_fallback_seconds,
@@ -4483,7 +4489,7 @@ local function run_team_support(player, mode, profile, allies, pressure)
     return false
 end
 
-local pvp_burst_stage = {}
+runtime_debug.pvp_burst_stage = {}
 local function burst_target_is_ready(target, mode, player)
     if not is_pvp_mode(mode) then return true end
     local guid = unit_guid(target) or tostring(target)
@@ -4498,7 +4504,7 @@ local function burst_target_is_ready(target, mode, player)
         local predicted_hp = runtime_debug.predicted_health_percent(
             player, player_hp, prediction_window, loss, incoming)
         if predicted_hp <= survival_limit then
-            pvp_burst_stage[guid] = "hold_personal_survival"
+            runtime_debug.pvp_burst_stage[guid] = "hold_personal_survival"
             decision_trace("pvp_burst_hold", { reason = "projected_self_danger",
                 player_hp = string.format("%.1f", player_hp),
                 predicted_hp = string.format("%.1f", predicted_hp), limit = survival_limit })
@@ -4506,27 +4512,27 @@ local function burst_target_is_ready(target, mode, player)
         end
     end
     if target_is_protected(target) then
-        pvp_burst_stage[guid] = "cancelled_protected"
+        runtime_debug.pvp_burst_stage[guid] = "cancelled_protected"
         decision_trace("pvp_burst_cancel", { reason = "target_defensive", target = safe_unit_call(target, "get_name") })
         return false
     end
     if has_debuff(target, SPELL.EXECUTION_SENTENCE) then
-        pvp_burst_stage[guid] = "commit_sentence_active"
+        runtime_debug.pvp_burst_stage[guid] = "commit_sentence_active"
         return true
     end
     local hp = unit_health_percent(target)
     if wings_active(player) then
-        pvp_burst_stage[guid] = "commit_wings_active"
+        runtime_debug.pvp_burst_stage[guid] = "commit_wings_active"
         return true
     end
     if hp ~= nil and hp <= 20 then
-        pvp_burst_stage[guid] = "commit_execute"
+        runtime_debug.pvp_burst_stage[guid] = "commit_execute"
         return true
     end
     local burst_range = smart_setting(gui.pvp_burst_max_range, 12)
     local distance = unit_distance(player, target)
     if distance > burst_range then
-        pvp_burst_stage[guid] = "hold_range"
+        runtime_debug.pvp_burst_stage[guid] = "hold_range"
         decision_trace("pvp_burst_hold", { reason = "target_out_of_burst_range",
             distance = string.format("%.1f", distance), limit = burst_range })
         return false
@@ -4534,7 +4540,7 @@ local function burst_target_is_ready(target, mode, player)
     local line_of_sight = safe_unit_call(player, "has_line_of_sight", target)
     if line_of_sight == nil then line_of_sight = safe_unit_call(target, "has_line_of_sight", player) end
     if line_of_sight == false then
-        pvp_burst_stage[guid] = "hold_line_of_sight"
+        runtime_debug.pvp_burst_stage[guid] = "hold_line_of_sight"
         decision_trace("pvp_burst_hold", { reason = "target_line_of_sight_blocked" })
         return false
     end
@@ -4543,7 +4549,7 @@ local function burst_target_is_ready(target, mode, player)
         local _, _, incoming_heal = projected_enemy_health(target,
             smart_setting(gui.pvp_target_prediction, 2))
         if incoming_heal >= heal_hold and (hp or 100) > smart_setting(gui.pvp_execute_spend, 35) then
-            pvp_burst_stage[guid] = "hold_incoming_healing"
+            runtime_debug.pvp_burst_stage[guid] = "hold_incoming_healing"
             decision_trace("pvp_burst_hold", { reason = "large_incoming_heal",
                 incoming_heal = string.format("%.1f", incoming_heal), limit = heal_hold })
             return false
@@ -4557,17 +4563,17 @@ local function burst_target_is_ready(target, mode, player)
     local minimum_cc = smart_setting(gui.pvp_burst_cc_min, 1200)
     local controlled = confirmed_cc(target, "is_stunned", "STUN", minimum_cc)
     if controlled then
-        pvp_burst_stage[guid] = "commit_controlled"
+        runtime_debug.pvp_burst_stage[guid] = "commit_controlled"
         return true
     end
     if hp ~= nil and hp <= 60 then
         if not resources_ready then
-            pvp_burst_stage[guid] = "prepare_holy_power"
+            runtime_debug.pvp_burst_stage[guid] = "prepare_holy_power"
             decision_trace("pvp_burst_prepare", { reason = "low_target_resource_gate",
                 target_hp = string.format("%.1f", hp), holy_power = current_power, required = minimum_power })
             return false
         end
-        pvp_burst_stage[guid] = "commit_low_target"
+        runtime_debug.pvp_burst_stage[guid] = "commit_low_target"
         return true
     end
     local trinket_window = smart_setting(gui.pvp_trinket_window, 90)
@@ -4576,12 +4582,12 @@ local function burst_target_is_ready(target, mode, player)
         local ok, used = pcall(pvp_helper.trinket_used_within, pvp_helper, target, trinket_window)
         if ok and used == true then
             if not resources_ready then
-                pvp_burst_stage[guid] = "prepare_holy_power"
+                runtime_debug.pvp_burst_stage[guid] = "prepare_holy_power"
                 decision_trace("pvp_burst_prepare", { reason = "post_trinket_resource_gate",
                     holy_power = current_power, required = minimum_power })
                 return false
             end
-            pvp_burst_stage[guid] = "commit_post_trinket"
+            runtime_debug.pvp_burst_stage[guid] = "commit_post_trinket"
             decision_trace("pvp_burst_sync", { reason = "enemy_trinket_on_cooldown",
                 target = safe_unit_call(target, "get_name") or "unknown", window = trinket_window })
             return true
@@ -4591,28 +4597,28 @@ local function burst_target_is_ready(target, mode, player)
         if enemy ~= target and is_enemy_player(player, enemy) and unit_distance(player, enemy) <= 45
             and safe_unit_call(enemy, "get_group_role") == 1 then
             local healer_guid = unit_guid(enemy)
-            if healer_guid and (pvp_healer_lockouts[healer_guid] or -math.huge) > core.time() then
+            if healer_guid and (runtime_debug.pvp_healer_lockouts[healer_guid] or -math.huge) > core.time() then
                 if not resources_ready then
-                    pvp_burst_stage[guid] = "prepare_holy_power"
+                    runtime_debug.pvp_burst_stage[guid] = "prepare_holy_power"
                     decision_trace("pvp_burst_prepare", { reason = "healer_lockout_resource_gate",
                         holy_power = current_power, required = minimum_power })
                     return false
                 end
-                pvp_burst_stage[guid] = "commit_healer_lockout"
+                runtime_debug.pvp_burst_stage[guid] = "commit_healer_lockout"
                 decision_trace("pvp_burst_sync", { reason = "confirmed_healer_rebuke_lockout",
                     healer = safe_unit_call(enemy, "get_name") or "unknown",
-                    remaining = string.format("%.1f", pvp_healer_lockouts[healer_guid] - core.time()) })
+                    remaining = string.format("%.1f", runtime_debug.pvp_healer_lockouts[healer_guid] - core.time()) })
                 return true
             end
             for _, flag in ipairs({ "STUN", "SILENCE", "FEAR", "HORROR", "INCAPACITATE", "DISORIENT", "SAP", "CYCLONE", "BANISH" }) do
                 if confirmed_cc(enemy, nil, flag, minimum_cc) then
                     if not resources_ready then
-                        pvp_burst_stage[guid] = "prepare_holy_power"
+                        runtime_debug.pvp_burst_stage[guid] = "prepare_holy_power"
                         decision_trace("pvp_burst_prepare", { reason = "healer_control_resource_gate",
                             holy_power = current_power, required = minimum_power })
                         return false
                     end
-                    pvp_burst_stage[guid] = "commit_healer_controlled"
+                    runtime_debug.pvp_burst_stage[guid] = "commit_healer_controlled"
                     return true
                 end
             end
@@ -4625,12 +4631,12 @@ local function burst_target_is_ready(target, mode, player)
                 local ok, active = pcall(pvp_helper.has_burst_active, pvp_helper, ally, 500)
                 if ok and active == true then
                     if not resources_ready then
-                        pvp_burst_stage[guid] = "prepare_holy_power"
+                        runtime_debug.pvp_burst_stage[guid] = "prepare_holy_power"
                         decision_trace("pvp_burst_prepare", { reason = "teammate_burst_resource_gate",
                             holy_power = current_power, required = minimum_power })
                         return false
                     end
-                    pvp_burst_stage[guid] = "commit_teammate_burst"
+                    runtime_debug.pvp_burst_stage[guid] = "commit_teammate_burst"
                     decision_trace("pvp_burst_sync", { reason = "teammate_offensive_active",
                         ally = safe_unit_call(ally, "get_name") or "unknown" })
                     return true
@@ -4638,7 +4644,7 @@ local function burst_target_is_ready(target, mode, player)
             end
         end
     end
-    pvp_burst_stage[guid] = "build_resources"
+    runtime_debug.pvp_burst_stage[guid] = "build_resources"
     decision_trace("pvp_burst_build", { reason = "waiting_for_control_or_execute", target_hp = hp or "unknown" })
     return false
 end
@@ -4658,9 +4664,9 @@ pvp_cleave_safe = function(player, target, radius, from_player)
     return true
 end
 
-local was_in_combat, opener_pending = false, false
-local burst_hold_started = {}
-local pvp_resource_bank_started = {}
+runtime_debug.was_in_combat, runtime_debug.opener_pending = false, false
+runtime_debug.burst_hold_started = {}
+runtime_debug.pvp_resource_bank_started = {}
 runtime_debug.cast_sacrosanct_wake = function(target, player, hero_tree, holy_power, pvp_mode)
     local limit = get_threshold(gui.shield_of_vengeance)
     if hero_tree ~= "Templar" or not has_spell(SPELL.SACROSANCT_CRUSADE)
@@ -4698,19 +4704,19 @@ local function run_damage_priority(target, player, aoe, burst_window, mode)
     local low_value_window = minimum_ttd > 0 and not pvp_mode and not training_dummy
         and not is_boss_or_elite(target) and ttd < minimum_ttd
     if burst_window and low_value_window then
-        burst_hold_started[target_key] = burst_hold_started[target_key] or core.time()
-        if core.time() - burst_hold_started[target_key] < maximum_hold then
+        runtime_debug.burst_hold_started[target_key] = runtime_debug.burst_hold_started[target_key] or core.time()
+        if core.time() - runtime_debug.burst_hold_started[target_key] < maximum_hold then
             burst_window = false
             decision_trace("hold_burst_short_ttd", { reason = "target_dying", ttd = string.format("%.1f", ttd) })
         end
     else
-        burst_hold_started[target_key] = nil
+        runtime_debug.burst_hold_started[target_key] = nil
     end
     if target_is_protected(target) or safe_unit_call(target, "is_immune") == true then
         decision_trace("stop_damage_protected_target", { reason = "immunity_or_major_reduction" })
         return false
     end
-    if opener_pending then
+    if runtime_debug.opener_pending then
         if pvp_mode then
             runtime_debug.pvp_opener_stage = runtime_debug.pvp_opener_stage or "judgment"
             if runtime_debug.pvp_opener_stage == "judgment" then
@@ -4723,18 +4729,18 @@ local function run_damage_priority(target, player, aoe, burst_window, mode)
             end
             if runtime_debug.pvp_opener_stage == "blade" then
                 if not has_spell(SPELL.BLADE_OF_JUSTICE) then
-                    opener_pending = false
+                    runtime_debug.opener_pending = false
                     runtime_debug.pvp_opener_stage = "complete"
                 elseif cast(SPELL.BLADE_OF_JUSTICE, target, player) then
-                    opener_pending = false
+                    runtime_debug.opener_pending = false
                     runtime_debug.pvp_opener_stage = "complete"
                     return true
                 end
             end
         elseif not has_spell(SPELL.BLADE_OF_JUSTICE) then
-            opener_pending = false
+            runtime_debug.opener_pending = false
         elseif cast(SPELL.BLADE_OF_JUSTICE, target, player) then
-            opener_pending = false
+            runtime_debug.opener_pending = false
             return true
         end
     end
@@ -4841,13 +4847,13 @@ local function run_damage_priority(target, player, aoe, burst_window, mode)
         and cast_finisher(target, player, false, holy_power, divine_purpose, true) then return true end
 
     local bank_limit = smart_setting(gui.pvp_resource_bank, 3)
-    local burst_stage = pvp_burst_stage[target_key]
+    local burst_stage = runtime_debug.pvp_burst_stage[target_key]
     local wants_bank = pvp_mode and not burst_window and gui.burst:get_state() == true
         and bank_limit > 0 and holy_power >= 3 and holy_power < 5
         and (burst_stage == "build_resources" or burst_stage == "prepare_holy_power")
     if wants_bank then
-        pvp_resource_bank_started[target_key] = pvp_resource_bank_started[target_key] or core.time()
-        local banked_for = core.time() - pvp_resource_bank_started[target_key]
+        runtime_debug.pvp_resource_bank_started[target_key] = runtime_debug.pvp_resource_bank_started[target_key] or core.time()
+        local banked_for = core.time() - runtime_debug.pvp_resource_bank_started[target_key]
         if banked_for < bank_limit then
             local bank_reason = holy_power >= 4 and "waiting_for_kill_window" or "building_safe_holy_power"
             decision_trace("pvp_resource_bank", { reason = bank_reason,
@@ -4855,7 +4861,7 @@ local function run_damage_priority(target, player, aoe, burst_window, mode)
             if holy_power >= 4 then return false end
         end
     else
-        pvp_resource_bank_started[target_key] = nil
+        runtime_debug.pvp_resource_bank_started[target_key] = nil
     end
 
     local art_of_war_stacks = get_buff_stacks(player, SPELL.ART_OF_WAR)
@@ -5037,7 +5043,7 @@ runtime_debug.find_pve_interrupt = function(player, selected)
 end
 
 local function reset_combat_adaptive_state()
-    if not was_in_combat then return end
+    if not runtime_debug.was_in_combat then return end
     local resolved_casts = combat_stats.confirmed + combat_stats.failed + combat_stats.interrupted
     local failure_rate = resolved_casts > 0 and combat_stats.failed / resolved_casts or 0
     diagnostic_event("INFO", "ROTATION", "combat_summary", {
@@ -5062,14 +5068,14 @@ local function reset_combat_adaptive_state()
         support = 0, interrupt = 0, swaps = 0, burst = 0, cc = 0, saves = 0,
         confirmed = 0, failed = 0, interrupted = 0 }
     cleanup_adaptive_history(true)
-    burst_hold_started = {}
-    pvp_burst_stage = {}
-    pvp_resource_bank_started = {}
-    pending_target_swap = nil
+    runtime_debug.burst_hold_started = {}
+    runtime_debug.pvp_burst_stage = {}
+    runtime_debug.pvp_resource_bank_started = {}
+    runtime_debug.pending_target_swap = nil
     cast_failure_state = {}
-    pvp_stun_requests = {}
-    pvp_disorient_requests = {}
-    pvp_healer_lockouts = {}
+    runtime_debug.pvp_stun_requests = {}
+    runtime_debug.pvp_disorient_requests = {}
+    runtime_debug.pvp_healer_lockouts = {}
     runtime_debug.enemy_target_memory, runtime_debug.ally_swap_windows = {}, {}
     runtime_debug.pvp_opener_stage = nil
     runtime_debug.manual_target_lock_until = -math.huge
@@ -5111,7 +5117,7 @@ runtime_debug.run_rotation = function()
     if (gui.fishing:get_state() or gui.skinning:get_state() or gui.looting:get_state())
         and not player:is_in_combat() then
         reset_combat_adaptive_state()
-        was_in_combat, opener_pending = false, false
+        runtime_debug.was_in_combat, runtime_debug.opener_pending = false, false
         return
     end
     local selected_before_combat = safe_unit_call(player, "get_target")
@@ -5119,11 +5125,11 @@ runtime_debug.run_rotation = function()
         and safe_unit_call(player, "can_attack", selected_before_combat) == true
     if not player:is_in_combat() and not selected_training_dummy then
         reset_combat_adaptive_state()
-        was_in_combat, opener_pending = false, false
+        runtime_debug.was_in_combat, runtime_debug.opener_pending = false, false
         return
     end
-    if not was_in_combat then
-        was_in_combat, opener_pending = true, true
+    if not runtime_debug.was_in_combat then
+        runtime_debug.was_in_combat, runtime_debug.opener_pending = true, true
         runtime_debug.pvp_opener_stage = nil
         combat_stats = { started = core.time(), actions = 0, damage = 0, defensive = 0,
             support = 0, interrupt = 0, swaps = 0, burst = 0, cc = 0, saves = 0,
@@ -5282,7 +5288,7 @@ runtime_debug.run_rotation = function()
     runtime_debug.target_hp = string.format("%.1f%%", unit_health_percent(target) or 0)
     runtime_debug.target_distance = string.format("%.1f yd", unit_distance(player, target))
     if is_pvp_mode(mode) then
-        local stage = pvp_burst_stage[unit_guid(target) or tostring(target)] or "evaluate"
+        local stage = runtime_debug.pvp_burst_stage[unit_guid(target) or tostring(target)] or "evaluate"
         runtime_debug.pvp_state = runtime_debug.pvp_state .. " stage=" .. stage
             .. " stunDR=" .. (stun_dr_ready(target) and "ready" or "hold")
             .. " disorientDR=" .. (disorient_dr_ready(target) and "ready" or "hold")
@@ -5412,7 +5418,7 @@ if type(core.register_on_game_event_callback) == "function" then
         if owned and event == "UNIT_SPELLCAST_SUCCEEDED" and spell_id == SPELL.REBUKE
             and request.target_role == 1 and request.target_guid then
             local duration = smart_setting(gui.pvp_healer_lockout_window, 3)
-            pvp_healer_lockouts[tostring(request.target_guid)] = core.time() + duration
+            runtime_debug.pvp_healer_lockouts[tostring(request.target_guid)] = core.time() + duration
             diagnostic_event("ACTION", "INTERRUPT", "confirmed_healer_lockout", {
                 target = request.target, target_guid = request.target_guid, duration = duration,
             })
@@ -5431,12 +5437,12 @@ if type(core.register_on_game_event_callback) == "function" then
                 end
             end
             if spell_id == SPELL.HAMMER_OF_JUSTICE and request.target_guid then
-                pvp_stun_requests[request.target_guid] = nil
+                runtime_debug.pvp_stun_requests[request.target_guid] = nil
             elseif spell_id == SPELL.BLINDING_LIGHT then
-                pvp_disorient_requests = {}
+                runtime_debug.pvp_disorient_requests = {}
             end
         end
-        if owned and was_in_combat then
+        if owned and runtime_debug.was_in_combat then
             if event == "UNIT_SPELLCAST_SUCCEEDED" then combat_stats.confirmed = combat_stats.confirmed + 1
             elseif event == "UNIT_SPELLCAST_FAILED" then combat_stats.failed = combat_stats.failed + 1
             else combat_stats.interrupted = combat_stats.interrupted + 1 end

@@ -9,6 +9,7 @@ local PaladinGui = require("holy_paladin_gui")
 local ArenaLines = require("holy_paladin_arena_lines")
 local DangerZones = require("holy_paladin_danger_zones")
 local BossGuide = require("holy_paladin_s2_boss_guide")
+local HealthPrediction = require("common/modules/health_prediction")
 local enums = require("common/enums")
 local fish_helper = require("common/utility/fish_helper")
 local gold = require("common/color").new(219, 181, 93, 255)
@@ -759,12 +760,14 @@ local function predicted_health_percent(unit)
     end
     local trend_projected = math.max(0, current - trend_loss)
     local hp, max_hp = safe_call(unit, "get_health"), safe_call(unit, "get_max_health")
-    local incoming = safe_call(unit, "get_incoming_damage", DAMAGE_PREDICTION_WINDOW)
-    if type(incoming) ~= "number" or type(hp) ~= "number"
+    local unit_incoming = safe_call(unit, "get_incoming_damage", DAMAGE_PREDICTION_WINDOW)
+    local module_incoming = safe_call(HealthPrediction, "get_incoming_damage",
+        unit, DAMAGE_PREDICTION_WINDOW)
+    local incoming = math.max(0, tonumber(unit_incoming) or 0, tonumber(module_incoming) or 0)
+    if type(hp) ~= "number"
         or type(max_hp) ~= "number" or max_hp <= 0 then
         return trend_projected, current, trend_loss, time_to_danger
     end
-    incoming = math.max(0, incoming)
     local incoming_heals = safe_call(unit, "get_incoming_heals")
     if type(incoming_heals) ~= "number" then incoming_heals = 0 end
     local shield = safe_call(unit, "get_total_shield")

@@ -59,7 +59,11 @@ function M.detect()
     local player=invoke(core and core.object_manager,"get_local_player")
     if not player or invoke(player,"is_valid")~=true then return nil,"player unavailable" end
     local class=tonumber(invoke(player,"get_class"))
-    if class and class~=2 then return nil,"not a Paladin" end
+    -- Never infer a Paladin profile while class identity is unavailable. Spell
+    -- book state can briefly survive a character or client transition, which
+    -- otherwise lets a stale signature start this suite on another class.
+    if class==nil then return nil,"player class unavailable" end
+    if class~=2 then return nil,"not a Paladin" end
     local edition,why=M.edition(); if not edition then return nil,why end
     if edition=="forever" then
         local spec,swhy=M.forever_spec(player)
