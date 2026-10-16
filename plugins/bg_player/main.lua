@@ -51,6 +51,7 @@ local Darkspear=require("bg_darkspear")
 local ForeverRecovery=require("bg_forever_recovery")
 local LevelPolicy=require("bg_level_policy")
 local ForeverLevelRules=require("bg_forever_level_rules")
+local ForeverMMaps=require("bg_forever_mmap_reference")
 local MountSelection=require("bg_mount_selection")
 local Navigation=require("bg_navigation")
 local MountRecovery=require("bg_mount_recovery")
@@ -1298,6 +1299,7 @@ local function debug_rows()
    tostring(TrinityForever.battlemaster.random_modern).." / epic="..tostring(TrinityForever.battlemaster.random_epic)..
    " / live catalog remains authoritative"},
   {"Forever readiness",Client:is_forever() and "4 BG catalog; battlemaster/entrance queue; deterministic Darkspear fallback; Brawl/Epic unavailable" or "Not running Forever"},
+  {"Forever mmap reference",Client:is_forever() and ForeverMMaps.report(detected_profile()) or "Not running Forever"},
   {"Vehicle / siege handlers",(objective_actions and type(objective_actions.vehicle)=="function" and "vehicle ready" or "vehicle unavailable").." / "..
    (objective_actions and type(objective_actions.siege_gate)=="function" and "siege ready" or "siege unavailable")},
   {"Plugin initialization",plugin_init_ms and string.format("%.1fms",plugin_init_ms) or "measuring"},
@@ -1343,6 +1345,12 @@ _G.SylvanasBattlegroundBot={
    darkspear_navigation="landmark_fallback_no_native_mmap_2524",live_validation_required=true,route_scope=Client.route_scope,build=Build.version}
  end,
  get_forever_reference=function() return TrinityForever end,
+ get_forever_mmap_reference=function(profile)
+  if profile then return ForeverMMaps.coverage(profile) end
+  local profiles={};for name in pairs(ForeverMMaps.profiles) do profiles[name]=ForeverMMaps.coverage(name) end
+  return {target_build=ForeverMMaps.target_build,verified=false,status=ForeverMMaps.status,
+   map_headers=ForeverMMaps.map_headers,tile_files=ForeverMMaps.tile_files,profiles=profiles}
+ end,
  set_objective_actions=function(actions)
   assert(actions==nil or type(actions)=="table","Expected objective action table")
   if actions then for key,fn in pairs(actions) do

@@ -1,4 +1,12 @@
-SYLVANAS BATTLEGROUND COMMAND - v1.95.0 - October 15, 2026
+SYLVANAS BATTLEGROUND COMMAND - v1.96.0 - October 15, 2026
+
+Version 1.96.0 records the supplied Forever legacy mmap inventory without
+installing or trusting it. Diagnostics now show per-profile map ID, header, tile
+count, target build, and unverified status. The archive contains AV map 30 (27
+tiles), WSG map 489 (12), and AB map 529 (16), but no Darkspear map 2524. The
+public `get_forever_mmap_reference(profile)` API exposes the same immutable
+evidence so ArthasNav tooling can distinguish absent geometry from bad routes.
+Active server probes and live-match validation remain authoritative.
 
 Version 1.95.0 integrates the safe runtime findings from the supplied Forever
 MMap compatibility package. ArthasNav map/tile absence and mmap/Detour format
