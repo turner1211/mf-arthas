@@ -1,4 +1,4 @@
-SYLVANAS HUNTER 1.6.6 — MIDNIGHT + WOW FOREVER
+SYLVANAS HUNTER 1.6.7 — MIDNIGHT + WOW FOREVER
 
 PLUGIN FOLDER RULE: Every file inside this plugin folder and every subfolder
 must end in `.lua` or `.md`. Release packaging fails if any other file type is
@@ -8,6 +8,15 @@ JPEG, ZIP, Python, JSON, layered-art, or other file types in the plugin folder.
 Built for Project Sylvanas's Midnight and WoW Forever client APIs. This is an offline-validated
 release candidate; live testing is still required. It is not a claim of flawless
 gameplay, maximum DPS, or verified behavior on every talent build.
+
+Version 1.6.7 extends the level-aware Forever policy. BM and Marksmanship can
+maintain Track Hidden from level 24 against Rogue and Druid targets without
+overriding Survival's Track Humanoids damage tracking. Scare Beast can safely
+control a selected hostile pet from level 14, and its fear ranks are protected
+from the damage rotation. Distracting Shot can peel a dungeon mob from a healer
+from level 12 only while the Hunter is healthy and free of existing attackers.
+Mana reserves now scale across the level 1–9, 10–17, 18–24, and 25+ toolkits,
+and Serpent Sting is withheld from targets forecast to die before useful ticks.
 
 Version 1.6.6 adds automatic character-level detection to every snapshot and
 Forever status log. Forever priorities now unlock by the real trainer/talent

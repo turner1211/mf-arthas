@@ -890,3 +890,28 @@ Sources:
 - https://foreverdb.net/sim/hunter/beast-mastery
 - https://foreverdb.net/sim/hunter/survival
 - https://foreverdb.net/spell/3045
+# 1.6.7 WoW Forever tracking, control, and leveling pass — 2026-10-15
+
+Forever teaches Distracting Shot at level 12, Scare Beast at 14, and Track
+Hidden at 24. The new priorities enforce those boundaries directly. BM and MM
+activate Track Hidden only against Rogue or Druid players; Survival preserves
+Track Humanoids because Improved Tracking raises its damage against players.
+Scare Beast targets only the selected hostile pet before this Hunter has put a
+Serpent Sting on it, and all three fear ranks are classified as breakable CC so
+the damage engine will stop. Distracting Shot is limited to PvE mobs targeting
+a healer while the Hunter is at least 70% health and has no current attacker.
+
+The leveling and PvE guides also emphasize that mana pressure changes as new
+ranks unlock, and that Serpent Sting should be skipped on trash that cannot
+live through most of its 15-second duration. Mana floors now scale by actual
+character level, and a measured time-to-die below nine seconds suppresses a new
+Serpent Sting application.
+
+Sources:
+- https://foreverdb.net/guide/leveling-hunter
+- https://foreverdb.net/class/Hunter/pve
+- https://foreverdb.net/class/Hunter/pvp
+- https://foreverdb.net/class/Hunter/builds
+- https://foreverdb.net/spell/1513
+- https://foreverdb.net/spell/19885
+- https://foreverdb.net/sim/hunter/marksmanship

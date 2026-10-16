@@ -12,3 +12,5 @@ BM regressions cover non-execute Black Arrow, real Kill Shot gating, Barbed burs
 
 These are offline tests. Live client casting, PvP prediction, latency, native rendering fidelity and DPS performance remain unverified.
 Additional checks: MM PvE priorities across five activities; Survival hidden/absent Tip preparation across eight activities; native Focus-cost variants; hostile player-owned world pet routing; persistent log writes/retries, retained sessions, rotation and GUI clipboard controls.
+
+28 focused WoW Forever decisions passed, including level-aware mana, Track Hidden, Scare Beast, healer-peel Distracting Shot, short-target Sting suppression, and all three isolated rotations.

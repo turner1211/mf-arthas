@@ -3,7 +3,7 @@ local ok,Pvp=pcall(require,'common/utility/pvp_helper');if not ok then Pvp=nil e
 local helper_ok,UnitHelper=pcall(require,'common/utility/unit_helper');if not helper_ok then UnitHelper=nil end
 local prediction_ok,Prediction=pcall(require,'common/modules/health_prediction');if not prediction_ok then Prediction=nil end
 local N={Pvp=Pvp}
-local BREAKABLE={6770,2094,1776,118,28271,28272,61305,61721,61780,126819,161354,161355,161372,51514,20066,8122,5782,3355,6358,33786,710,31661,105421,213691}
+local BREAKABLE={6770,2094,1776,118,28271,28272,61305,61721,61780,126819,161354,161355,161372,51514,20066,8122,5782,1513,14326,14327,3355,6358,33786,710,31661,105421,213691}
 local IMMUNE={642,45438,186265,33786,710,1022,414658}
 local SETUP_STUN={[19577]=true,[474421]=true}
 local HARMLESS_FOR_TRAP={[257284]=true,[5116]=true,[195645]=true}

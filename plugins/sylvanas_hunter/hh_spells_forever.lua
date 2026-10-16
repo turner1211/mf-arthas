@@ -1,4 +1,4 @@
-local S={rows={},talent={},aura={serpent={13555,13554,13553,13552,13551,1978},scorpid={3043},viper={14280,14279,3034},mark={14325,14324,14323,14322,14321,1130},hawk={25296,14320,14319,14318,14317,13165},beast={1299447,1299446,1299445,13161},monkey={13163},lacerate={24118},trueshot={19506},track_humanoids={19883},cheetah={5118},concussive=5116,mend={13544,13543,13542,3661,3662,136},deterrence=19263}}
+local S={rows={},talent={},aura={serpent={13555,13554,13553,13552,13551,1978},scorpid={3043},viper={14280,14279,3034},mark={14325,14324,14323,14322,14321,1130},hawk={25296,14320,14319,14318,14317,13165},beast={1299447,1299446,1299445,13161},monkey={13163},lacerate={24118},trueshot={19506},track_humanoids={19883},track_hidden={19885},cheetah={5118},concussive=5116,mend={13544,13543,13542,3661,3662,136},deterrence=19263}}
 local all={253,254,255};local bm={253};local mm={254};local sv={255}
 local function add(key,ids,specs,kind,extra)
  if type(ids)=='number'then ids={ids}end
@@ -26,6 +26,9 @@ add('sniper_shot',{1310786,1310785,1310687},mm,'enemy',{stationary=true,casttime
 add('rapid_fire',{3045},all,'self',{off=true,burst=true})
 add('trueshot_aura',{19506},mm,'self',{maintenance=true,off=true})
 add('track_humanoids',{19883},sv,'self',{maintenance=true,off=true,pvp=true})
+add('track_hidden',{19885},all,'self',{maintenance=true,off=true,pvp=true})
+add('scare_beast',{14327,14326,1513},all,'enemy',{utility=true,pvp=true,stationary=true,casttime=1.5})
+add('distracting_shot',{14274,14273,14272,20736},all)
 add('forever_scatter',{19503},mm,'enemy',{utility=true,pvp=true,control=true})
 add('strider_kick',{1317257},sv)
 add('mongoose_bite',{14271,14270,14269,1495},sv)

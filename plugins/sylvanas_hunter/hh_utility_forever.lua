@@ -1,6 +1,28 @@
-local U,A,S=require('hh_util'),require('hh_aura'),require('hh_spells');local Q={}
+local U,A,S,N=require('hh_util'),require('hh_aura'),require('hh_spells'),require('hh_snapshot');local Q={}
+local HARMLESS_BREAKABLE={[5116]=true,[14268]=true,[14267]=true,[2974]=true}
+local function clean_breakable(unit)
+ local debuffs=U.call(unit,'get_debuffs');if type(debuffs)~='table'then return false end
+ for _,row in pairs(debuffs)do if not HARMLESS_BREAKABLE[U.number(row.buff_id)]then return false end end
+ return true
+end
 function Q.run(c,e)
  local a
+ -- Scare Beast is learned at 14. Use it only on the selected hostile pet and
+ -- only before our own damage lands; the fear is breakable and short ranged.
+ if c.pvp and(U.number(c.level)or 1)>=14 and c.settings.cc and U.call(c.target,'is_pet')==true
+  and not N.protected(c.target)and clean_breakable(c.target)and e.history_target.serpent_sting~=c.target_guid then
+  a=c.pick('scare_beast','fear the selected enemy beast pet before applying damage');if a then return a end
+ end
+ -- Distracting Shot is learned at 12. Peel a mob from the healer only while
+ -- healthy and not already tanking another attacker, giving the tank time to recover it.
+ if not c.pvp and(U.number(c.level)or 1)>=12 and c.settings.cc and c.hp>=70 and c.attackers==0 and U.valid(c.target)then
+  local victim=U.call(c.target,'get_target')
+  for _,member in ipairs(c.party or{})do
+   if U.same(victim,member.unit)and tostring(member.role):upper()=='HEALER'then
+    a=c.pick('distracting_shot','pull a mob off the healer for tank recovery');if a then return a end
+   end
+  end
+ end
  local melee_emergency=c.physical or(c.distance and c.distance<=5.5 and c.attackers>0)
  if c.settings.defensives and c.hp<=c.settings.turtle_hp and melee_emergency then a=c.pick('deterrence','Forever emergency melee avoidance');if a then return a end end
  if c.settings.defensives and c.settings.forever_readiness~=false and c.hp<=c.settings.turtle_hp and melee_emergency

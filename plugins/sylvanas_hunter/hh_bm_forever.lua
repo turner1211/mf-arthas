@@ -3,7 +3,8 @@ function R.decide(c,e)
  if c.spec~=253 then return end
  local distance=U.distance(c.player,c.target)
  if distance<8 then return c.pick('raptor_strike','BM dead-zone melee fallback')end
- local a=F.open(c,e);if a then return a end
+ local a=F.pvp_tracking(c,e);if a then return a end
+ a=F.open(c,e);if a then return a end
  if F.level(c,40)and c.burst then a=c.pick('bestial_wrath','Forever BM offensive window');if a then return a end end
  if F.pet_first(c,e)then return end
  if F.rapid_fire(c)then a=c.pick('rapid_fire','sim-backed Forever BM attack-speed window below 95% mana');if a then return a end end

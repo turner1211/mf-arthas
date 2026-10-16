@@ -21,7 +21,7 @@ function F.mark_and_sting(c,e)
   -- keep evaluating so a mana target still receives Serpent Sting.
   a=c.pick('viper_sting','drain a mana target with the Forever 15-second Viper cooldown');if a then return a end
  end
- if (not c.target_hp or c.target_hp>35)and not has_any(c,S.aura.serpent,true)then
+ if (not c.target_hp or c.target_hp>35)and(not c.ttd or c.ttd>=9)and not has_any(c,S.aura.serpent,true)then
   a=c.pick('serpent_sting','maintain efficient Serpent Sting on a durable target');if a then return a end
  end
 end
@@ -36,6 +36,10 @@ end
 function F.mana(c)return c.resource_pct or 0 end
 function F.can_spend(c,key,reserve)
  if c.settings.forever_mana_pool==false then return true end
+ local level=U.number(c.level)or 60
+ if level<10 then reserve=math.min(reserve,10)
+ elseif level<18 then reserve=math.min(reserve,18)
+ elseif level<25 then reserve=math.min(reserve,25)end
  local cost=c.cost and c.cost(key)
  if not cost or not c.focus_max or c.focus_max<=0 then return F.mana(c)>=reserve end
  return ((c.focus-cost)/c.focus_max*100)>=reserve
@@ -68,12 +72,19 @@ function F.durable(c,seconds,hp)
  return not c.target_hp or c.target_hp>hp
 end
 function F.pvp_tracking(c,e)
- if c.spec~=255 or not c.pvp or c.settings.forever_pvp_tracking==false then return end
- local active=c.buff(S.aura.track_humanoids[1])
+ if not c.pvp then return end
+ local key,aura
+ if c.spec==255 and c.settings.forever_pvp_tracking~=false then key='track_humanoids';aura=S.aura.track_humanoids
+ elseif c.spec~=255 and F.level(c,24)and c.settings.forever_track_hidden~=false then
+  local class=U.number(U.call(c.target,'get_class'))
+  if class==4 or class==11 then key='track_hidden';aura=S.aura.track_hidden end
+ end
+ if not key then return end
+ local active=c.buff(aura[1])
  -- Some hosts expose tracking as an aura; others do not. A confirmed local
  -- cast is a safe fallback that prevents repeated GCD requests on nil data.
- if active==true or active==nil and e.history.track_humanoids then return end
- return c.pick('track_humanoids','enable Improved Tracking damage against PvP humanoids')
+ if active==true or active==nil and e.history[key] then return end
+ return c.pick(key,key=='track_humanoids'and'enable Improved Tracking damage against PvP humanoids'or'improve detection against a stealth-capable PvP target')
 end
 function F.burst_reset(c,keys,why)
  if c.settings.forever_readiness==false or not c.burst or c.ttd and c.ttd<15 then return end

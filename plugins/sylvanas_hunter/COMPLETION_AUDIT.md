@@ -139,3 +139,5 @@ Version 1.6.4 adds learned-spell fallback from unavailable Viper Sting to Serpen
 Version 1.6.5 adds Survival-only Track Humanoids upkeep for the Improved Tracking PvP damage bonus, a spec/mode-filtered default-on GUI option and hotkey, guarded unknown-aura handling, and the current explicit Mongoose Bite/Strider Kick/Raptor Strike priority.
 
 Version 1.6.6 adds native character-level detection and explicit Forever unlock boundaries, corrects BM to the current Multi-Shot/Arcane simulator priority, reserves Rapid Fire by context, and makes Pet-first engagement safety functional with a bounded hand-off.
+
+Version 1.6.7 adds level-gated Track Hidden, Scare Beast pet control, guarded healer-peel Distracting Shot, level-scaled mana floors, short-target Sting suppression, and breakable-fear protection without changing Midnight modules.
