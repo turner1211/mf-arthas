@@ -1,8 +1,8 @@
 # Assassination Rogue — Valeera Activity Profiles
 
-Version 1.2.10 extends character-level awareness into shared control, mobility and defensive logic. Forever now selects the highest learned, level-eligible ranks of Gouge, Kidney Shot, Blind, Sap, Kick, Sprint, Vanish and Evasion instead of allowing shared Retail IDs to choose a missing or obsolete rank. Level-30-and-below solo rotations can spend three or more points on Eviscerate as a short target enters finishing range instead of wasting another builder. Retail/Midnight dispatch remains separate and unchanged.
+Version 1.2.11 prevents the automatic skinning/looting walker from competing with MasterArthasNav. When either supported navigation export reports an active route, gathering releases only its own movement helper and waits without stopping the route owner. The Rogue loader does not use `os.time()`, so the separate shared-loader clock issue described in the audit does not apply to this plugin source.
 
-Project Sylvanas / IZI plugin, version 1.2.10. Built from the Holy Paladin GUI and aura compatibility layer, with Rogue damage, control, survival, gathering and logging modules.
+Project Sylvanas / IZI plugin, version 1.2.11. Built from the Holy Paladin GUI and aura compatibility layer, with Rogue damage, control, survival, gathering and logging modules.
 
 ## Controls
 

@@ -16,6 +16,16 @@ local function call(o,k,...)
  local ok,v=pcall(o[k],o,...);if ok then return v end
 end
 local function note(T,s) M.status=s;T.note("GATHERING",{s}) end
+local function master_navigation_busy()
+ -- MasterArthasNav publishes the same bundle under both names. Check both for
+ -- compatibility, but never call stop on that client because it owns the route.
+ for _,name in ipairs({'AmeisenNav','ArthasNav'}) do
+  local bundle=rawget(_G,name)
+  local client=type(bundle)=='table' and bundle.client or nil
+  if client and call(client,'is_busy')==true then return true end
+ end
+ return false
+end
 local function distance(a,b)
  local d=call(a,"distance_to",b);if type(d)=="number" then return d end
  local x,y=call(a,"get_position"),call(b,"get_position")
@@ -37,6 +47,9 @@ function M.skin_error(message,T)
 end
 function M.update(p,opts,T,cached_objects)
  if call(p,"is_in_combat")==true or call(p,"is_mounted")==true then M.stop();M.status="Paused for combat / mount";return end
+ if master_navigation_busy() then
+  M.stop();busy_until=0;M.status='Paused: MasterArthasNav owns movement';return
+ end
  if skin_pending then
   if core.time()<skin_pending.expires then M.status='Skinning: waiting for cast confirmation';return end
   M.confirm_skin(false,T)
