@@ -153,7 +153,7 @@ function C:reset_match()
  self.activity_position=nil;self.activity_goal=nil;self.activity_at=nil;self.activity_recoveries=0
  self.interaction_key=nil;self.interaction_failures=0;self.interaction_retry_at=0
  self.interaction_pending_until=nil
- self.match_entered_at=nil;self.match_finished=false;self.last_match_phase=nil;self.active_phase_at=nil
+ self.match_entered_at=nil;self.match_finished=false;self.last_match_phase=nil;self.active_phase_at=nil;self.active_guard_until=nil
  self.awaiting_respawn=nil;self.respawn_reintegrate_until=nil
  self.death_hotspots={};self.death_noted=nil;self.match_deaths=0;self.last_death_at=nil;self.current_profile=nil;self.spawn_key=nil;self.objective_history={}
 end
@@ -278,7 +278,11 @@ function C:tick()
  if self.match~=match then self:reset_match();self.match=match;self.next_action=now;self.match_entered_at=now end
  local phase=a.match_state()
  local previous_phase=self.last_match_phase
- if phase==3 and self.last_match_phase~=3 and self.last_match_phase~=nil then self.active_phase_at=now end
+ -- Keep durable proof that this exact match was engaged. Retail normally moves
+ -- Engaged (3) -> PostRound (4) -> Complete (5), so checking only the
+ -- immediately previous phase loses the proof needed for a safe automatic exit.
+ if phase==3 and self.active_phase_at==nil then self.active_phase_at=now end
+ if phase==3 and previous_phase~=nil and previous_phase~=3 then self.active_guard_until=now+3 end
  self.last_match_phase=phase
  if a.observe_team then a.observe_team(player,phase) end
  self.observations={observed_at=now,phase=phase}
@@ -289,7 +293,7 @@ function C:tick()
  -- leave request unless this controller observed the match become active.
  local complete_phase=phase==5
  if type(a.match_complete)=="function" then complete_phase=a.match_complete(phase)==true end
- local verified_complete=complete_phase and (previous_phase==3 or self.match_finished==true)
+ local verified_complete=complete_phase and (self.active_phase_at~=nil or self.match_finished==true)
  if verified_complete or verified_winner then
   self.match_finished=true;self:stop_motion();self:status("finished")
   if now>=self.next_action then self.next_action=now+5;a.leave() end
@@ -319,7 +323,7 @@ function C:tick()
  if self.awaiting_respawn then
   self.awaiting_respawn=nil;self.death_noted=nil;self.respawn_reintegrate_until=now+12
  end
- if phase==3 and self.active_phase_at and now-self.active_phase_at<3 then
+ if phase==3 and self.active_guard_until and now<self.active_guard_until then
   self:stop_motion();self:status("confirming_match_entry");return
  end
  if phase~=3 then

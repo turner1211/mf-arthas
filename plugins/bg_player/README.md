@@ -1,4 +1,13 @@
-SYLVANAS BATTLEGROUND COMMAND - v1.98.0 - October 16, 2026
+SYLVANAS BATTLEGROUND COMMAND - v1.99.0 - October 16, 2026
+
+Version 1.99.0 fixes automatic match completion across Retail's documented
+Engaged -> PostRound -> Complete sequence. The controller now retains durable
+proof that the current match reached Engaged, allowing a verified Complete
+state to trigger its normal leave and delayed requeue workflow even when
+PostRound was the immediately previous state. A Complete value observed without
+prior engagement still fails closed, preventing startup/loading glitches from
+forcing an unintended battleground leave. Direct Engaged loads remain responsive;
+the three-second movement guard applies only to a real phase transition.
 
 Version 1.98.0 closes an unattended queue-acceptance gap. A confirmation is
 accepted only when fresh metadata identifies the selected battleground mode or

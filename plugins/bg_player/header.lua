@@ -1,1 +1,1 @@
-return {name="Sylvanas Battleground Command", version="1.98.0", author="Local", load=true}
+return {name="Sylvanas Battleground Command", version="1.99.0", author="Local", load=true}
