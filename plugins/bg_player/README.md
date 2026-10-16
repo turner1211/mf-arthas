@@ -1,4 +1,11 @@
-SYLVANAS BATTLEGROUND COMMAND - v1.100.0 - October 16, 2026
+SYLVANAS BATTLEGROUND COMMAND - v1.101.0 - October 16, 2026
+
+Version 1.101.0 closes two movement-state gaps found by the follow-up deep
+audit. A crowd-control hold now releases authored direct steering immediately,
+invalidates its callbacks, and never resumes the stale provider path that the
+direct corridor replaced. Directional stuck recovery now stops ArthasNav before
+either its SimpleMovement adapter or core-input fallback starts strafing. These
+changes preserve one movement owner during crowd control and obstacle recovery.
 
 Version 1.100.0 fixes the three BG Player movement defects confirmed by the
 October 16 external audit. ArthasNav paths and authored local corridors now

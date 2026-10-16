@@ -1,4 +1,5 @@
 local N={};N.__index=N
+local DIRECT_HOLD={}
 function N.new(get_nav,report,direct_start,direct_stop,skip_height_probe)
  return setmetatable({get_nav=get_nav,report=report,direct_start=direct_start,direct_stop=direct_stop,
   skip_height_probe=skip_height_probe,generation=0,direct_active=false,paused={},height_probe_disabled=false},N)
@@ -7,8 +8,10 @@ function N:stop()
  self.generation=self.generation+1
  self:stop_direct()
  for reason,n in pairs(self.paused) do
-  local found,resume=pcall(function() return n and n.resume end)
-  if found and type(resume)=="function" then pcall(resume,n,reason) end
+  if n~=DIRECT_HOLD then
+   local found,resume=pcall(function() return n and n.resume end)
+   if found and type(resume)=="function" then pcall(resume,n,reason) end
+  end
   self.paused[reason]=nil
  end
  local n=self.get_nav();if n then
@@ -22,7 +25,18 @@ function N:stop_direct()
 end
 function N:pause(reason)
  reason=tostring(reason or "movement_hold")
- if self.paused[reason] then return true end
+ if self.paused[reason]~=nil then return true end
+ -- Direct corridors hold local input rather than a provider path. They cannot
+ -- be paused safely: release their keys and invalidate their callbacks, then
+ -- let the controller redispatch the current waypoint after the hold clears.
+ -- Do not pause/resume the provider here because direct movement stopped its
+ -- previous path when it took ownership.
+ if self.direct_active then
+  self.generation=self.generation+1
+  self:stop_direct()
+  self.paused[reason]=DIRECT_HOLD
+  return true
+ end
  local n=self.get_nav();if not n then return false end
  local found,pause=pcall(function() return n.pause end)
  if not found or type(pause)~="function" then return false end
@@ -34,6 +48,7 @@ function N:resume(reason)
  reason=tostring(reason or "movement_hold")
  local n=self.paused[reason]
  if not n then return true end
+ if n==DIRECT_HOLD then self.paused[reason]=nil;return true end
  local found,resume=pcall(function() return n.resume end)
  if not found or type(resume)~="function" then return false end
  local ok,result=pcall(resume,n,reason)

@@ -721,6 +721,9 @@ local api={
  replan=function(reason) local n=nav();if n and n.replan then n:replan(reason) end end,
  escape_direction=function(direction)
   local n=nav();local movement=n and n.movement
+  -- A directional recovery is a manual driver. Stop the current path before
+  -- starting it so provider steering cannot cancel or fight the strafe.
+  if direction~=nil then navigation:stop() end
   if movement and type(movement.strafe)=="function" then
    local ok,result=pcall(movement.strafe,movement,direction)
    if ok and result~=false then return true end
@@ -734,7 +737,6 @@ local api={
   local start=direction=="left" and input.strafe_left_start or
    direction=="right" and input.strafe_right_start or nil
   if type(start)~="function" then return false end
-  navigation:stop()
   local ok,result=pcall(start)
   return ok and result~=false
  end,

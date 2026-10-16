@@ -159,8 +159,12 @@ foreach ($p in $Projects) {
     }
 
     $version = Get-Version $src.FullName
+    # Shared localization packages wrap the original application in mf_entry.
+    # Preserve that stable entry when it is present in the editable source;
+    # older projects continue to enter through main.lua.
+    $entry = if (Test-Path -LiteralPath (Join-Path $src.FullName 'mf_entry.lua')) { 'mf_entry.lua' } else { 'main.lua' }
     $header = if (Test-Path -LiteralPath (Join-Path $src.FullName 'header.lua')) { "header header.lua`n" } else { '' }
-    $body = "project $($p.Id)`nversion $version`nentry main.lua`n$header" + ($entries -join "`n") + "`n"
+    $body = "project $($p.Id)`nversion $version`nentry $entry`n$header" + ($entries -join "`n") + "`n"
     $build = (Get-Hex $Utf8.GetBytes($body)).Substring(0, 16)
     [IO.File]::WriteAllText((Join-Path $dest 'manifest.txt'), "# mf-arthas-manifest 1`nbuild $build`n$body", $Utf8)
 
