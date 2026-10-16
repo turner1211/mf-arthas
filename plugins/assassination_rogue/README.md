@@ -1,8 +1,8 @@
 # Assassination Rogue — Valeera Activity Profiles
 
-Version 1.2.12 hardens logging, learned prediction and gathering against transient host failures. Session-log batches remain in memory until the host confirms the append, so a rejected OneDrive or Project Sylvanas write can retry instead of silently losing crash-recovery rows. Debug writes now distinguish a rejected append and preserve the latest error in memory; predictive threat learning keeps unsaved observations dirty for its next retry. Looting, skinning, profession startup and corpse-approach vector creation now contain invalidated native handles without aborting the complete Rogue update callback. Version 1.2.11 prevents the gathering walker from competing with MasterArthasNav.
+Version 1.2.13 separates normal log commits from crash-recovery snapshot retries, preventing duplicate session rows when only the snapshot writer fails. Clear Log now succeeds only after the host confirms both the log reset and persistent-history reset. Version 1.2.12 hardened logging, learned prediction and gathering against transient host failures.
 
-Project Sylvanas / IZI plugin, version 1.2.12. Built from the Holy Paladin GUI and aura compatibility layer, with Rogue damage, control, survival, gathering and logging modules.
+Project Sylvanas / IZI plugin, version 1.2.13. Built from the Holy Paladin GUI and aura compatibility layer, with Rogue damage, control, survival, gathering and logging modules.
 
 ## Controls
 

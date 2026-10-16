@@ -8,6 +8,7 @@ local enabled,lines,run_start,last_state=true,{},1,-math.huge
 local head,count,total=1,0,0
 local batch,batch_bytes,last_flush,last_persist={},0,-math.huge,-math.huge
 local write_retry=0
+local persistent_dirty=false
 local run={active=false,requests=0,success=0,failed=0}
 local state_interval=1
 local idle_signature,idle_state_time='',-math.huge
@@ -29,29 +30,33 @@ local function replace_history(text)
  return true
 end
 function M.flush(force)
- if #batch==0 or now()<write_retry or not force and now()-last_flush<0.5 then return end
+ if #batch==0 and not persistent_dirty then return end
+ if #batch>0 and (now()<write_retry or not force and now()-last_flush<0.5) then return end
  last_flush=now()
  -- Keep the pending batch intact until the host confirms the append. A
  -- transient OneDrive or host writer failure must remain retryable in memory.
- local text=table.concat(batch)
- local ok,err=pcall(function()
-  assert(core.write_log_file,'log writer unavailable')
-  assert(core.write_log_file(path,text)~=false,'log writer rejected append')
-  if type(core.write_data_file)=='function' then
-   persistent=persistent..text
-   if #persistent>persistent_limit then
-    persistent=persistent:sub(#persistent-persistent_limit+1)
-    local first=persistent:find('\n',1,true);if first then persistent=persistent:sub(first+1) end
-   end
-   if force or now()-last_persist>=10 then
-    local saved,reason=replace_history(persistent)
-    if saved then last_persist=now() else M.status='Recording; persistent snapshot unavailable / '..clean(reason) end
-   end
+ local text=#batch>0 and table.concat(batch) or ''
+ if #text>0 then
+  local ok,err=pcall(function()
+   assert(type(core.write_log_file)=='function','log writer unavailable')
+   assert(core.write_log_file(path,text)~=false,'log writer rejected append')
+  end)
+  if not ok then M.status='File unavailable; memory retained / '..clean(err);write_retry=now()+5;return end
+  -- The append is committed. Never retry it merely because the independent
+  -- crash-recovery snapshot is temporarily unavailable.
+  batch={};batch_bytes=0;write_retry=0
+  persistent=persistent..text;persistent_dirty=true
+  if #persistent>persistent_limit then
+   persistent=persistent:sub(#persistent-persistent_limit+1)
+   local first=persistent:find('\n',1,true);if first then persistent=persistent:sub(first+1) end
   end
- end)
- if ok then batch={};batch_bytes=0 end
- M.status=ok and 'Recording / '..count..' lines' or 'File unavailable; memory retained / '..clean(err)
- if not ok then write_retry=now()+5 end
+ end
+ if persistent_dirty and (force or now()-last_persist>=10) then
+  local ok,saved,reason=pcall(replace_history,persistent)
+  if ok and saved then persistent_dirty=false;last_persist=now()
+  else M.status='Recording; persistent snapshot unavailable / '..clean(ok and reason or saved);return end
+ end
+ M.status='Recording / '..count..' lines'
 end
 function M.note(kind,fields)
  if not enabled then return end
@@ -192,11 +197,13 @@ function M.event(id,success,req)
 end
 function M.clear()
  local ok=pcall(function()
-  assert(core.delete_log_file);core.delete_log_file(path);core.create_log_file(path)
-  persistent='';replace_history('')
+  assert(type(core.delete_log_file)=='function' and type(core.create_log_file)=='function','log reset API unavailable')
+  assert(core.delete_log_file(path)~=false,'log delete rejected')
+  assert(core.create_log_file(path)~=false,'log create rejected')
+  local saved,reason=replace_history('');assert(saved,reason)
  end)
  if not ok then M.status="Clear failed; log retained";return false end
- lines={};head,count,total=1,0,0;batch={};batch_bytes=0;write_retry=0;last_persist=-math.huge;run_start=1;last_state=-math.huge;idle_signature='';idle_state_time=-math.huge;decision_signature='';decision_time=-math.huge;run.requests=0;run.success=0;run.failed=0;run.start=now();M.note("LOG_CLEARED");return true
+ persistent='';persistent_dirty=false;lines={};head,count,total=1,0,0;batch={};batch_bytes=0;write_retry=0;last_persist=now();run_start=1;last_state=-math.huge;idle_signature='';idle_state_time=-math.huge;decision_signature='';decision_time=-math.huge;run.requests=0;run.success=0;run.failed=0;run.start=now();M.note("LOG_CLEARED");return true
 end
 M.note("LOGGER_START",{"entity="..Identity.logger,"owner="..Identity.entity,"version="..require('ar_version'),"session="..tostring(type(core.get_server_time)=='function' and core.get_server_time() or 'unknown'),"recovered_lines="..tostring(total)})
 M.flush(true)
