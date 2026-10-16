@@ -1,4 +1,6 @@
-# Bloodcrypt Delver — development build 0.6.34
+# Bloodcrypt Delver — development build 0.6.35
+
+Build 0.6.35 fixes a long-route deadlock in automatic mount preparation. Characters with no usable collected mount, an unavailable mount collection, or no compatible mount now continue by walking, allowing ArthasNav to receive the route instead of repeatedly stopping before navigation starts.
 
 Build 0.6.34 rejects incomplete scenario transactions instead of publishing scenario ID or step ID zero during loading transitions. The WoW bridge now preserves the last valid snapshot when Blizzard temporarily returns no scenario step, allowing the existing freshness and recovery logic to handle the interruption. Route storage now validates against the live catalog, enabling saved routes for the fifteenth identity, Labyrinth of Kindo'jan, and rejecting story indexes that do not exist for the selected delve.
 

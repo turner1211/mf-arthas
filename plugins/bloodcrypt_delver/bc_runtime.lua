@@ -143,7 +143,9 @@ function M.prepare_mount(distance_to_goal,prefer_flying)
  local flyable=prefer_flying and core.world and ((core.world.is_advanced_flyable_area and core.world.is_advanced_flyable_area()==true) or (core.world.is_flyable_area and core.world.is_flyable_area()==true))
  local rows=M.mount_collection();local best
  for _,m in ipairs(rows) do if not mount_state.failures[m.index] then local score=(flyable and m.flying and 4 or not flyable and not m.flying and 3 or 1);if not best or score>best.score then m.score=score;best=m end end end
- if not best then mount_state.failures={};mount_state.attempts=0;mount_state.next_try=now+10;return false,"No usable collected mount" end
+ -- Mounting is optional. An empty or unsupported collection must not prevent
+ -- the caller from submitting the walking route to ArthasNav.
+ if not best then mount_state.failures={};mount_state.attempts=0;mount_state.next_try=now+10;return true,"No usable collected mount; walking" end
  local owned,why=M.local_control();if not owned then return false,why end
  local ran,result=pcall(core.input.mount,best.index);mount_state.attempts=mount_state.attempts+1
  if not ran or result==false then mount_state.failures[best.index]=true;mount_state.next_try=now+1;if mount_state.attempts>=3 then mount_state.next_try=now+30;mount_state.attempts=0;mount_state.failures={} end;return nil,"Mount request rejected; selecting another" end
