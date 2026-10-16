@@ -1,4 +1,4 @@
-# WoW Forever Shaman research — version 5.6.0
+# WoW Forever Shaman research — version 5.7.0
 
 Reviewed October 15, 2026 against public beta information for builds through 1.60.1.70374.
 
@@ -30,3 +30,11 @@ The beta remains subject to tuning changes. Runtime spellbook checks remain auth
 - Before Stormstrike becomes available, Enhancement uses low-rank Lightning Bolt to pull at range, Earth Shock on single targets, and Flame Shock/Earth Shock alternation on packs.
 - Enhancement avoids Earth Shock when host threat data says a grouped non-tank is close to taking aggro, using Frost Shock for damage and control instead.
 - In PvP, a confirmed Elemental Focus proc can fund expensive Frost Shock, but the shared Shock cooldown remains reserved when an interruptible enemy cast is present.
+
+## Version 5.7 findings
+
+- Damage specializations should restore health between pulls with Healing Wave; combat self-healing remains reserved for emergencies.
+- Call of the Ancestors arrives at level 30 and provides a second configured totem set, so grouped preparation can use it without replacing the solo Call of the Elements page.
+- Stoneclaw is available from level 8 and should absorb pressure when multiple leveling enemies connect, before health reaches an emergency threshold.
+- Level-30 Elemental builds can add the Earthbound root to Earthbind, creating a short casting window when enemies reach melee range.
+- Enhancement guidance recommends skipping totems on quick kills. Fire totems are therefore limited to durable targets and real packs instead of every ordinary enemy.

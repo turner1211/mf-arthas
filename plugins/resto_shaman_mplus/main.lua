@@ -79,4 +79,4 @@ core.register_on_game_event_callback(function(event,args)
  RT.safe("aura_event",module("rs_auras").event,event,args);RT.safe("telemetry_event",module("rs_telemetry").event,event,args)
  RT.last_tick=-math.huge
 end)
-core.log("[Shaman Suite] 5.6.0 loaded: deeper level-aware WoW Forever logic; Retail/Midnight remains isolated.")
+core.log("[Shaman Suite] 5.7.0 loaded: level-band recovery and totem logic for WoW Forever; Retail/Midnight remains isolated.")

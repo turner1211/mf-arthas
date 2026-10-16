@@ -1,4 +1,10 @@
-# Shaman Suite 5.6.0
+# Shaman Suite 5.7.0
+
+- Adds level-aware between-pull Healing Wave recovery for Elemental and Enhancement.
+- Uses the level-30 Call of the Ancestors preset for grouped pre-pull setup when learned.
+- Deploys Stoneclaw earlier for solo characters below level 30 when multiple enemies connect.
+- Gives level-30 Elemental an Earthbind window to regain casting space in PvE.
+- Prevents Enhancement from spending a Fire totem on short ordinary targets while retaining it for packs, elites, PvP, bosses, and durable enemies.
 
 - Separates Restoration's level 20-39 toolkit from the level-40 Chain Heal and Riptide plan.
 - Proactively places Healing Stream during group combat before level 40.

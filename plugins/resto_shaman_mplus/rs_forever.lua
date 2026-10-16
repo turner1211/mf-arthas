@@ -285,10 +285,15 @@ end
 local function maintenance(me,context,spec,rows)
  local mp=mana(me);local policy=level_policy(me)
  local t=target(me)
+ if spec~="restoration" and U.call(me,"is_in_combat")~=true and (U.health(me) or 100)<88 and mp>=policy.heal_reserve then
+  local offset=C.get("forever_downrank") and ((U.health(me) or 100)>72 and 1 or 0) or 0
+  if cast(F.HEALING_WAVE,me,me,true,offset) then C.status="Forever: level-aware between-pull Healing Wave";return true end
+ end
  if C.get("forever_totem_sets") and C.get("forever_prepull_calls") and U.call(me,"is_in_combat")~=true
   and #rows>1 and t and U.distance(me,t)>10 and U.distance(me,t)<=35 and not any_totem()
-  and core.time()-M.last_call>30 and cast(F.CALL_ELEMENTS,me,me,true) then
-  M.last_call=core.time();C.status="Forever: configured four-totem set";return true
+  and core.time()-M.last_call>30 then
+   local preset=policy.level>=30 and F.known(F.CALL_ANCESTORS) and F.CALL_ANCESTORS or F.CALL_ELEMENTS
+   if cast(preset,me,me,true) then M.last_call=core.time();C.status=policy.level>=30 and "Forever: level-30 group totem preset" or "Forever: configured four-totem set";return true end
  end
  if spec=="restoration" then
   if not aura(me,F.WATER_SHIELD) and cast(F.WATER_SHIELD,me,me) then C.status="Forever Restoration: Water Shield";return true end
@@ -309,6 +314,8 @@ local function maintenance(me,context,spec,rows)
  end
  if C.get("forever_support_totems") then
   local nearby=#enemies(me,me,9)
+  if policy.level<30 and #rows==1 and nearby>=2 and (U.health(me) or 100)<90 and not active_element("earth")
+   and cast(F.STONECLAW,me,me) then C.status="Forever: low-level multi-enemy Stoneclaw";return true end
   if nearby>=2 and (U.health(me) or 100)<65 and not active_element("earth") and cast(F.STONECLAW,me,me) then C.status="Forever: Stoneclaw survival peel";return true end
   local tank_pressure=false;for _,row in ipairs(rows) do if row.tank and row.attackers>=2 then tank_pressure=true;break end end
   if tank_pressure and not active_element("earth") and cast(F.STONESKIN,me,me) then C.status="Forever: Stoneskin for physical tank pressure";return true end
@@ -386,6 +393,8 @@ local function elemental(me,context)
  if context.pvp and mp>=30 and magic_buff(t) and cast(F.PURGE,t,me) then C.status="Forever Elemental: Purge";return true end
  if U.distance(me,t)<=7 and ((U.health(me) or 100)<70 or U.call(me,"is_moving")==true) and not reserve_shock(me)
   and cast(F.FROST_SHOCK,t,me) then C.status="Forever Elemental: Frost Shock kite";return true end
+ if not context.pvp and policy.level>=30 and U.distance(me,t)<=7 and ((U.health(me) or 100)<88 or count>=2)
+  and not active_element("earth") and cast(F.EARTHBIND,me,me) then C.status="Forever Elemental: level-30 Earthbind casting space";return true end
  if context.pvp and clear and not reserve_shock(me) and cast(F.FROST_SHOCK,t,me,false,nil,true) then C.status="Forever Elemental PvP: free Clearcasting Frost Shock";return true end
  if not active_totem(F.SEARING) and not active_totem(F.MAGMA) and mp>=25 and cast(count>=3 and F.MAGMA or F.SEARING,me,me) then C.status="Forever Elemental: Fire totem setup";return true end
  if (not flame or remaining and remaining<=3) and mp>=20 and (U.health(t) or 100)>30 and not reserve_shock(me) and cast(F.FLAME_SHOCK,t,me) then C.status="Forever Elemental: full-duration Flame Shock";return true end
@@ -425,7 +434,8 @@ local function enhancement(me,context)
   if holding_threat(me,t) and cast(F.FROST_SHOCK,t,me) then C.status="Forever Enhancement: threat-safe Frost Shock";return true end
   if (count<2 or flame or M.last_shock_kind=="flame") and cast(F.EARTH_SHOCK,t,me) then C.status="Forever Enhancement: pre-Stormstrike Earth Shock";return true end
  end
- if not active_totem(F.SEARING) and not active_totem(F.MAGMA) and mp>=25 and cast(count>=3 and F.MAGMA or F.SEARING,me,me) then C.status="Forever Enhancement: Fire totem setup";return true end
+ local durable=important_target(me,t,count,context) or ((U.health(t) or 100)>=75 and (tonumber(U.call(t,"get_max_health")) or 0)>=(tonumber(U.call(me,"get_max_health")) or math.huge)*0.7)
+ if durable and not active_totem(F.SEARING) and not active_totem(F.MAGMA) and mp>=25 and cast(count>=3 and F.MAGMA or F.SEARING,me,me) then C.status="Forever Enhancement: durable-fight Fire totem";return true end
  if (not flame or remaining and remaining<=3) and mp>=20 and (U.health(t) or 100)>30 and not reserve_shock(me) and cast(F.FLAME_SHOCK,t,me) then C.status="Forever Enhancement: full-duration Flame Shock";return true end
  if fire_count>=3 and mp>=math.max(25,floor) and active_element("fire") and aoe_safe(me,fire_position,10) and cast(F.FIRE_NOVA,me,me) then C.status="Forever Enhancement: three-target positioned Fire Nova";return true end
  if mp>=floor and not reserve_shock(me) and (core.time()<M.stormstrike_until or (U.health(t) or 100)<=20)
