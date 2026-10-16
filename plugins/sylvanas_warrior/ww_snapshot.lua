@@ -93,7 +93,7 @@ function N.build(player,identity,mode,settings,engine)
   settings=settings,now=now,game_now=U.number(U.fn(core.game_time)),enemies={},nearby={},casts={},
   enemy_count=1,attackers=0,burst_attackers=0,team_burst_attackers=0,physical=false,magic=false,aoe_safe=true,aoe_known=false,party={},
   target=U.call(player,'get_target'),hp=U.hp(player)}
- local detected_level=U.number(U.call(player,'get_level'))
+ local detected_level=U.number(U.call(player,'get_level'))or U.number(U.call(player,'get_character_level'))
  c.level=detected_level or 60
  c.level_known=detected_level~=nil
  c.level_band=c.level<20 and'novice'or c.level<30 and'developing'or c.level<40 and'veteran'or'endgame'

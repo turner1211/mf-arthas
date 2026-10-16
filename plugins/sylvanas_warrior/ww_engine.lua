@@ -56,6 +56,11 @@ end
 function E:ready(c,key,target)
  local r=S.rows[key]
  if not r or not r.specs[c.spec] or not c.settings.enabled then return false end
+ -- Learned talent abilities remain spellbook-authoritative because Forever's
+ -- Legacy points can unlock them early. Trainer abilities also carry an
+ -- explicit floor so stale host spellbook data cannot leak a future rank into
+ -- a lower-level rotation.
+ if r.min_level and c.level and c.level<r.min_level then return false end
  local root_break=c.mode=='arena' and (c.spec==71 or c.spec==72) and c.rooted==true
   and (key=='avatar' or key=='arms_bladestorm' or key=='fury_bladestorm')
  local fear_break=c.feared==true and c.spec==72 and(key=='death_wish'or key=='recklessness')

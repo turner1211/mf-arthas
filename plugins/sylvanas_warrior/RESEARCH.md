@@ -968,3 +968,22 @@ VERSION 1.6.0 — LEVEL-AWARE FOREVER ROTATION AUDIT
 - Sources checked October 15, 2026: Blizzard's Warrior class deep dive,
   Wowhead's current Forever Warrior beta build updates and Arms overview, and
   WoW Forever Builds & Tools data for build 1.60.1.70374.
+
+VERSION 1.7.0 — LEVEL-30 PRIORITY AND TRAINER-GATE AUDIT
+
+- Added explicit minimum levels for baseline and trainer abilities, including
+  Execute at 24, Whirlwind at 36, and Pummel at 38. Talent abilities remain
+  governed by the live spellbook so Forever Legacy bonus points can unlock
+  them earlier than a normal tree path.
+- Level-30 Fury no longer spends a global maintaining Rend. It prioritizes the
+  documented Overpower, durable-target Sunder, and queued swing flow, and holds
+  PvE Execute until 70 Rage so resources can carry into the next pull. PvP
+  Execute remains immediate.
+- Protection now establishes safe multi-target threat with Thunder Clap before
+  routine Shield Block, while lethal Shield Wall and Last Stand checks retain
+  priority. Shield Block remains limited to physical pressure.
+- Level detection now tries both get_level and get_character_level before using
+  its conservative fallback.
+- Sources checked October 15, 2026: Blizzard's WoW Forever beta development
+  notes (including the October 15 update), Wowhead's current level-30 Arms,
+  Fury, and Protection guides, and WoW Forever build 1.60.1.70374 data.

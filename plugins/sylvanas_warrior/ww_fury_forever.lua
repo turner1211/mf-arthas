@@ -11,8 +11,14 @@ function R.decide(c,engine)
  -- position; Recklessness no longer shares its cooldown and follows on the
  -- next decision tick when the burst window remains valid.
  if c.settings.cooldowns and c.burst and(c.rage or 0)>=20 and low>65 then a=c.pick('death_wish','Forever Fury safe Death Wish window')or c.pick('recklessness','Forever Fury Recklessness window');if a then return a end end
- if c.target_hp and c.target_hp<=20 and((c.rage or 0)>=35 or pvp or c.ttd and c.ttd<=3)then a=c.pick('execute','Forever Fury execute without wasting pooled Rage');if a then return a end end
- if due(engine,c,'rend',S.aura.rend,4)and(not c.ttd or c.ttd>9)then a=c.pick('rend','Forever Fury maintain Rend');if a then return a end end
+ local level=c.level or 60
+ -- Level-30 Fury carries Rage between pulls. Execute remains immediate in PvP,
+ -- but PvE holds it until a healthy Rage reserve exists at the current cap.
+ local execute_rage=level<=30 and 70 or 35
+ if c.target_hp and c.target_hp<=20 and((c.rage or 0)>=execute_rage or pvp or level>30 and c.ttd and c.ttd<=3)then a=c.pick('execute','Forever Fury execute without wasting pooled Rage');if a then return a end end
+ -- The current level-30 priority omits Rend in favor of Overpower, Sunder and
+ -- queued swings. Preserve Rend maintenance only for later-level rotations.
+ if level>30 and due(engine,c,'rend',S.aura.rend,4)and(not c.ttd or c.ttd>9)then a=c.pick('rend','Forever Fury maintain Rend');if a then return a end end
  a=c.pick('overpower','Forever Fury consume reactive Overpower');if a then return a end
  if c.talent('gore_drinker')and low<=60 then
   a=c.pick('bloodthirst','Forever Fury trigger Gore Drinker recovery');if a then return a end

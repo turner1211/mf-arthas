@@ -1,11 +1,16 @@
 local S=require('ww_spells');local R={spec=73}
 local function since(engine,c,key)return c.now-(engine.target_history[key..':'..tostring(c.target_guid)]or-math.huge)end
 local function due(engine,c,key,aura,refresh)local active,left=c.debuff(aura);return active==true and left and left<=refresh or active~=true and since(engine,c,key)>refresh end
-function R.mitigation(c)
+function R.mitigation(c,engine)
  if c.spec~=73 or not c.settings.defensives then return end
  local low=math.min(c.hp or 100,c.predicted_hp or c.hp or 100)
  if low<=20 then return c.pick('shield_wall','Forever Protection lethal-pressure Shield Wall')or c.pick('last_stand','Forever Protection emergency Last Stand')end
  if low<=40 then return c.pick('last_stand','Forever Protection early Last Stand health buffer')end
+ -- On packs, establish Thunder Clap threat before spending the next decision
+ -- on Shield Block. Emergency health cooldowns above always retain priority.
+ if engine and c.aoe_safe and c.enemy_count>=2 and due(engine,c,'thunder_clap',S.aura.thunder_clap,3)then
+  local a=c.pick('thunder_clap','Forever Protection establish pack threat before blocking');if a then return a end
+ end
  local block,left=c.buff(S.aura.shield_block)
  if c.physical and c.attackers>0 and(block~=true or left and left<=1.5)then return c.pick('shield_block','Forever Protection maintain two-block physical mitigation')end
 end

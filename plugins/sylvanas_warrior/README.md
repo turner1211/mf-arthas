@@ -1,5 +1,12 @@
 SYLVANAS WARRIOR — ARMS / FURY / PROTECTION
-Version 1.6.0 — Midnight and WoW Forever dual-runtime Warrior suite
+Version 1.7.0 — Midnight and WoW Forever dual-runtime Warrior suite
+
+Forever 1.7.0 adds explicit character-level floors for trainer abilities while
+leaving talent abilities spellbook-driven for Legacy bonus-point builds. At the
+current level-30 cap, Fury skips low-value Rend upkeep and preserves carried
+Rage before Execute. Protection establishes safe pack threat with Thunder Clap
+before routine Shield Block. Level detection now accepts both supported player
+API names, and every action still passes the learned-spell check.
 
 Forever 1.6.0 detects the live character level and selects novice, developing,
 veteran, or endgame priorities while still requiring every ability to be
